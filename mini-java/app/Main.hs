@@ -4,7 +4,7 @@ import Parser (parse)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/expVarCalc.minijava" -- read file
+    fileContent <- readFile "code/examples/explIfElse.minijava" -- read file
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> print t

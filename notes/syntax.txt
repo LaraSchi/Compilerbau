@@ -1,0 +1,83 @@
+Program ::= Class+
+
+Class ::= 'class' Newtype '{' FieldDecl* MethodDecl* '}'
+
+Newtype ::= Identifier
+
+FieldDecl ::= Type Identifier ';'
+
+MethodDecl ::= 'public' Type Identifier '(' ParameterList? ')' '{' Stmt* '}'
+
+ParameterList ::= Parameter (',' Parameter)*
+
+Parameter ::= Type Identifier
+
+Type ::= 'int' 
+       | 'boolean' 
+       | 'char'
+       | Newtype
+
+
+Stmt ::= ReturnStmt 
+       | WhileStmt
+       | DeclarationStmt
+       | IfStmt 
+       | StmtExpr
+
+StmtExpr ::= AssignmentStmt 
+           | NewExpression
+           | MethodCall
+
+
+Expression ::= This
+             | Super
+             | Var
+             | InstVar
+             | IntegerLiteral 
+             | CharLiteral 
+             | BooleanLiteral 
+             | String
+             | Identifier 
+             | '(' Expression ')' 
+             | Expression BinaryOperator Expression
+             | UnaryOperator Expression
+             | StmtExpr
+
+NewExpression ::= 'new' ClassName '(' ArgumentList? ');'
+
+MethodCall ::= Identifier '(' ArgumentList? ');'
+
+ArgumentList ::= Expression (',' Expression)*
+
+ReturnStmt ::= 'return' Expression ';'
+
+WhileStmt ::= 'while' '(' Expression ')' Stmt
+
+DeclarationStmt ::= Type Identifier ('=' Expression)? ';'
+
+IfStmt ::= 'if' '(' Expression ')' Stmt ('else' Stmt)?
+
+AssignmentStmt ::= Identifier '=' Expression ';'
+
+BinaryOperator ::= '+' | '-' | '*' | '/' | '&&' | '||' | '==' | '!=' | '<' | '>' | '<=' | '>='
+
+UnaryOperator ::= '-' | '!' | '+'
+
+IntegerLiteral ::= [0-9]+
+
+CharLiteral ::= '\'' [a-zA-Z] '\''
+
+String ::= '"' Identifier '"'
+
+BooleanLiteral ::= 'true' | 'false'
+
+Identifier ::= [a-zA-Z][a-zA-Z0-9]*
+
+This ::= 'this'
+
+Super ::= 'super'
+
+Var ::= Identifier
+
+InstVar ::= Expression '.' Identifier
+

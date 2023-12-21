@@ -39,9 +39,6 @@ library:
     - array
     - bytestring
     - mtl
-  build-tool:
-    - alex
-    - happy
 
 executables:
   mini-java-exe:
@@ -64,3 +61,8 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - mini-java
+    - HUnit
+    - aeson
+    - bytestring
+    - hspec
+    - hspec-discover
