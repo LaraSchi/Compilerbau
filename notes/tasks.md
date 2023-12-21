@@ -5,7 +5,11 @@
 - Abstrakte Syntax: Aufbau der abstrakten Syntax aus dem Parsetree
 - Dokumentation: Erstellen der Dokumentation
 
-### Scannen/Parsen/Grammatik (Frage: evtl. einfach als gemeinsame Aufgabe sehen?)
+### Scannen/Parsen/Grammatik
+
+    Frage:
+    Das evtl. noch zu Aufgaben von allen zählen? 
+    
 - Scannen: alex–File oder Scanner von Hand programmieren
 - Grammatik: Erstellen einer Mini-Java-Grammatik an Hand der Spezifikation
 - Parsen: Erstellen des happy–Files oder des Kombinator–Parsers und Aufbau
@@ -24,6 +28,7 @@ des abstrakten Syntaxbaums
 – Händische Übersetzung aller Java-Files der Testsuite in die abstrakte Syntax
 (als Test–Eingaben für den Typ-Checker)
 
+
 – Händische Übersetzung aller Testfälle der abstrakten Syntax in getypte ab-
 strakte Syntax (als Test–Eingaben für den Code-Generierer).
 
@@ -32,3 +37,7 @@ abstrakten Bytecode.
 
 – Automatische Tests, die die jeweiligen Testsuite mit den implementierten
 Funktionen des Teams vergleichen
+
+    Ideen zum Testen:
+    - pro Type je ein funktionierendes und ein nicht funktionierendes Bsp möglichst minimal
+    - 3-5 größere funktionierende Beispiele

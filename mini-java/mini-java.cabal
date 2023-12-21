@@ -63,6 +63,8 @@ test-suite mini-java-test
   main-is: Spec.hs
   other-modules:
       ParserSpec
+      SemanticsSpec
+      TestHelper
       Paths_mini_java
   autogen-modules:
       Paths_mini_java
