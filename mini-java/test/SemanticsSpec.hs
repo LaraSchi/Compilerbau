@@ -10,7 +10,7 @@ import Semantics
 -- tests one TestEntry
 testEntry :: TestEntry -> SpecWith ()
 testEntry entry = it ("Test nr. " ++ no entry ++ ": testting " ++ name entry) $ do
-    let result = checkSemantics $ read $ input entry
+    let result = checkSemantics $ read $ replaceAposQuotes $ input entry
     case result of
         Left _  -> "false" `shouldBe` expected entry
         Right _ -> "true" `shouldBe` expected entry
@@ -20,3 +20,9 @@ spec :: Spec
 spec = describe "Semanticcheck Tests" $ do
     testData <- runIO (readTestData "test/examples/semanticsTests.json")
     mapM_ testEntry testData
+
+replaceAposQuotes :: String -> String
+replaceAposQuotes = map replaceChar
+    where
+        replaceChar '\'' = '"'
+        replaceChar c    = c

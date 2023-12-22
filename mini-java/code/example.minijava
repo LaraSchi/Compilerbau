@@ -2,6 +2,7 @@ class LoopClass {
   public int countToTen() {
     int i = 0;
     while (i < 10) {
+      i.countToTen();
       i = i + 1;
     }
     return i;

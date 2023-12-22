@@ -14,20 +14,21 @@ import Control.Monad.Except
 %error { parseError }
 
 %token
-  class           { ClassT }
-  public          { PublicT }
-  intType         { IntTypeT }
-  booleanType     { BooleanTypeT }
-  charType        { CharTypeT }
-  new             { NewT }
-  return          { ReturnT }
-  while           { WhileT }
-  if              { IfT }
-  else            { ElseT }
-  this            { ThisT }
-  super           { SuperT }
-  true            { TrueT }
-  false           { FalseT }
+  class             { ClassT }
+  public            { PublicT }
+  intType           { IntTypeT }
+  booleanType       { BooleanTypeT }
+  charType          { CharTypeT }
+  new               { NewT }
+  return            { ReturnT }
+  while             { WhileT }
+  if                { IfT }
+  else              { ElseT }
+  this              { ThisT }
+  super             { SuperT }
+  true              { TrueT }
+  false             { FalseT }
+  null              { NullT }
   '+'               { PlusT }
   '-'               { MinusT }
   '*'               { TimesT }
@@ -116,22 +117,25 @@ StmtExpr
 Expression
   : this                            { ThisExpr }
   | super                           { SuperExpr }
-  | int                             { IntLitExpr $1 }
-  | char                            { CharLitExpr $1 }
-  | BooleanLiteral                  { BoolLitExpr $1 }
-  | string                          { StringLitExpr $1 }
   | identifier                      { IdentifierExpr $1 }
-  | '(' Expression ')'              { ParenExpr $2 }
-  | Expression BinaryOperator Expression { BinOpExpr $1 $2 $3 }
+  | string '.' Expression           { InstVar $3 $1 }
   | UnaryOperator Expression        { UnaryOpExpr $1 $2 }
+  | Expression BinaryOperator Expression { BinOpExpr $1 $2 $3 }
+  | int                             { IntLitExpr $1 }
+  | BooleanLiteral                  { BoolLitExpr $1 }
+  | char                            { CharLitExpr $1 }
+  | string                          { StringLitExpr $1 }
+  | null                            { Null }
   | StmtExpr                        { StmtExprExpr $1 }
+  | '(' Expression ')'              { ParenExpr $2 }
 
 
 NewExpression
   : new ClassName '(' ArgumentList ')' ';' { NewExpr $2 $4 }
 
 MethodCall
-  : identifier '(' ArgumentList ')' ';' { MethodCallExpr $1 $3 }
+  : Expression '.' identifier '(' ArgumentList ')' ';' { MethodCallExpr $1 $3 $5 }
+  | Expression '.' identifier '(' ')' ';'              { MethodCallExpr $1 $3 [] }
 
 ArgumentList
   : Expression                      { [$1] }

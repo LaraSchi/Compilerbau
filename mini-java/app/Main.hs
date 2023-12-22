@@ -5,12 +5,12 @@ import Semantics(checkSemantics)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/explIfElse.minijava" -- read file
+    fileContent <- readFile "code/example.minijava" -- read file
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
-            Left _   -> putStrLn "Semantic check failed"
-            Right t' -> print t'
+            Left e   -> print "false"
+            Right t' -> print "true"
 
 {- 
 TODO: 

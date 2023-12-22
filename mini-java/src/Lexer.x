@@ -25,6 +25,7 @@ tokens :-
   super                     { \_ -> SuperT }
   true                      { \_ -> TrueT }
   false                     { \_ -> FalseT }
+  null                      { \_ -> NullT }
   "+"                         { \_ -> PlusT }
   "-"                         { \_ -> MinusT }
   "*"                         { \_ -> TimesT }
@@ -69,6 +70,7 @@ data Token = ClassT
            | SuperT
            | TrueT
            | FalseT
+           | NullT
            | PlusT
            | MinusT
            | TimesT

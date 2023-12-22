@@ -11,29 +11,32 @@ data Class = Class Newtype [FieldDecl] [MethodDecl]
 newtype Newtype = Newtype String
                 deriving (Show, Eq, Read)
 
-data FieldDecl = FieldDecl Type String
+data FieldDecl = FieldDecl Type String -- #TODO: manche trings zu Identifier
                deriving (Show, Eq, Read)
 
-data MethodDecl = MethodDecl Visibility Type String [Parameter] [Stmt]
+data MethodDecl = MethodDecl Visibility Type String [Parameter] BlockStmt
                 deriving (Show, Eq, Read)
 
 data Parameter = Parameter Type String
                deriving (Show, Eq, Read)
 
+type BlockStmt =  [Stmt]
+
 data Type = Int
           | Boolean
           | Char
           | NewtypeType Newtype
+          | Func [Type] Type
           deriving (Show, Eq, Read)
 
 data Visibility = Public
           deriving (Show, Eq, Read)
 
 data Stmt = ReturnStmt Expression
-          | WhileStmt Expression [Stmt]
+          | WhileStmt Expression BlockStmt
           | DeclarationStmt Type String (Maybe Expression)
-          | IfStmt Expression [Stmt]
-          | IfElseStmt Expression [Stmt] [Stmt] -- #TODO: alle [Stmt] zu BlockStmt
+          | IfStmt Expression BlockStmt
+          | IfElseStmt Expression BlockStmt BlockStmt -- #TODO: alle [Stmt] zu BlockStmt
           | StmtExprStmt StmtExpr
           deriving (Show, Eq, Read)
 
@@ -44,22 +47,25 @@ data StmtExpr = AssignmentStmt String Expression
 
 data Expression = ThisExpr
                 | SuperExpr
-                | IntLitExpr Int
-                | CharLitExpr String
-                | BoolLitExpr Bool
-                | StringLitExpr String
                 | IdentifierExpr String
-                | ParenExpr Expression
-                | BinOpExpr Expression BinaryOperator Expression
+                | InstVar Expression String
                 | UnaryOpExpr UnaryOperator Expression
+                | BinOpExpr Expression BinaryOperator Expression
+                | IntLitExpr Int
+                | BoolLitExpr Bool
+                | CharLitExpr String
+                | StringLitExpr String
+                | Null
                 | StmtExprExpr StmtExpr
+                | ParenExpr Expression -- Expression in Klammern
                 deriving (Show, Eq, Read)
 
 data NewExpr = NewExpr ClassName [Expression]
              deriving (Show, Eq, Read)
 
-data MethodCallExpr = MethodCallExpr String [Expression]
+data MethodCallExpr = MethodCallExpr Expression String [Expression]
                     deriving (Show, Eq, Read)
+
 
 data BinaryOperator = Plus
                     | Minus
@@ -82,4 +88,3 @@ data UnaryOperator = UnaryMinus
 
 newtype ClassName = ClassName String
                   deriving (Show, Eq, Read)
-
