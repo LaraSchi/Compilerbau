@@ -10,7 +10,7 @@ main = do
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
             Left e   -> print "false"
-            Right t' -> print "true"
+            Right t' -> print t'
 
 {- 
 TODO: 

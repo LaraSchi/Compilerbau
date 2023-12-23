@@ -2,27 +2,27 @@
     {
         "no"        : "1"
     ,   "name"      : "IfElse"
-    ,   "input"     : "Program (Class (Newtype 'ControlClass') [] [MethodDecl Public Int 'check' [Parameter Int 'a'] [IfElseStmt (BinOpExpr (IdentifierExpr 'a') Greater (IntLitExpr 0)) [ReturnStmt (IntLitExpr 1)] [ReturnStmt (IntLitExpr 0)]]])"
+    ,   "input"     : "Program (Class (Newtype 'ControlClass') [] [MethodDecl Public Int 'check' [Parameter Int 'a'] [IfElseStmt (BinOpExpr (IdentifierExpr 'a') Greater (IntLitExpr 0)) [ReturnStmt (IntLitExpr 1)] (Just[ReturnStmt (IntLitExpr 0)])]]) False"
     ,   "expected"  : "true"
     },{
         "no"        : "2"
     ,   "name"      : "Class"
-    ,   "input"     : "Program (Class (Newtype 'SimpleClass') [FieldDecl Int 'number',FieldDecl Boolean 'flag'] [])"
+    ,   "input"     : "Program (Class (Newtype 'SimpleClass') [FieldDecl Int 'number',FieldDecl Boolean 'flag'] []) False"
     ,   "expected"  : "true"
     },{
         "no"        : "3"
     ,   "name"      : "Method"
-    ,   "input"     : "Program (Class (Newtype 'MathClass') [] [MethodDecl Public Int 'add' [Parameter Int 'a',Parameter Int 'b'] [ReturnStmt (BinOpExpr (IdentifierExpr 'a') Plus (IdentifierExpr 'b'))]])"
+    ,   "input"     : "Program (Class (Newtype 'MathClass') [] [MethodDecl Public Int 'add' [Parameter Int 'a',Parameter Int 'b'] [ReturnStmt (BinOpExpr (IdentifierExpr 'a') Plus (IdentifierExpr 'b'))]]) False"
     ,   "expected"  : "true"
     },{
         "no"        : "4"
     ,   "name"      : "While"
-    ,   "input"     : "Program (Class (Newtype 'LoopClass') [] [MethodDecl Public Int 'countToTen' [] [DeclarationStmt Int 'i' (Just (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr 'i') Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt 'i' (BinOpExpr (IdentifierExpr 'i') Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr 'i')]])"
+    ,   "input"     : "Program (Class (Newtype 'LoopClass') [] [MethodDecl Public Int 'countToTen' [] [DeclarationStmt Int 'i' (Just (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr 'i') Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt 'i' (BinOpExpr (IdentifierExpr 'i') Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr 'i')]]) False"
     ,   "expected"  : "true"
     },{
         "no"        : "5"
     ,   "name"      : "Var And Calc"
-    ,   "input"     : "Program (Class (Newtype 'CalculationClass') [] [MethodDecl Public Int 'calculate' [] [DeclarationStmt Int 'a' (Just (IntLitExpr 10)),DeclarationStmt Int 'b' (Just (BinOpExpr (IdentifierExpr 'a') Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr 'b')]])"
+    ,   "input"     : "Program (Class (Newtype 'CalculationClass') [] [MethodDecl Public Int 'calculate' [] [DeclarationStmt Int 'a' (Just (IntLitExpr 10)),DeclarationStmt Int 'b' (Just (BinOpExpr (IdentifierExpr 'a') Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr 'b')]])  False"
     ,   "expected"  : "true"
     }
 ]

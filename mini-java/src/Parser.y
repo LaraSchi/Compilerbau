@@ -50,15 +50,15 @@ import Control.Monad.Except
   ')'               { RParT }
   '{'               { LBraceT }
   '}'               { RBraceT }
-  int               { IntT $$ }
-  char              { CharT $$ }
-  string            { StringT $$ }
+  int               { IntTo $$ }
+  char              { CharTo $$ }
+  string            { StringTo $$ }
   identifier        { IdentifierT $$ }
 
 %%
 
 Program
-  : Class                 { Program $1 }
+  : Class                 { Program $1 False }
 
 Class
   : class Newtype '{' FieldDecls MethodDecls '}'    { Class $2 $4 $5 }
@@ -69,10 +69,10 @@ Newtype
   : identifier            { Newtype $1 }
 
 Type
-  : intType                   { Int }
-  | booleanType               { Boolean }
-  | charType                  { Char }
-  | Newtype                   { NewtypeType $1 }
+  : intType                   { IntT }
+  | booleanType               { BoolT }
+  | charType                  { CharT }
+  | Newtype                   { NewtypeT $1 }
 
 FieldDecls
   : FieldDecl              { [$1] }
@@ -127,7 +127,7 @@ Expression
   | string                          { StringLitExpr $1 }
   | null                            { Null }
   | StmtExpr                        { StmtExprExpr $1 }
-  | '(' Expression ')'              { ParenExpr $2 }
+  | '(' Expression ')'              { $2 }
 
 
 NewExpression
@@ -148,12 +148,11 @@ WhileStmt
   : while '(' Expression ')' '{' BlockStmt '}' { WhileStmt $3 $6 }
 
 DeclarationStmt
-  : Type identifier ';'                 { DeclarationStmt $1 $2 Nothing }
-  | Type identifier '=' Expression ';'  { DeclarationStmt $1 $2 (Just $4) }
+  : Type identifier ';'                 { LocalOrFieldVarDeclStmt $1 $2 }
 
 IfStmt
-  : if '(' Expression ')' '{' BlockStmt '}'                             { IfStmt $3 $6 }
-  | if '(' Expression ')' '{' BlockStmt '}' else '{' BlockStmt '}'      { IfElseStmt $3 $6 $10 }
+  : if '(' Expression ')' '{' BlockStmt '}'                             { IfElseStmt $3 $6 Nothing }
+  | if '(' Expression ')' '{' BlockStmt '}' else '{' BlockStmt '}'      { IfElseStmt $3 $6 (Just $10) }
 
 AssignmentStmt
   : identifier '=' Expression ';' { AssignmentStmt $1 $3 }

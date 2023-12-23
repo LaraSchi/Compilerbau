@@ -1,8 +1,9 @@
 module Syntax where
 
+type Typed = Bool
 
 -- Definition des Programmtyps
-newtype Program = Program Class
+data Program = Program Class Typed
              deriving (Show, Eq, Read)
 
 data Class = Class Newtype [FieldDecl] [MethodDecl]
@@ -22,32 +23,37 @@ data Parameter = Parameter Type String
 
 type BlockStmt =  [Stmt]
 
-data Type = Int
-          | Boolean
-          | Char
-          | NewtypeType Newtype
-          | Func [Type] Type
+data Type = IntT
+          | BoolT
+          | CharT
+          | StringT -- #TODO: zu Parser hinzufügen
+          | NewtypeT Newtype
+          | FuncT [Type] Type
+          | NoT
           deriving (Show, Eq, Read)
 
 data Visibility = Public
           deriving (Show, Eq, Read)
 
-data Stmt = ReturnStmt Expression
+data Stmt = TypedStmt Stmt Type
+          | ReturnStmt Expression
           | WhileStmt Expression BlockStmt
-          | DeclarationStmt Type String (Maybe Expression)
+          | LocalOrFieldVarDeclStmt Type String
           | IfStmt Expression BlockStmt
-          | IfElseStmt Expression BlockStmt BlockStmt -- #TODO: alle [Stmt] zu BlockStmt
+          | IfElseStmt Expression BlockStmt (Maybe BlockStmt)
           | StmtExprStmt StmtExpr
           deriving (Show, Eq, Read)
 
-data StmtExpr = AssignmentStmt String Expression
+data StmtExpr = TypedStmtExpr StmtExpr Type
+              | AssignmentStmt String Expression
               | NewExpression NewExpr
               | MethodCall MethodCallExpr
               deriving (Show, Eq, Read)
 
-data Expression = ThisExpr
+data Expression = TypedExpr Expression Type 
+                | ThisExpr
                 | SuperExpr
-                | IdentifierExpr String
+                | IdentifierExpr String --LocalOrFieldVar
                 | InstVar Expression String
                 | UnaryOpExpr UnaryOperator Expression
                 | BinOpExpr Expression BinaryOperator Expression
@@ -57,7 +63,6 @@ data Expression = ThisExpr
                 | StringLitExpr String
                 | Null
                 | StmtExprExpr StmtExpr
-                | ParenExpr Expression -- Expression in Klammern
                 deriving (Show, Eq, Read)
 
 data NewExpr = NewExpr ClassName [Expression]
@@ -88,3 +93,5 @@ data UnaryOperator = UnaryMinus
 
 newtype ClassName = ClassName String
                   deriving (Show, Eq, Read)
+
+-- TODO: evtl umbenennen? Zb Expression -> Expr?

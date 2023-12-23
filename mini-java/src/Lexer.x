@@ -47,9 +47,9 @@ tokens :-
   ")"                         { \_ -> RParT }
   "{"                         { \_ -> LBraceT }
   "}"                         { \_ -> RBraceT }
-  $digit+                     { \s -> IntT (read s) }
-  "'"$char"'"                 { \s -> CharT s }
-  "'" $string+ "'"            { \s -> StringT s }
+  $digit+                     { \s -> IntTo (read s) }
+  "'"$char"'"                 { \s -> CharTo s }
+  "'" $string+ "'"            { \s -> StringTo s }
   $string+                    { \s -> IdentifierT s }
 
 
@@ -92,9 +92,9 @@ data Token = ClassT
            | RParT
            | LBraceT
            | RBraceT
-           | IntT Int
-           | CharT String
-           | StringT String
+           | IntTo Int
+           | CharTo String
+           | StringTo String
            | IdentifierT String
     deriving (Show, Eq)
 }
