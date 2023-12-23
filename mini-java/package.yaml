@@ -44,6 +44,9 @@ executables:
   mini-java-exe:
     main:                Main.hs
     source-dirs:         app
+    build-tools:
+    - alex
+    - happy
     ghc-options:
     - -threaded
     - -rtsopts
