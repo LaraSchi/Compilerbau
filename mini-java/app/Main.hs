@@ -9,7 +9,7 @@ main = do
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
-            Left e   -> print "false"
+            Left _   -> print "false"
             Right t' -> print t'
 
 {- 

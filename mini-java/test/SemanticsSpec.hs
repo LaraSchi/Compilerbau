@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module SemanticsSpec where
+module SemanticsSpec(spec) where
 
 import Test.Hspec
 import TestHelper

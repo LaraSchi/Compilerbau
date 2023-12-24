@@ -148,7 +148,7 @@ WhileStmt
   : while '(' Expression ')' '{' BlockStmt '}' { WhileStmt $3 $6 }
 
 DeclarationStmt
-  : Type identifier ';'                 { LocalOrFieldVarDeclStmt $1 $2 }
+  : Type identifier ';'                 { LocalVarDeclStmt $1 $2 }
 
 IfStmt
   : if '(' Expression ')' '{' BlockStmt '}'                             { IfElseStmt $3 $6 Nothing }

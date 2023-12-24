@@ -29,7 +29,7 @@ data Type = IntT
           | StringT -- #TODO: zu Parser hinzufügen
           | NewtypeT Newtype
           | FuncT [Type] Type
-          | NoT
+          | VoidT
           deriving (Show, Eq, Read)
 
 data Visibility = Public
@@ -38,7 +38,7 @@ data Visibility = Public
 data Stmt = TypedStmt Stmt Type
           | ReturnStmt Expression
           | WhileStmt Expression BlockStmt
-          | LocalOrFieldVarDeclStmt Type String
+          | LocalVarDeclStmt Type String
           | IfStmt Expression BlockStmt
           | IfElseStmt Expression BlockStmt (Maybe BlockStmt)
           | StmtExprStmt StmtExpr

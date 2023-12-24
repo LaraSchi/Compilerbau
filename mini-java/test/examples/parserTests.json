@@ -18,11 +18,11 @@
         "no"        : "4"
     ,   "name"      : "While"
     ,   "input"     : "class LoopClass {public int countToTen() {int i; i = 0; while (i < 10) {i = i + 1;}return i;}}"
-    ,   "expected"  : "Program (Class (Newtype \"LoopClass\") [] [MethodDecl Public IntT \"countToTen\" [] [LocalOrFieldVarDeclStmt IntT \"i\",StmtExprStmt (AssignmentStmt \"i\" (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr \"i\") Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt \"i\" (BinOpExpr (IdentifierExpr \"i\") Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr \"i\")]]) False"
+    ,   "expected"  : "Program (Class (Newtype \"LoopClass\") [] [MethodDecl Public IntT \"countToTen\" [] [LocalVarDeclStmt IntT \"i\",StmtExprStmt (AssignmentStmt \"i\" (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr \"i\") Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt \"i\" (BinOpExpr (IdentifierExpr \"i\") Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr \"i\")]]) False"
     },{
         "no"        : "5"
     ,   "name"      : "Var And Calc"
     ,   "input"     : "class CalculationClass {public int calculate() {int a; a = 10;int b; b = a + 5;return b;}}"
-    ,   "expected"  : "Program (Class (Newtype \"CalculationClass\") [] [MethodDecl Public IntT \"calculate\" [] [LocalOrFieldVarDeclStmt IntT \"a\",StmtExprStmt (AssignmentStmt \"a\" (IntLitExpr 10)),LocalOrFieldVarDeclStmt IntT \"b\",StmtExprStmt (AssignmentStmt \"b\" (BinOpExpr (IdentifierExpr \"a\") Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr \"b\")]]) False"
+    ,   "expected"  : "Program (Class (Newtype \"CalculationClass\") [] [MethodDecl Public IntT \"calculate\" [] [LocalVarDeclStmt IntT \"a\",StmtExprStmt (AssignmentStmt \"a\" (IntLitExpr 10)),LocalVarDeclStmt IntT \"b\",StmtExprStmt (AssignmentStmt \"b\" (BinOpExpr (IdentifierExpr \"a\") Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr \"b\")]]) False"
     }
 ]

@@ -17,12 +17,12 @@
     },{
         "no"        : "4"
     ,   "name"      : "While"
-    ,   "input"     : "Program (Class (Newtype \"LoopClass\") [] [MethodDecl Public IntT \"countToTen\" [] [LocalOrFieldVarDeclStmt IntT \"i\",StmtExprStmt (AssignmentStmt \"i\" (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr \"i\") Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt \"i\" (BinOpExpr (IdentifierExpr \"i\") Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr \"i\")]]) False"
+    ,   "input"     : "Program (Class (Newtype \"LoopClass\") [] [MethodDecl Public IntT \"countToTen\" [] [LocalVarDeclStmt IntT \"i\",StmtExprStmt (AssignmentStmt \"i\" (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr \"i\") Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt \"i\" (BinOpExpr (IdentifierExpr \"i\") Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr \"i\")]]) False"
     ,   "expected"  : "true"
     },{
         "no"        : "5"
     ,   "name"      : "Var And Calc"
-    ,   "input"     : "Program (Class (Newtype \"CalculationClass\") [] [MethodDecl Public IntT \"calculate\" [] [LocalOrFieldVarDeclStmt IntT \"a\",StmtExprStmt (AssignmentStmt \"a\" (IntLitExpr 10)),LocalOrFieldVarDeclStmt IntT \"b\",StmtExprStmt (AssignmentStmt \"b\" (BinOpExpr (IdentifierExpr \"a\") Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr \"b\")]]) False"
+    ,   "input"     : "Program (Class (Newtype \"CalculationClass\") [] [MethodDecl Public IntT \"calculate\" [] [LocalVarDeclStmt IntT \"a\",StmtExprStmt (AssignmentStmt \"a\" (IntLitExpr 10)),LocalVarDeclStmt IntT \"b\",StmtExprStmt (AssignmentStmt \"b\" (BinOpExpr (IdentifierExpr \"a\") Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr \"b\")]]) False"
     ,   "expected"  : "true"
     }
 ]

@@ -9,3 +9,4 @@ class LoopClass {
     return i;
   }
 }
+
