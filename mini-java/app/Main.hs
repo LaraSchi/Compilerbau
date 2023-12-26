@@ -2,10 +2,16 @@ module Main (main) where
 
 import Parser (parse)
 import Semantics(checkSemantics)
+import ClassFormat (showCP_Infos, CP_Infos, CP_Info(..), Tag(..))
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/example.minijava" -- read file
+    fileContent <- readFile "code/examples/bct.minijava" -- read file
+    putStrLn ""
+    putStrLn "parsing file content"
+    putStrLn ""
+    putStrLn "File Content:"
+    putStrLn fileContent
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
@@ -19,6 +25,7 @@ main = do
                     ]
 
     let result = showCP_Infos sampleCP 1
+    putStrLn ""
     putStrLn "Example of constant pool"
     putStrLn result
     -------------------------------------
