@@ -6,10 +6,10 @@ type Typed = Bool
 data Program = Program Class Typed
              deriving (Show, Eq, Read)
 
-data Class = Class Newtype [FieldDecl] [MethodDecl]
+data Class = Class NewType [FieldDecl] [MethodDecl]
            deriving (Show, Eq, Read)
 
-newtype Newtype = Newtype String
+newtype NewType = NewType String
                 deriving (Show, Eq, Read)
 
 data FieldDecl = FieldDecl Type String -- #TODO: manche trings zu Identifier
@@ -27,7 +27,7 @@ data Type = IntT
           | BoolT
           | CharT
           | StringT -- #TODO: zu Parser hinzufügen
-          | NewtypeT Newtype
+          | NewTypeT NewType
           | FuncT [Type] Type
           | VoidT
           deriving (Show, Eq, Read)
@@ -45,7 +45,7 @@ data Stmt = TypedStmt Stmt Type
           deriving (Show, Eq, Read)
 
 data StmtExpr = TypedStmtExpr StmtExpr Type
-              | AssignmentStmt String Expression
+              | AssignmentStmt Expression Expression
               | NewExpression NewExpr
               | MethodCall MethodCallExpr
               deriving (Show, Eq, Read)
@@ -65,7 +65,7 @@ data Expression = TypedExpr Expression Type
                 | StmtExprExpr StmtExpr
                 deriving (Show, Eq, Read)
 
-data NewExpr = NewExpr ClassName [Expression]
+data NewExpr = NewExpr NewType [Expression]
              deriving (Show, Eq, Read)
 
 data MethodCallExpr = MethodCallExpr Expression String [Expression]

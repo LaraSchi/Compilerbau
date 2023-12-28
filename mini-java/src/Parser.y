@@ -66,13 +66,13 @@ Class
   | class Newtype '{' MethodDecls '}'               { Class $2 [] $4 }
 
 Newtype
-  : identifier            { Newtype $1 }
+  : identifier            { NewType $1 }
 
 Type
   : intType                   { IntT }
   | booleanType               { BoolT }
   | charType                  { CharT }
-  | Newtype                   { NewtypeT $1 }
+  | Newtype                   { NewTypeT $1 }
 
 FieldDecls
   : FieldDecl              { [$1] }
@@ -118,7 +118,7 @@ Expression
   : this                            { ThisExpr }
   | super                           { SuperExpr }
   | identifier                      { IdentifierExpr $1 }
-  | string '.' Expression           { InstVar $3 $1 }
+  | Expression '.' identifier       { InstVar $1 $3 }
   | UnaryOperator Expression        { UnaryOpExpr $1 $2 }
   | Expression BinaryOperator Expression { BinOpExpr $1 $2 $3 }
   | int                             { IntLitExpr $1 }
@@ -131,7 +131,8 @@ Expression
 
 
 NewExpression
-  : new ClassName '(' ArgumentList ')' ';' { NewExpr $2 $4 }
+  : new Newtype '(' ArgumentList ')' ';' { NewExpr $2 $4 }
+  | new Newtype '(' ')' ';'              { NewExpr $2 [] }
 
 MethodCall
   : Expression '.' identifier '(' ArgumentList ')' ';' { MethodCallExpr $1 $3 $5 }
@@ -155,7 +156,10 @@ IfStmt
   | if '(' Expression ')' '{' BlockStmt '}' else '{' BlockStmt '}'      { IfElseStmt $3 $6 (Just $10) }
 
 AssignmentStmt
-  : identifier '=' Expression ';' { AssignmentStmt $1 $3 }
+  : identifier '=' Expression ';'                   { AssignmentStmt (IdentifierExpr $1) $3 }
+  | identifier '=' Expression                       { AssignmentStmt (IdentifierExpr $1) $3 }
+  | identifier '.' identifier '=' Expression        { AssignmentStmt (InstVar (IdentifierExpr $1) $3) $5 }
+  | identifier '.' identifier '=' Expression ';'    { AssignmentStmt (InstVar (IdentifierExpr $1) $3) $5 }
 
 BinaryOperator
   : '+'       { Plus }

@@ -1,12 +1,9 @@
-class LoopClass {
-  public int countToTen() {
-    int i;
-    i = 0;
-    while (i < 10) {
-      i.countToTen();
-      i = i + 1;
-    }
-    return i;
-  }
-}
+class A {
+int attr;
+public A meth(Boolean x) { 
 
+    A a;
+    a = new A ();
+    a.attr = 5;
+ }
+}
