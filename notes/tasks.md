@@ -41,3 +41,19 @@ Funktionen des Teams vergleichen
     Ideen zum Testen:
     - pro Type je ein funktionierendes und ein nicht funktionierendes Bsp möglichst minimal
     - 3-5 größere funktionierende Beispiele
+
+    Ideen:
+    - evtl. PrettyPrinter für Zwischenschritte? zb typecheck?
+
+
+
+Program (Class (NewType "A") 
+    [FieldDecl IntT "attr"] 
+    
+    [MethodDecl Public (NewTypeT (NewType "A")) "meth" [Parameter (NewTypeT (NewType "Boolean")) "x"] 
+    
+    [TypedStmt (LocalVarDeclStmt (NewTypeT (NewType "A")) "a") (NewTypeT (NewType "A")),
+    
+    TypedStmt (StmtExprStmt (TypedStmtExpr (AssignmentStmt (IdentifierExpr "a") (StmtExprExpr (NewExpression (NewExpr (NewType "A") [])))) VoidT)) VoidT,
+    
+    TypedStmt (StmtExprStmt (TypedStmtExpr (AssignmentStmt (InstVar (IdentifierExpr "a") "attr") (TypedExpr (IntLitExpr 5) IntT)) IntT)) VoidT]]) True

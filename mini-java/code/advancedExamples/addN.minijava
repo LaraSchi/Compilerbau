@@ -1,0 +1,14 @@
+class Addn {
+    int n;
+    public Addn Addn(int n) {
+        this.n = n;
+    }
+    public Addn add1(int n) {
+        Addn a;
+        a = new Add(n);
+        return a;
+    }
+    public int add2(int x) {
+        return n + x;
+    }
+}
