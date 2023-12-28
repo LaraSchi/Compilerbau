@@ -9,7 +9,8 @@ import Debug.Trace --Debugging, TODO: remove
 data TypeState = TypeState { classType        :: Type,
                              localTypeset     :: [(String, Type)],
                              fieldTypeset     :: [(String, Type)],
-                             errors           :: [String]}
+                             errors           :: [String] }
+                             deriving Show 
 
 type TypeStateM = State TypeState
 
@@ -37,12 +38,13 @@ fillTypeSetFields fds = modify (\s -> s {fieldTypeset = types})
 fillTypesSetMethod :: [MethodDecl] -> TypeStateM ()
 fillTypesSetMethod mds = do
     ts <- gets localTypeset
-    let funcTypes = map buildFuncType mds
+    let funcTypes = concatMap buildFuncType mds
     modify (\s -> s {localTypeset = ts ++ funcTypes})
 
-buildFuncType :: MethodDecl -> (String, Type)
-buildFuncType (MethodDecl _ t n ps _) = (n, FuncT param t)
-    where param = map (\(Parameter ty _) -> ty) ps
+buildFuncType :: MethodDecl -> [(String, Type)]
+buildFuncType (MethodDecl _ t n ps _) = (n, FuncT paramFunc t) : paramTypes
+    where paramFunc  = map (\(Parameter ty _) -> ty) ps
+          paramTypes = map (\(Parameter ty st) -> (st,ty)) ps
 
 
 checkMethod :: MethodDecl -> TypeStateM MethodDecl
@@ -51,7 +53,7 @@ checkMethod (MethodDecl v t s ps stmts) = do
     locals <- gets localTypeset
     fields <- gets fieldTypeset
     classT <- gets classType
-    traceShow locals $ traceShow fields $ traceShow classT $ return $ MethodDecl v t s ps typedStmts
+    return $ MethodDecl v t s ps typedStmts
 
 
 checkStmt :: Stmt -> TypeStateM Stmt
@@ -79,7 +81,7 @@ checkStmt _                                 = error "checkStmt called on already
 checkTypeExpr :: Type -> Expression -> TypeStateM Expression
 checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
     then return typed
-    else error "Int hier sollte eine passende Error message erstellt werden"
+    else error "checkTypeExpr error" -- #TODO: passende Error messages
 
 -- TODO: alle Expr typen 
 -- TODO: evtl. zu haskell typen? 
@@ -101,10 +103,11 @@ checkExpr _                    = error "checkExpr called on already typed Expres
 checkIdentifier :: String -> TypeStateM Expression
 checkIdentifier s = do
     state <- get
+    local <- gets localTypeset
+    let typeSet = localTypeset state ++ fieldTypeset state
     case lookup s $ localTypeset state ++ fieldTypeset state of
         Just t -> return $ TypedExpr (IdentifierExpr s) t
         _      -> return $ TypedExpr (IdentifierExpr s) VoidT -- #TODO: stimmt das?
-
 
 -- #TODO: evtl. Hilfsfunktionen
 checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
@@ -135,7 +138,7 @@ checkSameExpr e1 e2 t = do
     let equal = getTypeE e1T == getTypeE e2T        -- Are ExprTypes equal?
     if equal && (t == getTypeE e1T || t == VoidT)   -- equal & Both have required type
         then return (e1,e2) 
-        else error "hier sollte eine passende Error message erstellt werden"
+        else semanticsError "checkSameExpr" $ show e1T ++ " & " ++ show e2T ++ ", with Type " ++ show t ++ ", but type e1, e2: " ++ show (getTypeE e1T) ++ " " ++ show (getTypeE e2T) 
 
 
 -- type checking statements & wraping StmtExpr into TypedStmtExpr
@@ -192,3 +195,5 @@ getTypeSE _                    = error "blub"
 
 -- Debug Helper 
 
+semanticsError :: String -> String -> a
+semanticsError s1 s2 = error $ "error in function " ++ s1 ++ "\ncalles on " ++ s2
