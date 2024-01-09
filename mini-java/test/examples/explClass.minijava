@@ -1,4 +1,18 @@
+-- positive example
+
 class SimpleClass {
   int number;
   boolean flag;
+}
+
+
+-- negative examples
+class boolean {
+  int number;
+}
+
+
+class SimpleClass {
+  int number;
+  boolean flag
 }

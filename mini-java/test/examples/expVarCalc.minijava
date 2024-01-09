@@ -1,7 +1,44 @@
+-- positive example
+
 class CalculationClass {
   public int calculate() {
     int a = 10;
     int b = a + 5;
+    return b;
+  }
+}
+
+class CalculationClass {
+  public int calculate() {
+    int a = 10;
+    int b = a - 5;
+    return b;
+  }
+}
+
+class CalculationClass {
+  public int calculate() {
+    int a = 10;
+    int b = a / 5;
+    return b;
+  }
+}
+
+class CalculationClass {
+  public int calculate() {
+    int a = 10;
+    int b = a * 5;
+    return b;
+  }
+}
+
+
+-- negative examples
+
+class CalculationClass {
+  public int calculate() {
+    int a = 10;
+    int b = a && 5;
     return b;
   }
 }

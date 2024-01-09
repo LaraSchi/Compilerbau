@@ -1,9 +1,36 @@
+-- positive example
+
 class LoopClass {
   public int countToTen() {
     int i = 0;
     while (i < 10) {
       i = i + 1;
     }
+    return i;
+  }
+}
+
+
+
+-- negative example
+
+class LoopClass {
+  public int countToTen() {
+    int i = 0;
+    while i < 10 {
+      i = i + 1;
+    }
+    return i;
+  }
+}
+
+
+class LoopClass {
+  public int countToTen() {
+    int i = 0;
+    do {
+      i = i + 1;
+    } while (i < 10)
     return i;
   }
 }

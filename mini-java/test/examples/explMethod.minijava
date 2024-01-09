@@ -1,5 +1,23 @@
+-- positive example
+
 class MathClass {
   public int add(int a, int b) {
+    return a + b;
+  }
+}
+
+
+-- negative example
+
+class MathClass {
+  public int add(int a, int b) {
+    int z = a + b;
+  }
+}
+
+
+class MathClass {
+  public boolean add(int a, int b) {
     return a + b;
   }
 }

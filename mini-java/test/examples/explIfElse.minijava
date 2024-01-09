@@ -1,6 +1,32 @@
+-- postive examples
+
 class ControlClass {
   public int check(int a) {
     if (a > 0) {
+      return 1;
+    } else {
+      return 0;
+    }
+  }
+}
+
+
+-- negative examples
+
+class ControlClass {
+  public int check(int a) {
+    else (a > 0) {
+      return 1;
+    } if {
+      return 0;
+    }
+  }
+}
+
+
+class ControlClass {
+  public int check(int a) {
+    if a > 0 {
       return 1;
     } else {
       return 0;
