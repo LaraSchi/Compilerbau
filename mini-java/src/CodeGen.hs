@@ -67,11 +67,7 @@ generateMethodConstantPool (MethodDecl visability this_type methodName parameter
     currIdx <- getCurrentIdx
     classNameIdx <- getIdx (createUtf8Entry (newTypeToString className))
     addElement (MethodRef_Info TagMethodRef classNameIdx (currIdx+1) "")
-    createNameAndTypeStringEntry methodName ("(" ++ (intercalate (concatMap getInputType parameters)) ++ ")" ++ (typeToString this_type))
-
-   -- createUtf8Entry methodName : -- store method name
-   -- [createUtf8Entry ("(" ++ (intercalate ", " (concatMap createInputString parameters)) ++ ")" ++ (typeToString this_type) )]++ -- store Input and Output type
-   -- [NameAndType_Info TagNameAndType currentIndex (currentIndex+1) ""]++  -- name and type with index to method name and index to method types
+    createNameAndTypeStringEntry methodName ("(" ++ intercalate " " (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
 
 
 
