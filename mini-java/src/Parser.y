@@ -61,8 +61,8 @@ Program
   : Class                 { Program $1 False }
 
 Class
-  : class Newtype '{' FieldDecls MethodDecls '}'    { Class $2 $4 $5 }
-  | class Newtype '{' FieldDecls '}'                { Class $2 $4 [] }
+  : class Newtype '{' Fields MethodDecls '}'    { Class $2 $4 $5 }
+  | class Newtype '{' Fields '}'                { Class $2 $4 [] }
   | class Newtype '{' MethodDecls '}'               { Class $2 [] $4 }
 
 Newtype
@@ -74,9 +74,9 @@ Type
   | charType                  { CharT }
   | Newtype                   { NewTypeT $1 }
 
-FieldDecls
-  : FieldDecl              { [$1] }
-  | FieldDecl FieldDecls   { $1 : $2 }
+Fields
+  : Field             { [$1] }
+  | Field Fields   { $1 : $2 }
 
 MethodDecls
   : MethodDecl               { [$1] }
@@ -86,8 +86,9 @@ MethodDecl
   : public Type identifier '(' ParameterList ')' '{' BlockStmt '}'   { MethodDecl Public $2 $3 $5 $8 }
   | public Type identifier '(' ')' '{' BlockStmt '}'                 { MethodDecl Public $2 $3 [] $7 }
 
-FieldDecl
+Field
   : Type identifier ';'              { FieldDecl $1 $2 }
+  | Type identifier '=' Expression ';'   { FieldRef $1 $2 $4 }
 
 
 ParameterList
@@ -150,6 +151,7 @@ WhileStmt
 
 DeclarationStmt
   : Type identifier ';'                 { LocalVarDeclStmt $1 $2 }
+  | Type identifier '=' Expression ';'  { LocalVarRefStmt $1 $2 $4 }
 
 IfStmt
   : if '(' Expression ')' '{' BlockStmt '}'                             { IfElseStmt $3 $6 Nothing }

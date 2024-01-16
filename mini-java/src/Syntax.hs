@@ -6,13 +6,14 @@ type Typed = Bool
 data Program = Program Class Typed
              deriving (Show, Eq, Read)
 
-data Class = Class NewType [FieldDecl] [MethodDecl]
+data Class = Class NewType [Field] [MethodDecl]
            deriving (Show, Eq, Read)
 
 newtype NewType = NewType String
                 deriving (Show, Eq, Read)
 
-data FieldDecl = FieldDecl Type String -- #TODO: manche trings zu Identifier
+data Field = FieldDecl Type String -- #TODO: manche Strings zu Identifier
+           | FieldRef Type String Expression -- #TODO: wie Assign?
                deriving (Show, Eq, Read)
 
 data MethodDecl = MethodDecl Visibility Type String [Parameter] BlockStmt
@@ -39,13 +40,14 @@ data Stmt = TypedStmt Stmt Type
           | ReturnStmt Expression
           | WhileStmt Expression BlockStmt
           | LocalVarDeclStmt Type String
+          | LocalVarRefStmt Type String Expression
           | IfStmt Expression BlockStmt
           | IfElseStmt Expression BlockStmt (Maybe BlockStmt)
           | StmtExprStmt StmtExpr
           deriving (Show, Eq, Read)
 
 data StmtExpr = TypedStmtExpr StmtExpr Type
-              | AssignmentStmt Expression Expression
+              | AssignmentStmt Expression Expression -- #TODO: first Expr -> String
               | NewExpression NewExpr
               | MethodCall MethodCallExpr
               deriving (Show, Eq, Read)

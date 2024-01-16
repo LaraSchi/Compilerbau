@@ -31,7 +31,7 @@ checkSProg (Program (Class n fd md) _) = do
         mdTyped <- mapM checkMethod md
         return (Program (Class n fd mdTyped) True)
 
-fillTypeSetFields :: [FieldDecl] -> TypeStateM ()
+fillTypeSetFields :: [Field] -> TypeStateM ()
 fillTypeSetFields fds = modify (\s -> s {fieldTypeset = types}) 
     where types = map (\(FieldDecl t s) -> (s,t)) fds
 
@@ -76,6 +76,7 @@ checkStmt (IfElseStmt e bs1 (Just bs2))      = do
     bsT2 <- mapM checkStmt bs2
     return $ TypedStmt (IfElseStmt eT bsT1 (Just bsT2)) VoidT
 checkStmt (StmtExprStmt se)                 = checkStmtExpr se >>= \seT -> return $ TypedStmt (StmtExprStmt seT) VoidT
+checkStmt s                                 = return $ TypedStmt s VoidT
 checkStmt _                                 = error "checkStmt called on already typed Expression"
 
 checkTypeExpr :: Type -> Expression -> TypeStateM Expression
