@@ -8,7 +8,8 @@ import Data.Typeable
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/example.minijava" -- read file
+    -- fileContent <- readFile "code/examples/bct.minijava" --  -- Anabels current fav minijava file :)
+    fileContent <- readFile "code/advancedExamples/addN.minijava"   -- Laras current fav minijava file :)
     putStrLn ""
     putStrLn "parsing file content"
     putStrLn ""
@@ -31,4 +32,5 @@ TODO:
     - Prüfen, ob Grammatik vollständig und ggf. erweitern.
         -> fehlt: 
                 - forloops
-                - Binary und Unary nich vollständig?) -}
+                - Binary und Unary nich vollständig? (z.B: ^))
+                - eingebaute Funktionen, wie system.out.println? -}

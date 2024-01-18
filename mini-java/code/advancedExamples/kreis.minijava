@@ -1,0 +1,11 @@
+class Kreis {
+    float a;
+    float b;
+    public Kreis kreisfunktion(float x) {
+        Kreis k;
+        k = new Kreis();
+        k.a = cos(x);
+        k.b = sin(x);
+        return k;
+        }
+}
