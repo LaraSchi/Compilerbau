@@ -5,5 +5,6 @@ public A meth(Boolean x) {
     A a;
     a = new A ();
     a.attr = 5;
+    return a;
  }
 }

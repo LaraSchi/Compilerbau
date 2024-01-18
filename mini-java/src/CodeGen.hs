@@ -48,27 +48,41 @@ generateClassConstantPool (Class className fields methods) = do
                 [MethodRef_Info TagMethodRef 4 6 ""] ++ createClassEntry 4 (NewType "java/lang/Object") ++
                 [NameAndType_Info TagNameAndType 7 8 ""] ++
                 [createUtf8Entry "<init>"] ++ [createUtf8Entry "()V"])
+    addElement (createUtf8Entry "Code")
 
-    mapM_ (\field -> generateFieldConstantPool field className) fields
-    mapM_ (\method -> generateMethodConstantPool method className) methods
+    mapM_ (\field -> generateFieldDeklCP field) fields
+    mapM_ (\method -> generateMethodDeklCP method) methods
+    -- Todo mapM_ (\field -> generateFieldRefCP field className) fields
+   -- Todo  mapM_ (\method -> generateMethodConstantPool method className) methods
 
--- Function to generate constant pool entries for a field
-generateFieldConstantPool :: FieldDecl -> NewType -> ConstantpoolStateM ()
-generateFieldConstantPool (FieldDecl fieldType fieldName) className = do
+generateFieldDeklCP :: FieldDecl -> ConstantpoolStateM ()
+generateFieldDeklCP (FieldDecl fieldType fieldName) = do
+    addElement (createUtf8Entry fieldName)
+    addElement (createUtf8Entry (typeToString fieldType))
+
+
+-- Function to generate constant pool entries for a field references
+generateFieldRefCP :: FieldDecl -> NewType -> ConstantpoolStateM ()
+generateFieldRefCP (FieldDecl fieldType fieldName) className = do
     currIdx <- getCurrentIdx
     classNameIdx <- getIdx (createUtf8Entry (newTypeToString className))
     addElement (FieldRef_Info TagFieldRef classNameIdx (currIdx+1) "")
     createNameAndTypeEntry fieldName fieldType
 
 
--- Function to generate constant pool entries for a method
+generateMethodDeklCP :: MethodDecl -> ConstantpoolStateM ()
+generateMethodDeklCP (MethodDecl visability this_type methodName parameters blockstmt) = do
+    addElement (createUtf8Entry methodName)
+    addElement (createUtf8Entry ("(" ++ intercalate " " (concatMap getInputType parameters) ++ ")" ++ typeToString this_type))
+    addElement (createUtf8Entry "Code")
+
+-- Function to generate constant pool entries for a method references
 generateMethodConstantPool ::  MethodDecl -> NewType -> ConstantpoolStateM ()
 generateMethodConstantPool (MethodDecl visability this_type methodName parameters blockstmt) className = do
     currIdx <- getCurrentIdx
     classNameIdx <- getIdx (createUtf8Entry (newTypeToString className))
     addElement (MethodRef_Info TagMethodRef classNameIdx (currIdx+1) "")
     createNameAndTypeStringEntry methodName ("(" ++ intercalate " " (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
-
 
 
 -- Helper functions
