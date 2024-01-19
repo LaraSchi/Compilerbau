@@ -61,17 +61,6 @@ data CP_Info =
                 , index_nameandtype_cp  :: Index_Constant_Pool -- index to Name and Type of method.
                 , desc                  :: String
                 }
-        | InterfaceMethodRef_Info 
-                { tag_cp                :: Tag
-                , index_name_cp         :: Index_Constant_Pool
-                , index_nameandtype_cp  :: Index_Constant_Pool
-                , desc                  :: String
-                }
-        | String_Info
-                { tag_cp                :: Tag
-                , index_cp              :: Index_Constant_Pool
-                , desc                  :: String
-                }
         | Integer_Info 
                 { tag_cp                :: Tag
                 , numi_cp               :: Int
