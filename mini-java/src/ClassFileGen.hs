@@ -7,8 +7,8 @@ generateClassFile :: Program -> CP_Infos -> ClassFile
 generateClassFile (Program (Class className fields methods) typed_bool) cpInfos =
     let -- Parse the Java class syntax and extract relevant information
         magicValue = Magic  -- Where to get the information
-        minVer = MinorVersion 0  -- see example (6.1) where does the information come from
-        maxVer = MajorVersion 55 -- see example (6.1) where does the information come from
+        minVer = MinorVersion 0  
+        maxVer = MajorVersion 55 
         countCP = length cpInfos
         arrayCP = cpInfos
         accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)  -- why the brackets (when integer is given [ ] is not needed)?

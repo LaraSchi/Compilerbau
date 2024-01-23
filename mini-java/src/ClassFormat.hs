@@ -291,6 +291,19 @@ data Attribute_Info =
             }
          deriving Show
 
+
+
+-- Function to display Method_Info items with indices
+showMethod_Infos :: [Method_Info] -> Int -> String
+showMethod_Infos [] n = ""
+showMethod_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showMethod_Infos xss (n+1))
+
+
+-- Function to display Attribute_Info items with indices
+showAttribute_Infos :: [Attribute_Info] -> Int -> String
+showAttribute_Infos [] n = ""
+showAttribute_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
+
 type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
