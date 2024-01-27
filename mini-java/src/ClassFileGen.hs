@@ -44,14 +44,14 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
     }
 
 
--- how to parse the information?
+-- iterieren über fielddecls und für jede fielddecl neue FieldInfo machen
 generateFieldsArray :: [FieldDecl] -> Field_Infos
 generateFieldsArray fields = 
     let newFieldInfos :: Field_Infos
         newFieldInfos = [Field_Info   -- dummy
-                            { af_fi = AccessFlags [acc_Public]  -- why the brackets (when integer is given [ ] is not needed)?
-                            , index_name_fi = 1   -- name_index
-                            , index_descr_fi = 1     -- descriptor_index
+                            { af_fi = AccessFlags [acc_Public]  -- 0x0000 dummy
+                            , index_name_fi = 1   -- name_index  getindex method in CodeGen.hs (info bauen mit gebauter Info aus FieldDecl)
+                            , index_descr_fi = 1     -- descriptor_index (type) -> von FieldDecl bekommen und dann im Konstanten pool danach suchen und dann index angeben
                             , tam_fi = 0                    -- count_attributte
                             , array_attr_fi = []
                             }]
@@ -64,6 +64,10 @@ generateMethodsArray methods =
     let newMethodInfos :: Method_Infos
         newMethodInfos = []
     in newMethodInfos
+
+-- access flag bei MethodDecl
+-- name index: Name von MethodDecl -> dann suchen im Konstantenpool
+-- index über name index im Konstantenpool finden
 
 
 -- function to create attribute Infos?
