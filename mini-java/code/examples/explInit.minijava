@@ -1,0 +1,10 @@
+class test {
+    int i;
+
+    public test(int i){
+        this.i = i;
+    }
+    public void t(){
+        test test_var = new test(1);
+    }
+}
