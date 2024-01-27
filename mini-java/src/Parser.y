@@ -162,6 +162,7 @@ AssignmentStmt
   | identifier '=' Expression                       { AssignmentStmt (IdentifierExpr $1) $3 }
   | identifier '.' identifier '=' Expression        { AssignmentStmt (InstVar (IdentifierExpr $1) $3) $5 }
   | identifier '.' identifier '=' Expression ';'    { AssignmentStmt (InstVar (IdentifierExpr $1) $3) $5 }
+  | this       '.' identifier '=' Expression ';'    { AssignmentStmt (InstVar ThisExpr $3) $5 }
 
 BinaryOperator
   : '+'       { Plus }

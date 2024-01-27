@@ -1,4 +1,6 @@
+-- Entnommen aus der Vorlesung
 module ClassFormat where
+import Syntax
 import qualified Data.ByteString.Lazy as BS
 
 -- class file format
@@ -44,7 +46,7 @@ data MajorVersion = MajorVersion {
 data CP_Info = 
           Class_Info
                 { tag_cp                :: Tag
-                , index_cp              :: Index_Constant_Pool
+                , index_cp              :: Index_Constant_Pool -- index to class info (exmpl. to class name)
                 , desc                  :: String
                 }
         | FieldRef_Info 
@@ -55,19 +57,8 @@ data CP_Info =
                 }
         | MethodRef_Info 
                 { tag_cp                :: Tag
-                , index_name_cp         :: Index_Constant_Pool
-                , index_nameandtype_cp  :: Index_Constant_Pool
-                , desc                  :: String
-                }
-        | InterfaceMethodRef_Info 
-                { tag_cp                :: Tag
-                , index_name_cp         :: Index_Constant_Pool
-                , index_nameandtype_cp  :: Index_Constant_Pool
-                , desc                  :: String
-                }
-        | String_Info
-                { tag_cp                :: Tag
-                , index_cp              :: Index_Constant_Pool
+                , index_name_cp         :: Index_Constant_Pool -- index to class name
+                , index_nameandtype_cp  :: Index_Constant_Pool -- index to Name and Type of method.
                 , desc                  :: String
                 }
         | Integer_Info 
@@ -104,7 +95,7 @@ data CP_Info =
                 , cad_cp                :: String
                 , desc                  :: String
                 }
-            deriving Show
+            deriving (Show, Eq)
 
 -- Function to display CP_Info items with indices
 showCP_Infos :: [CP_Info] -> Int -> String
@@ -122,7 +113,7 @@ data Tag = TagClass
          | TagDouble
          | TagNameAndType
          | TagUtf8
-        deriving Show
+        deriving (Show, Eq)
 
 data AccessFlags = AccessFlags [Int]
             deriving Show
@@ -288,6 +279,19 @@ data Attribute_Info =
             , tam_len_attr              :: Int                              -- attribute_length
             }
          deriving Show
+
+
+
+-- Function to display Method_Info items with indices
+showMethod_Infos :: [Method_Info] -> Int -> String
+showMethod_Infos [] n = ""
+showMethod_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showMethod_Infos xss (n+1))
+
+
+-- Function to display Attribute_Info items with indices
+showAttribute_Infos :: [Attribute_Info] -> Int -> String
+showAttribute_Infos [] n = ""
+showAttribute_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
 
 type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]

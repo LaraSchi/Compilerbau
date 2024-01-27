@@ -1,0 +1,13 @@
+class A {
+    int attr;
+
+    public A x(Boolean t) {
+        A a;
+        a = new A ();
+        a.attr = 5;
+        return a;
+    }
+    public void test(){
+        x(true);
+    }
+}

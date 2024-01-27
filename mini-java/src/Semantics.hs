@@ -110,10 +110,10 @@ checkIdentifier s = do
         Just t -> return $ TypedExpr (IdentifierExpr s) t
         _      -> return $ TypedExpr (IdentifierExpr s) VoidT -- #TODO: stimmt das?
 
--- #TODO: evtl. Hilfsfunktionen
+-- #TODO: evtl. umschreiben
 checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
 checkUnary Not e  = checkTypeExpr BoolT e >>= \eT -> return $ TypedExpr (UnaryOpExpr Not eT) BoolT
-checkUnary op  e  = checkTypeExpr IntT e >>= \eT -> return $ TypedExpr (UnaryOpExpr op eT) IntT
+checkUnary op  e  = checkTypeExpr IntT  e >>= \eT -> return $ TypedExpr (UnaryOpExpr op eT ) IntT
 
 
 checkBinary :: Expression -> BinaryOperator -> Expression -> TypeStateM Expression
@@ -127,7 +127,7 @@ checkBinary e1 op e2  = case op of
     LessEq      -> checkIntBinary BoolT
     GreaterEq   -> checkIntBinary BoolT
     _           -> checkIntBinary IntT -- Plus, Minus, Times & Divide
-    where checkIntBinary t    = checkSameExpr e1 e2 IntT >>= result t
+    where checkIntBinary t    = checkSameExpr e1 e2 IntT  >>= result t
           checkBoolBinary     = checkSameExpr e1 e2 BoolT >>= result BoolT
           checkCompBinary     = checkSameExpr e1 e2 VoidT >>=  result BoolT
           result t (eT1, eT2) = return $ TypedExpr (BinOpExpr eT1 op eT2) t
