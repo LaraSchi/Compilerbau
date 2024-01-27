@@ -1,7 +1,10 @@
 module ClassFileGen where
 
 import Syntax
+import Parser
 import ClassFormat
+import Data.Typeable
+
 
 generateClassFile :: Program -> CP_Infos -> ClassFile
 generateClassFile (Program (Class className fields methods) typed_bool) cpInfos =

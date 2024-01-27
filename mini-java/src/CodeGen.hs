@@ -1,6 +1,5 @@
 module CodeGen where
 
-
 import Syntax
 import ClassFormat
 

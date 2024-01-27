@@ -9,7 +9,7 @@ import ClassFileGen(generateClassFile)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/bct.minijava" --  -- Anabels current fav minijava file :)
+    fileContent <- readFile "code/examples.minijava" --  -- Anabels current fav minijava file :)
     --fileContent <- readFile "code/advancedExamples/addN.minijava"   -- Laras current fav minijava file :)
     putStrLn ""
     putStrLn "parsing file content"
