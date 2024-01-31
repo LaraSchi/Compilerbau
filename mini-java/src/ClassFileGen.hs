@@ -48,7 +48,7 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
 
 
 -- iterieren über fielddecls und für jede fielddecl neue FieldInfo machen
-generateFieldsArray :: [FieldDecl] -> Field_Infos
+generateFieldsArray :: [Field] -> Field_Infos
 generateFieldsArray fields = 
     let newFieldInfos :: Field_Infos
         newFieldInfos = [Field_Info   -- dummy

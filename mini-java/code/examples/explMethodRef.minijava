@@ -1,7 +1,7 @@
 class A {
     int attr;
 
-    public A x(Boolean t) {
+    public A x(boolean t) {
         A a;
         a = new A ();
         a.attr = 5;

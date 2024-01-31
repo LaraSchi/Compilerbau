@@ -1,4 +1,4 @@
-module CodeGen where
+module ConstPoolGen where
 
 import Syntax
 import ClassFormat
@@ -92,15 +92,15 @@ generateClassConstantPool (Class className fields methods) = do
     return ()
 
 -- Find Field references my iterating over Methods block
-findReferencesMethodDecl :: MethodDecl -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findReferencesMethodDecl :: MethodDecl -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesMethodDecl (MethodDecl _ _ _ _ stmtList) fieldDecls className =
   findReferencesStmtList stmtList fieldDecls className
 
-findReferencesStmtList :: [Stmt] -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findReferencesStmtList :: [Stmt] -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesStmtList stmtList fieldDecls className =
     mapM_ (\thisStmt -> findReferencesStmt thisStmt fieldDecls className) stmtList
 
-findReferencesStmt :: Stmt -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findReferencesStmt :: Stmt -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesStmt stmt fieldDecls className = case stmt of
   TypedStmt stmt thisType -> findReferencesStmt stmt fieldDecls className
   ReturnStmt expr -> findReferencesExpr expr fieldDecls className
@@ -123,7 +123,7 @@ findReferencesStmt stmt fieldDecls className = case stmt of
   StmtExprStmt stmtExpr -> findReferencesStmtExpr stmtExpr fieldDecls className
   _ -> (return ())
 
-findReferencesExpr :: Expression -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findReferencesExpr :: Expression -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldDecls className = case expr of
   IdentifierExpr name -> checkAndGenFieldRef name fieldDecls className
   InstVar expr name -> do
@@ -136,7 +136,7 @@ findReferencesExpr expr fieldDecls className = case expr of
   StmtExprExpr stmtExpr -> findReferencesStmtExpr stmtExpr fieldDecls className
   _ -> (return ())
 
-findReferencesStmtExpr :: StmtExpr -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findReferencesStmtExpr :: StmtExpr -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesStmtExpr stmtExpr fieldDecls className = case stmtExpr of
   TypedStmtExpr stmtExpr _ -> findReferencesStmtExpr stmtExpr fieldDecls className
   AssignmentStmt expr1 expr2 -> do
@@ -145,15 +145,15 @@ findReferencesStmtExpr stmtExpr fieldDecls className = case stmtExpr of
   NewExpression newExpr -> findReferencesNewExpr newExpr fieldDecls className
   MethodCall methodCallExpr -> findRefMethodCallExpr methodCallExpr fieldDecls className
 
-findReferencesNewExpr :: NewExpr -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findReferencesNewExpr :: NewExpr -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesNewExpr (NewExpr _ exprList) fieldDecls className = mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldDecls className) exprList
 
-findRefMethodCallExpr :: MethodCallExpr -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+findRefMethodCallExpr :: MethodCallExpr -> [Field] -> NewType -> ConstantpoolStateM ()
 findRefMethodCallExpr (MethodCallExpr expr name exprList)  fieldDecls className = do
     checkAndGenFieldRef name fieldDecls className
     mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldDecls className) exprList
 
-checkAndGenFieldRef :: String -> [FieldDecl] -> NewType -> ConstantpoolStateM ()
+checkAndGenFieldRef :: String -> [Field] -> NewType -> ConstantpoolStateM ()
 checkAndGenFieldRef name fieldDecls className = do
   let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) fieldDecls
   mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
@@ -162,7 +162,7 @@ checkAndGenFieldRef name fieldDecls className = do
 -- Helper functions to create specific constant pool entries
 -- The Entries are added to the state and the Info is returned for index retrieval.
 
-generateFieldDeklCP :: FieldDecl -> ConstantpoolStateM CP_Info
+generateFieldDeklCP :: Field -> ConstantpoolStateM CP_Info
 generateFieldDeklCP (FieldDecl fieldType fieldName) = do
     fieldNameInfo <- createUtf8Entry fieldName
     _ <- createUtf8Entry (typeToString fieldType)

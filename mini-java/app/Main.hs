@@ -3,13 +3,13 @@ module Main (main) where
 import Parser (parse)
 import Semantics(checkSemantics)
 import ClassFormat (showCP_Infos, CP_Infos, CP_Info(..), Tag(..))
-import CodeGen (startBuildProcess)
+import ConstPoolGen (startBuildProcess)
 import Data.Typeable
 import ClassFileGen(generateClassFile)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples.minijava" --  -- Anabels current fav minijava file :)
+    fileContent <- readFile "code/examples/expVarCalc.minijava" --  -- Anabels current fav minijava file :)
     --fileContent <- readFile "code/advancedExamples/addN.minijava"   -- Laras current fav minijava file :)
     putStrLn ""
     putStrLn "parsing file content"

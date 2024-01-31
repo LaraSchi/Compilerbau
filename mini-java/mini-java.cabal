@@ -27,7 +27,7 @@ library
   exposed-modules:
       ClassFileGen
       ClassFormat
-      CodeGen
+      ConstPoolGen
       Lexer
       Lib
       Parser
