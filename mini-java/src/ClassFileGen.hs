@@ -5,6 +5,13 @@ import Parser
 import ClassFormat
 import Data.Typeable
 
+-- classfile anschauen mit decodeClassFile() und dann print(...)
+
+
+-- main bct.class
+-- x = decodeClassFile(bct.class)
+-- print(x)
+
 
 generateClassFile :: Program -> CP_Infos -> ClassFile
 generateClassFile (Program (Class className fields methods) typed_bool) cpInfos =
@@ -22,9 +29,9 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         numFields = length fields
         arrayFields = generateFieldsArray fields
         numMethods = length methods
-        arrayMethods = generateMethodsArray methods  
-        numAttributes = length methods  -- what? where to get information
-        arrayAttributes = generateAttributesArray  []  -- what? where to get information
+        arrayMethods = generateMethodsArray methods  -- nur hier sind attributes Code drin
+        numAttributes = 0  -- what? where to get information
+        arrayAttributes = []  -- what? where to get information
 
     in ClassFile { 
         magic = magicValue,
@@ -73,7 +80,7 @@ generateMethodsArray methods =
 -- index über name index im Konstantenpool finden
 
 
--- function to create attribute Infos?
+-- function to create attribute Infos?  -- nur für methods, normales Array ist leer (brauche ich das noch, wenn man nur AttributeCode hat?)
 generateAttributesArray :: [String] -> Attribute_Infos
 generateAttributesArray attributes = 
     let newAttributeInfos :: Attribute_Infos

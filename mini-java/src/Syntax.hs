@@ -12,7 +12,7 @@ data Class = Class NewType [Field] [MethodDecl]
 newtype NewType = NewType String
                 deriving (Show, Eq, Read)
 
-data Field = FieldDecl Type String -- #TODO: manche Strings zu Identifier
+data Field = FieldDecl Type String -- #TODO: manche Strings zu Identifier   "maybe Expression"
            | FieldRef String Expression -- #TODO: wie Assign?
                deriving (Show, Eq, Read)
 
@@ -56,7 +56,7 @@ data Expression = TypedExpr Expression Type
                 | ThisExpr
                 | SuperExpr
                 | IdentifierExpr String --LocalOrFieldVar
-                | InstVar Expression String
+                | InstVar Expression String  -- ## FieldRef im CP
                 | UnaryOpExpr UnaryOperator Expression
                 | BinOpExpr Expression BinaryOperator Expression
                 | IntLitExpr Int
