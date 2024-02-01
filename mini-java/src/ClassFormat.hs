@@ -66,23 +66,6 @@ data CP_Info =
                 , numi_cp               :: Int
                 , desc                  :: String
                 }
-        | Float_Info 
-                { tag_cp                :: Tag
-                , numf_cp               :: Float
-                , desc                  :: String
-                }
-        | Long_Info 
-                { tag_cp                :: Tag
-                , numi_l1_cp            :: Int
-                , numi_l2_cp            :: Int
-                , desc                  :: String
-                }
-        | Double_Info 
-                { tag_cp                :: Tag
-                , numi_d1_cp            :: Int
-                , numi_d2_cp            :: Int
-                , desc                  :: String
-                }
         | NameAndType_Info 
                 { tag_cp                :: Tag
                 , index_name_cp         :: Index_Constant_Pool
@@ -155,14 +138,6 @@ acc_Transient_Varargs  = 128
 acc_Native :: Int
 acc_Native = 256
 
--- The class is an interface.
-acc_Interface  :: Int
-acc_Interface  = 512
-
--- The class or method is abstract.
-acc_Abstract   :: Int
-acc_Abstract   = 1024
-
 -- The method uses strict floating-point precision.
 acc_Strict :: Int
 acc_Strict = 2048
@@ -175,9 +150,6 @@ acc_Synthetic  = 4096
 acc_Annotation :: Int
 acc_Annotation = 8192
 
--- The class is an enumeration type.
-acc_Enum    :: Int
-acc_Enum    = 16384
 
 data ThisClass = ThisClass {
                     index_th :: Index_Constant_Pool
@@ -213,18 +185,7 @@ data Method_Info = Method_Info
                     deriving Show
 
 data Attribute_Info =
-        AttributeGeneric 
-            { index_name_attr           :: Index_Constant_Pool
-            , tam_len_attr              :: Int
-            , rest_attr                 :: BS.ByteString
-            }
-
-      | AttributeConstantValue 
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_attr                  :: Int                              -- attribute_length
-            , index_value_attr          :: Index_Constant_Pool              -- constantvalue_index
-            }
-      | AttributeCode 
+        AttributeCode 
             { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
             , tam_len_attr              :: Int                              -- attribute_length
             , len_stack_attr            :: Int                              -- max_stack
@@ -235,48 +196,6 @@ data Attribute_Info =
             , array_ex_attr             :: Tupla4Int                        -- no usamos
             , tam_atrr_attr             :: Int                              -- attributes_count
             , array_attr_attr           :: Attribute_Infos
-            }
-      
-      | AttributeExceptions
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
-            , tam_num_ex_attr           :: Int                              -- number of exceptions
-            , exception_index_table     :: [Int]                            -- exception_index_table 
-            }
-      
-      | AttributeInnerClasses
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
-            , tam_classes               :: Int                              -- number_classes
-            , array_classes             :: [(Int,Int,Int,AccessFlags)]       -- classes
-            }
-      
-      | AttributeSynthetic
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
-            }
-      
-      | AttributeSourceFile 
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
-            , index_src_attr            :: Index_Constant_Pool              -- sourcefile_index
-            }
-            
-      | AttributeLineNumberTable 
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
-            , tam_table_attr            :: Int                              -- lineNumberTable_length
-            , array_line_attr           :: Tupla2Int                        -- (start_pc, line_number)
-            }
-      | AttributeLocalVariableTable 
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
-            , tam__table_attr           :: Int                              -- local_varible_table_length
-            , array_var_attr            :: Tupla5Int                        -- (start_pc, length, name_index, descriptor_index, inlinedex)
-            }
-      | AttributeDeprecated
-            { index_name_attr           :: Index_Constant_Pool              -- attribute_name_index
-            , tam_len_attr              :: Int                              -- attribute_length
             }
          deriving Show
 
