@@ -13,7 +13,7 @@ newtype NewType = NewType String
                 deriving (Show, Eq, Read)
 
 data Field = FieldDecl Type String -- #TODO: manche Strings zu Identifier
-           | FieldRef Type String Expression -- #TODO: wie Assign?
+           | FieldRef String Expression -- #TODO: wie Assign?
                deriving (Show, Eq, Read)
 
 data MethodDecl = MethodDecl Visibility Type String [Parameter] BlockStmt

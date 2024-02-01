@@ -1,59 +1,12 @@
-# Aufgabenverteilung
+## TODO: 
 
-## Gemeinsame Aufgaben
-- GIT-Repository: Einrichten eines GIT-Repositories bei GitHUB
-- Abstrakte Syntax: Aufbau der abstrakten Syntax aus dem Parsetree
-- Dokumentation: Erstellen der Dokumentation
+- Alle bsp durchlaufen lassen
+- System.out.println
+- ClassFile format überarbeiten (data für iload...)
 
-### Scannen/Parsen/Grammatik
+## Nice to have:
 
-    Frage:
-    Das evtl. noch zu Aufgaben von allen zählen? 
-    
-- Scannen: alex–File oder Scanner von Hand programmieren
-- Grammatik: Erstellen einer Mini-Java-Grammatik an Hand der Spezifikation
-- Parsen: Erstellen des happy–Files oder des Kombinator–Parsers und Aufbau
-des abstrakten Syntaxbaums
-
-## Aufgaben vergeben:
-
-### Semantische Analyse: Typisierung der abstrakten Syntax (1 Person)
-
-### Aufbau eines abstrakten ClassFiles (1 Person)
-### Konstantenpool (1 Person)
-### Nur bei Bearbeitung durch 3 Personen: Umwandlung des ClassFiles in Bytecode (1 Person)
-### ggf. Tester (1 Person)
-– Testsuite von Java–Files, die alle implementierten Features abdecken.
-
-– Händische Übersetzung aller Java-Files der Testsuite in die abstrakte Syntax
-(als Test–Eingaben für den Typ-Checker)
-
-
-– Händische Übersetzung aller Testfälle der abstrakten Syntax in getypte ab-
-strakte Syntax (als Test–Eingaben für den Code-Generierer).
-
-– Händische Übersetzung aller Testfälle der getypten abstrakten Syntax in
-abstrakten Bytecode.
-
-– Automatische Tests, die die jeweiligen Testsuite mit den implementierten
-Funktionen des Teams vergleichen
-
-    Ideen zum Testen:
-    - pro Type je ein funktionierendes und ein nicht funktionierendes Bsp möglichst minimal
-    - 3-5 größere funktionierende Beispiele
-
-    Ideen:
-    - evtl. PrettyPrinter für Zwischenschritte? zb typecheck?
-
-
-
-Program (Class (NewType "A") 
-    [FieldDecl IntT "attr"] 
-    
-    [MethodDecl Public (NewTypeT (NewType "A")) "meth" [Parameter (NewTypeT (NewType "Boolean")) "x"] 
-    
-    [TypedStmt (LocalVarDeclStmt (NewTypeT (NewType "A")) "a") (NewTypeT (NewType "A")),
-    
-    TypedStmt (StmtExprStmt (TypedStmtExpr (AssignmentStmt (IdentifierExpr "a") (StmtExprExpr (NewExpression (NewExpr (NewType "A") [])))) VoidT)) VoidT,
-    
-    TypedStmt (StmtExprStmt (TypedStmtExpr (AssignmentStmt (InstVar (IdentifierExpr "a") "attr") (TypedExpr (IntLitExpr 5) IntT)) IntT)) VoidT]]) True
+- different access flags für fields (bis jetzt alles 0x0000)
+- classfile automatisch ausführen
+- [Class]
+- access flags klassen bis auf generisch und abstract

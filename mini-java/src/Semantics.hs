@@ -32,8 +32,13 @@ checkSProg (Program (Class n fd md) _) = do
         return (Program (Class n fd mdTyped) True)
 
 fillTypeSetFields :: [Field] -> TypeStateM ()
-fillTypeSetFields fds = modify (\s -> s {fieldTypeset = types}) 
-    where types = map (\(FieldDecl t s) -> (s,t)) fds
+fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds}) 
+    where types = typesOf fds
+
+typesOf :: [Field] -> [(String, Type)]
+typesOf []                 = []
+typesOf (FieldDecl t s:ys) = (s,t):typesOf ys
+typesOf (_:ys)               = typesOf ys
 
 fillTypesSetMethod :: [MethodDecl] -> TypeStateM ()
 fillTypesSetMethod mds = do
@@ -66,6 +71,11 @@ checkStmt v@(LocalVarDeclStmt t s)          = do
     locals <- gets fieldTypeset
     modify (\state -> state {fieldTypeset = (s,t):locals}) 
     return $ TypedStmt v t
+checkStmt v@(LocalVarRefStmt t s e)          = do
+    locals <- gets fieldTypeset
+    modify (\state -> state {fieldTypeset = (s,t):locals}) 
+    eTyped <- checkTypeExpr t e
+    return $ TypedStmt (LocalVarRefStmt t s eTyped) t
 checkStmt (IfElseStmt e bs Nothing)         = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- mapM checkStmt bs
@@ -104,7 +114,6 @@ checkExpr _                    = error "checkExpr called on already typed Expres
 checkIdentifier :: String -> TypeStateM Expression
 checkIdentifier s = do
     state <- get
-    local <- gets localTypeset
     let typeSet = localTypeset state ++ fieldTypeset state
     case lookup s $ localTypeset state ++ fieldTypeset state of
         Just t -> return $ TypedExpr (IdentifierExpr s) t

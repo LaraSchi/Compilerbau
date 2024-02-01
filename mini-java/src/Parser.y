@@ -75,8 +75,8 @@ Type
   | Newtype                   { NewTypeT $1 }
 
 Fields
-  : Field             { [$1] }
-  | Field Fields   { $1 : $2 }
+  : Field             { $1 }
+  | Field Fields   { $1 ++ $2 }
 
 MethodDecls
   : MethodDecl               { [$1] }
@@ -87,8 +87,9 @@ MethodDecl
   | public Type identifier '(' ')' '{' BlockStmt '}'                 { MethodDecl Public $2 $3 [] $7 }
 
 Field
-  : Type identifier ';'              { FieldDecl $1 $2 }
-  | Type identifier '=' Expression ';'   { FieldRef $1 $2 $4 }
+  : Type identifier ';'                  { [FieldDecl $1 $2] }
+  | Type identifier '=' Expression ';'   { [FieldDecl $1 $2, FieldRef $2 $4] } -- > TODO: Liste aus FieldRef und FieldDecl
+  | identifier '=' Expression ';'        { [FieldRef $1 $3] }
 
 
 ParameterList
