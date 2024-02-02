@@ -1,13 +1,9 @@
-class A {
-    int attr;
-
-    public A x(boolean t) {
-        A a;
-        a = new A ();
-        a.attr = 5;
-        return a;
+class ControlClass {
+    public int add(int a, int b) {
+        return a + b;
     }
-    public void test(){
-        x(true);
+
+    public void check(int a) {
+        add(1, 2);
     }
 }

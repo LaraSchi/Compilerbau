@@ -80,10 +80,7 @@ data CP_Info =
                 }
             deriving (Show, Eq)
 
--- Function to display CP_Info items with indices
-showCP_Infos :: [CP_Info] -> Int -> String
-showCP_Infos [] n = ""
-showCP_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showCP_Infos xss (n+1))
+
 
 data Tag = TagClass              
          | TagFieldRef
@@ -199,6 +196,15 @@ data Attribute_Info =
             }
          deriving Show
 
+-- Function to display CP_Info items with indices
+showCP_Infos :: [CP_Info] -> Int -> String
+showCP_Infos [] n = ""
+showCP_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showCP_Infos xss (n+1))
+
+-- Function to display Method_Info items with indices
+showField_Infos :: [Field_Info] -> Int -> String
+showField_Infos [] n = ""
+showField_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showField_Infos xss (n+1))
 
 
 -- Function to display Method_Info items with indices
@@ -211,6 +217,29 @@ showMethod_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showMetho
 showAttribute_Infos :: [Attribute_Info] -> Int -> String
 showAttribute_Infos [] n = ""
 showAttribute_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
+
+
+-- Function to display a ClassFile
+prettyPrintClassFile :: ClassFile -> String
+prettyPrintClassFile classFile =
+    "Class File:\n" ++
+    "  Magic: " ++ show (magic classFile) ++ "\n" ++
+    "  Version: " ++ show (minver classFile) ++ "." ++ show (maxver classFile) ++ "\n" ++
+    "  Constant Pool Count: " ++ show (count_cp classFile) ++ "\n" ++
+    "  Constant Pool:\n" ++ showCP_Infos (array_cp classFile) 1 ++ "\n" ++
+    "  Access Flags: " ++ show (acfg classFile) ++ "\n" ++
+    "  This Class: " ++ show (this classFile) ++ "\n" ++
+    "  Super Class: " ++ show (super classFile) ++ "\n" ++
+    "  Interfaces Count: " ++ show (count_interfaces classFile) ++ "\n" ++
+    "  Interfaces: " ++ show (array_interfaces classFile) ++ "\n" ++
+    "  Fields Count: " ++ show (count_fields classFile) ++ "\n" ++
+    "  Fields:\n" ++ showField_Infos (array_fields classFile) 1 ++ "\n" ++
+    "  Methods Count: " ++ show (count_methods classFile) ++ "\n" ++
+    "  Methods:\n" ++ showMethod_Infos (array_methods classFile) 1 ++ "\n" ++
+    "  Attributes Count: " ++ show (count_attributes classFile) ++ "\n" ++
+    "  Attributes\n" ++ showAttribute_Infos (array_attributes classFile) 1
+
+
 
 type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]

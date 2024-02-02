@@ -18,7 +18,7 @@ import Data.List (elemIndex)
 generateClassFile :: Program -> CP_Infos -> ClassFile
 generateClassFile (Program (Class className fields methods) typed_bool) cpInfos =
     let -- Parse the Java class syntax and extract relevant information
-        magicValue = Magic  -- Where to get the information
+        magicValue = Magic  -- Where to get the information, "serialization process" (?)
         minVer = MinorVersion 0  
         maxVer = MajorVersion 55 
         countCP = length cpInfos

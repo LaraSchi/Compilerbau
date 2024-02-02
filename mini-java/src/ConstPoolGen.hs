@@ -13,6 +13,7 @@ import Debug.Trace (traceShow)
 
 import Debug.Trace (trace)
 
+-- Todo Wie funktioniert das dann mit den FieldRefs?
 -- Todo Build desktiptor strings?
 
 -- State Monad
@@ -63,8 +64,6 @@ getCurrentIdx = do
     cp <- gets constPool
     return (if null cp then 1 else length cp + 1)
 
-
-
 -- Generation
 generateConstantPool :: Program -> ConstantpoolStateM ()
 generateConstantPool (Program classes typed_bool) = do
@@ -78,7 +77,7 @@ generateClassConstantPool (Class className fields methods) = do
     -- Store the class -- Todo only one?
     _ <- createClassEntry className
     -- Store init
-    generateMethodRefConstantPool "<init>" "()V" (NewType "java/lang/Object")-- Todo what is not default
+    generateMethodRefConstantPool "<init>" "()V" (NewType "java/lang/Object")
     -- Store declarations (Methods and Fields)
     mapM_ (\field -> generateFieldDeklCP field) fields
     mapM_ (\method -> generateMethodDeklCP method) methods
@@ -118,11 +117,17 @@ findReferencesStmt stmt fieldDecls className = case stmt of
   StmtExprStmt stmtExpr -> findReferencesStmtExpr stmtExpr fieldDecls className
   _ -> (return ())
 
+
+-- Todo just InstVar my FieldRef?
+-- Todo Integer_Info
+-- Todo printstatement
+
+
 findReferencesExpr :: Expression -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldDecls className = case expr of
   IdentifierExpr name -> checkAndGenFieldRef name fieldDecls className
   InstVar expr name -> do
-    trace ("Found instance variable: " ++ show name) findReferencesExpr expr fieldDecls className
+    findReferencesExpr expr fieldDecls className
     checkAndGenFieldRef name fieldDecls className
   UnaryOpExpr _ e -> findReferencesExpr e fieldDecls className
   BinOpExpr e1 _ e2 -> do
@@ -133,21 +138,27 @@ findReferencesExpr expr fieldDecls className = case expr of
 
 findReferencesStmtExpr :: StmtExpr -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesStmtExpr stmtExpr fieldDecls className = case stmtExpr of
-  TypedStmtExpr stmtExpr _ -> findReferencesStmtExpr stmtExpr fieldDecls className
+  TypedStmtExpr stmtExpr _ -> do
+    findReferencesStmtExpr stmtExpr fieldDecls className
   AssignmentStmt expr1 expr2 -> do
     findReferencesExpr expr1 fieldDecls className
     findReferencesExpr expr2 fieldDecls className
   NewExpression newExpr -> findReferencesNewExpr newExpr fieldDecls className
-  MethodCall methodCallExpr -> findRefMethodCallExpr methodCallExpr fieldDecls className
+  MethodCall methodCallExpr -> do
+    findRefMethodCallExpr methodCallExpr fieldDecls className
 
 findReferencesNewExpr :: NewExpr -> [Field] -> NewType -> ConstantpoolStateM ()
 findReferencesNewExpr (NewExpr _ exprList) fieldDecls className = mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldDecls className) exprList
+
 
 findRefMethodCallExpr :: MethodCallExpr -> [Field] -> NewType -> ConstantpoolStateM ()
 findRefMethodCallExpr (MethodCallExpr expr name exprList)  fieldDecls className = do
     checkAndGenFieldRef name fieldDecls className
     mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldDecls className) exprList
 
+
+
+-- Todo what is this for?
 checkAndGenFieldRef :: String -> [Field] -> NewType -> ConstantpoolStateM ()
 checkAndGenFieldRef name fieldDecls className = do
   let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) fieldDecls
@@ -158,18 +169,20 @@ checkAndGenFieldRef name fieldDecls className = do
 -- The Entries are added to the state and the Info is returned for index retrieval.
 
 generateFieldDeklCP :: Field -> ConstantpoolStateM CP_Info
-generateFieldDeklCP (FieldDecl fieldType fieldName) = do
-    fieldNameInfo <- createUtf8Entry fieldName
-    _ <- createUtf8Entry (typeToString fieldType)
-    return fieldNameInfo
+generateFieldDeklCP field = case field of
+    (FieldDecl fieldType fieldName) -> do
+        fieldNameInfo <- createUtf8Entry fieldName
+        _ <- createUtf8Entry (typeToString fieldType)
+        return fieldNameInfo
+    (FieldRef fieldType fieldName) -> createUtf8Entry "FieldRefPlaceholder"  -- Placeholder entry for FieldRef
+
 
 generateMethodDeklCP :: MethodDecl -> ConstantpoolStateM CP_Info
 generateMethodDeklCP (MethodDecl _ this_type methodName parameters _) = do
     methodNameInfo <- createUtf8Entry methodName
-    _ <- createUtf8Entry ("(" ++ intercalate " " (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
+    _ <- createUtf8Entry ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
     _ <- createUtf8Entry "Code"
     return methodNameInfo
-
 
 generateFieldRefConstantPool :: String -> String -> NewType -> ConstantpoolStateM CP_Info
 generateFieldRefConstantPool fieldName thisType className = do
@@ -177,8 +190,9 @@ generateFieldRefConstantPool fieldName thisType className = do
      classNameIdx <- getIdx classInfo
      nameTypeInfo <- createNameAndTypeEntry fieldName thisType
      nameTypeIdx <- getIdx nameTypeInfo
-     addElement (FieldRef_Info TagFieldRef classNameIdx nameTypeIdx "")
-     return (FieldRef_Info TagFieldRef classNameIdx nameTypeIdx "")
+     let deskr = (newTypeToString className) ++ "." ++ fieldName ++ ":" ++ thisType
+     addElement (FieldRef_Info TagFieldRef classNameIdx nameTypeIdx deskr)
+     return (FieldRef_Info TagFieldRef classNameIdx nameTypeIdx deskr)
 
 
 -- Function to generate constant pool entries for a method references
@@ -188,11 +202,10 @@ generateMethodRefConstantPool methodName thisType className = do
       classNameIdx <- getIdx classInfo
       nameTypeInfo <- createNameAndTypeEntry methodName thisType
       nameTypeIdx <- getIdx nameTypeInfo
-      addElement (MethodRef_Info TagMethodRef classNameIdx nameTypeIdx "")
+      let deskr = newTypeToString(className) ++ "." ++ methodName ++ ":" ++ thisType
+      addElement (MethodRef_Info TagMethodRef classNameIdx nameTypeIdx deskr)
       createUtf8Entry "Code"
-      return (MethodRef_Info TagMethodRef classNameIdx nameTypeIdx "")
-
-    -- Todo  nameTypeCpInfo <- createNameAndTypeStringEntry methodName ("(" ++ intercalate " " (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
+      return (MethodRef_Info TagMethodRef classNameIdx nameTypeIdx deskr)
 
 
 createNameAndTypeEntry :: String -> String -> ConstantpoolStateM CP_Info
@@ -203,16 +216,18 @@ createNameAndTypeEntry thisName thisType = do
     -- get their indexes.
     nameIdx <- getIdx nameInfo
     typeIdx <- getIdx typeInfo
-    addElement (NameAndType_Info TagNameAndType nameIdx typeIdx "")
-    return (NameAndType_Info TagNameAndType nameIdx typeIdx "")
+    let deskr = thisName ++ ":" ++ thisType
+    addElement (NameAndType_Info TagNameAndType nameIdx typeIdx deskr)
+    return (NameAndType_Info TagNameAndType nameIdx typeIdx deskr)
 
 
 createClassEntry :: NewType -> ConstantpoolStateM CP_Info
 createClassEntry (NewType className) = do
      utf8Info <- (createUtf8Entry className)
      classNameIdx <- getIdx utf8Info
-     addElement (Class_Info TagClass classNameIdx "")
-     return (Class_Info TagClass classNameIdx "")
+     let deskr = className
+     addElement (Class_Info TagClass classNameIdx deskr)
+     return (Class_Info TagClass classNameIdx deskr)
 
 
 -- Function for creating Utf8Info

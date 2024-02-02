@@ -2,14 +2,14 @@ module Main (main) where
 
 import Parser (parse)
 import Semantics(checkSemantics)
-import ClassFormat (showCP_Infos, CP_Infos, CP_Info(..), Tag(..))
+import ClassFormat
 import ConstPoolGen (startBuildProcess)
 import Data.Typeable
 import ClassFileGen(generateClassFile)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/expVarCalc.minijava" -- read file
+    fileContent <- readFile "code/examples/explMethodRef.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
     putStrLn ""
     putStrLn "parsing file content"
@@ -23,11 +23,11 @@ main = do
             Right t' -> do
                 print t'
                 let sampleCP = startBuildProcess t'
-                let sampleCF = generateClassFile t' sampleCP
+                let sampleCF = generateClassFile t' sampleCP -- Todo what is StackMapTable?
                 let constPoolShow = showCP_Infos sampleCP 1
-                let result = show sampleCF -- Todo pretty print classfile
+                --let result = prettyPrintClassFile sampleCF
                 putStrLn constPoolShow
-                putStrLn result
+                -- putStrLn result
                 return ()
     -------------------------------------
 

@@ -9,7 +9,7 @@ import TestHelper
 
 -- tests one TestEntry
 testEntry :: TestEntry -> SpecWith ()
-testEntry entry = it ("Test nr. " ++ no entry ++ ": testting " ++ name entry) $ do
+testEntry entry = it ("Test nr. " ++ no entry ++ ": testing " ++ name entry) $ do
     let result = parse (input entry)
     case result of
         Left err -> expectationFailure err

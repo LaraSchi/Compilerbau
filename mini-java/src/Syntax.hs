@@ -71,7 +71,7 @@ data Expression = TypedExpr Expression Type
 data NewExpr = NewExpr NewType [Expression]
              deriving (Show, Eq, Read)
 
-data MethodCallExpr = MethodCallExpr Expression String [Expression]
+data MethodCallExpr = MethodCallExpr Expression String [Expression] -- Todo Wie in den Folien umschreiebn
                     deriving (Show, Eq, Read)
 
 

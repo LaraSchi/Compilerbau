@@ -1,0 +1,14 @@
+[
+  {
+      "no"        : "1"
+  ,   "name"      : "FieldDeklr"
+  ,   "input"     : "class bct {\n    int j;\n    int i;\n}"
+  ,   "expected"  : "1|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"bct\", desc = \"\"}\n2|Class_Info {tag_cp = TagClass, index_cp = 1, desc = \"\"}\n3|Utf8_Info {tag_cp = TagUtf8, tam_cp = 16, cad_cp = \"java/lang/Object\", desc = \"\"}\n4|Class_Info {tag_cp = TagClass, index_cp = 3, desc = \"\"}\n5|Utf8_Info {tag_cp = TagUtf8, tam_cp = 6, cad_cp = \"<init>\", desc = \"\"}\n6|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"()V\", desc = \"\"}\n7|NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 5, index_descr_cp = 6, desc = \"\"}\n8|MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 4, index_nameandtype_cp = 7, desc = \"\"}\n9|Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = \"Code\", desc = \"\"}\n10|Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = \"j\", desc = \"\"}\n11|Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = \"I\", desc = \"\"}\n12|Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = \"i\", desc = \"\"}\n"
+  },
+  {
+      "no"        : "2"
+  ,   "name"      : "MethodDeklr"
+  ,   "input"     : "class MathClass {\n  public int add(int a, int b) {\n    return a + b;\n  }\n}"
+  ,   "expected"  : "1|Utf8_Info {tag_cp = TagUtf8, tam_cp = 9, cad_cp = \"MathClass\", desc = \"\"}\n2|Class_Info {tag_cp = TagClass, index_cp = 1, desc = \"\"}\n3|Utf8_Info {tag_cp = TagUtf8, tam_cp = 16, cad_cp = \"java/lang/Object\", desc = \"\"}\n4|Class_Info {tag_cp = TagClass, index_cp = 3, desc = \"\"}\n5|Utf8_Info {tag_cp = TagUtf8, tam_cp = 6, cad_cp = \"<init>\", desc = \"\"}\n6|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"()V\", desc = \"\"}\n7|NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 5, index_descr_cp = 6, desc = \"\"}\n8|MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 4, index_nameandtype_cp = 7, desc = \"\"}\n9|Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = \"Code\", desc = \"\"}\n10|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"add\", desc = \"\"}\n11|Utf8_Info {tag_cp = TagUtf8, tam_cp = 5, cad_cp = \"(II)I\", desc = \"\"}\n"
+  }
+]
