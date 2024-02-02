@@ -1,6 +1,5 @@
-public class test {
-
+class test {
     public void sayHello() {
-        System.out.println("Hello World");
+        println(~HelloWorld~);
     }
 }

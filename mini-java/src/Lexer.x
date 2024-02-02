@@ -26,6 +26,7 @@ tokens :-
   true                      { \_ -> TrueT }
   false                     { \_ -> FalseT }
   null                      { \_ -> NullT }
+  println                   { \_ -> PrintlnT }
   "+"                         { \_ -> PlusT }
   "-"                         { \_ -> MinusT }
   "*"                         { \_ -> TimesT }
@@ -49,7 +50,7 @@ tokens :-
   "}"                         { \_ -> RBraceT }
   $digit+                     { \s -> IntTo (read s) }
   "'"$char"'"                 { \s -> CharTo s }
-  "'" $string+ "'"            { \s -> StringTo s }
+  "~"$string+"~"              { \s -> StringTo s }
   $string+                    { \s -> IdentifierT s }
 
 
@@ -85,6 +86,7 @@ data Token = ClassT
            | LessEqT
            | GreaterEqT
            | NotT
+           | PrintlnT
            | SemicolonT
            | CommaT
            | DotT

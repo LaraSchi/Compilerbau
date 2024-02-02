@@ -14,46 +14,47 @@ import Control.Monad.Except
 %error { parseError }
 
 %token
-  class             { ClassT }
-  public            { PublicT }
-  intType           { IntTypeT }
-  booleanType       { BooleanTypeT }
-  charType          { CharTypeT }
-  new               { NewT }
-  return            { ReturnT }
-  while             { WhileT }
-  if                { IfT }
-  else              { ElseT }
-  this              { ThisT }
-  super             { SuperT }
-  true              { TrueT }
-  false             { FalseT }
-  null              { NullT }
-  '+'               { PlusT }
-  '-'               { MinusT }
-  '*'               { TimesT }
-  '/'               { DivideT }
-  '&&'              { AndT }
-  '||'              { OrT }
-  '=='              { EqualBoolT }
-  '='               { EqualT }
-  '!='              { NotEqualT }
-  '<'               { LessT }
-  '>'               { GreaterT }
-  '<='              { LessEqT }
-  '>='              { GreaterEqT }
-  '!'               { NotT }
-  ';'               { SemicolonT }
-  ','               { CommaT }
-  '.'               { DotT }
-  '('               { LParT }
-  ')'               { RParT }
-  '{'               { LBraceT }
-  '}'               { RBraceT }
-  int               { IntTo $$ }
-  char              { CharTo $$ }
-  string            { StringTo $$ }
-  identifier        { IdentifierT $$ }
+  class                     { ClassT }
+  public                    { PublicT }
+  intType                   { IntTypeT }
+  booleanType               { BooleanTypeT }
+  charType                  { CharTypeT }
+  new                       { NewT }
+  return                    { ReturnT }
+  while                     { WhileT }
+  if                        { IfT }
+  else                      { ElseT }
+  this                      { ThisT }
+  super                     { SuperT }
+  true                      { TrueT }
+  false                     { FalseT }
+  null                      { NullT }
+  println                   { PrintlnT }
+  '+'                       { PlusT }
+  '-'                       { MinusT }
+  '*'                       { TimesT }
+  '/'                       { DivideT }
+  '&&'                      { AndT }
+  '||'                      { OrT }
+  '=='                      { EqualBoolT }
+  '='                       { EqualT }
+  '!='                      { NotEqualT }
+  '<'                       { LessT }
+  '>'                       { GreaterT }
+  '<='                      { LessEqT }
+  '>='                      { GreaterEqT }
+  '!'                       { NotT }
+  ';'                       { SemicolonT }
+  ','                       { CommaT }
+  '.'                       { DotT }
+  '('                       { LParT }
+  ')'                       { RParT }
+  '{'                       { LBraceT }
+  '}'                       { RBraceT }
+  int                       { IntTo $$ }
+  char                      { CharTo $$ }
+  string                    { StringTo $$ }
+  identifier                { IdentifierT $$ }
 
 %%
 
@@ -108,6 +109,7 @@ Stmt
   | WhileStmt             { $1 }
   | DeclarationStmt       { $1 }
   | IfStmt                { $1 }
+  | println '(' string ')' ';'    { Print $3 }
   | StmtExpr              { StmtExprStmt $1 }
 
 

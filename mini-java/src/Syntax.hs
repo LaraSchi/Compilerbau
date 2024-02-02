@@ -44,6 +44,7 @@ data Stmt = TypedStmt Stmt Type
           | IfStmt Expression BlockStmt
           | IfElseStmt Expression BlockStmt (Maybe BlockStmt)
           | StmtExprStmt StmtExpr
+          | Print String
           deriving (Show, Eq, Read)
 
 data StmtExpr = TypedStmtExpr StmtExpr Type
