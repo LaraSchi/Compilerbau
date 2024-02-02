@@ -68,9 +68,11 @@ getCurrentIdx = do
 generateConstantPool :: Program -> ConstantpoolStateM ()
 generateConstantPool (Program classes typed_bool) = do
     generateClassConstantPool classes
-
     when (not typed_bool) $ do
             return error "Warning: Semantic analysis was not performed before constructing a constant pool." []
+
+data FieldOrMethod = ThisFieldDekl Field | ThisMethodDekl MethodDecl
+    deriving (Show, Eq, Read)
 
 generateClassConstantPool :: Class -> ConstantpoolStateM ()
 generateClassConstantPool (Class className fields methods) = do
@@ -82,39 +84,44 @@ generateClassConstantPool (Class className fields methods) = do
     mapM_ (\field -> generateFieldDeklCP field) fields
     mapM_ (\method -> generateMethodDeklCP method) methods
     -- Iterate over methods and store references (Methods and Fields)
-    mapM_ (\method -> findReferencesMethodDecl method fields className) methods
+
+    let fieldsAsFieldOrMethod = map ThisFieldDekl fields
+    mapM_ (\method -> findReferencesMethodDecl method fieldsAsFieldOrMethod className) methods
+    let methodsAsFieldOrMethod = map ThisMethodDekl methods
+    mapM_ (\method -> findReferencesMethodDecl method methodsAsFieldOrMethod className) methods
     return ()
 
+
 -- Find Field references my iterating over Methods block
-findReferencesMethodDecl :: MethodDecl -> [Field] -> NewType -> ConstantpoolStateM ()
-findReferencesMethodDecl (MethodDecl _ _ _ _ stmtList) fieldDecls className =
-  findReferencesStmtList stmtList fieldDecls className
+findReferencesMethodDecl :: MethodDecl -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findReferencesMethodDecl (MethodDecl _ _ _ _ stmtList) fieldOrMethodDecls className =
+    traceShow fieldOrMethodDecls $ findReferencesStmtList stmtList fieldOrMethodDecls className
 
-findReferencesStmtList :: [Stmt] -> [Field] -> NewType -> ConstantpoolStateM ()
-findReferencesStmtList stmtList fieldDecls className =
-    mapM_ (\thisStmt -> findReferencesStmt thisStmt fieldDecls className) stmtList
+findReferencesStmtList :: [Stmt] -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findReferencesStmtList stmtList fieldOrMethodDecls className =
+    mapM_ (\thisStmt -> findReferencesStmt thisStmt fieldOrMethodDecls className) stmtList
 
-findReferencesStmt :: Stmt -> [Field] -> NewType -> ConstantpoolStateM ()
-findReferencesStmt stmt fieldDecls className = case stmt of
-  TypedStmt stmt thisType -> findReferencesStmt stmt fieldDecls className
-  ReturnStmt expr -> findReferencesExpr expr fieldDecls className
+findReferencesStmt :: Stmt -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
+  TypedStmt stmt thisType -> findReferencesStmt stmt fieldOrMethodDecls className
+  ReturnStmt expr -> findReferencesExpr expr fieldOrMethodDecls className
   WhileStmt expr blockStmt -> do
-    findReferencesExpr expr fieldDecls className
-    findReferencesStmtList blockStmt fieldDecls className
+    findReferencesExpr expr fieldOrMethodDecls className
+    findReferencesStmtList blockStmt fieldOrMethodDecls className
   LocalVarDeclStmt thisType name -> do
-        checkAndGenFieldRef name fieldDecls className -- Possibly add FieldRef
+        checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
         when ((typeToString thisType) == (newTypeToString className)) $ do
               -- Possibly add class init MethodRef
               _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
               return ()
   IfStmt expr blockStmt -> do
-    findReferencesExpr expr fieldDecls className
-    findReferencesStmtList blockStmt fieldDecls className
+    findReferencesExpr expr fieldOrMethodDecls className
+    findReferencesStmtList blockStmt fieldOrMethodDecls className
   IfElseStmt expr blockStmt1 blockStmt2 -> do
-    findReferencesExpr expr fieldDecls className
-    findReferencesStmtList blockStmt1 fieldDecls className
-    maybe (return ()) (\stmt -> findReferencesStmtList stmt fieldDecls className) blockStmt2
-  StmtExprStmt stmtExpr -> findReferencesStmtExpr stmtExpr fieldDecls className
+    findReferencesExpr expr fieldOrMethodDecls className
+    findReferencesStmtList blockStmt1 fieldOrMethodDecls className
+    maybe (return ()) (\stmt -> findReferencesStmtList stmt fieldOrMethodDecls className) blockStmt2
+  StmtExprStmt stmtExpr -> findReferencesStmtExpr stmtExpr fieldOrMethodDecls className
   _ -> (return ())
 
 
@@ -123,47 +130,62 @@ findReferencesStmt stmt fieldDecls className = case stmt of
 -- Todo printstatement
 
 
-findReferencesExpr :: Expression -> [Field] -> NewType -> ConstantpoolStateM ()
-findReferencesExpr expr fieldDecls className = case expr of
-  IdentifierExpr name -> checkAndGenFieldRef name fieldDecls className
+findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findReferencesExpr expr fieldOrMethodDecls className = case expr of
+  IdentifierExpr name -> do
+    checkAndGenRef name fieldOrMethodDecls className
   InstVar expr name -> do
-    findReferencesExpr expr fieldDecls className
-    checkAndGenFieldRef name fieldDecls className
-  UnaryOpExpr _ e -> findReferencesExpr e fieldDecls className
+    findReferencesExpr expr fieldOrMethodDecls className
+    checkAndGenRef name fieldOrMethodDecls className
+  UnaryOpExpr _ e -> findReferencesExpr e fieldOrMethodDecls className
   BinOpExpr e1 _ e2 -> do
-    findReferencesExpr e1 fieldDecls className
-    findReferencesExpr e2 fieldDecls className
-  StmtExprExpr stmtExpr -> findReferencesStmtExpr stmtExpr fieldDecls className
+    findReferencesExpr e1 fieldOrMethodDecls className
+    findReferencesExpr e2 fieldOrMethodDecls className
+  StmtExprExpr stmtExpr -> findReferencesStmtExpr stmtExpr fieldOrMethodDecls className
   _ -> (return ())
 
-findReferencesStmtExpr :: StmtExpr -> [Field] -> NewType -> ConstantpoolStateM ()
-findReferencesStmtExpr stmtExpr fieldDecls className = case stmtExpr of
+findReferencesStmtExpr :: StmtExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findReferencesStmtExpr stmtExpr fieldOrMethodDecls className = case stmtExpr of
   TypedStmtExpr stmtExpr _ -> do
-    findReferencesStmtExpr stmtExpr fieldDecls className
+    findReferencesStmtExpr stmtExpr fieldOrMethodDecls className
   AssignmentStmt expr1 expr2 -> do
-    findReferencesExpr expr1 fieldDecls className
-    findReferencesExpr expr2 fieldDecls className
-  NewExpression newExpr -> findReferencesNewExpr newExpr fieldDecls className
+    findReferencesExpr expr1 fieldOrMethodDecls className
+    findReferencesExpr expr2 fieldOrMethodDecls className
+  NewExpression newExpr -> findReferencesNewExpr newExpr fieldOrMethodDecls className
   MethodCall methodCallExpr -> do
-    findRefMethodCallExpr methodCallExpr fieldDecls className
+    findRefMethodCallExpr methodCallExpr fieldOrMethodDecls className
 
-findReferencesNewExpr :: NewExpr -> [Field] -> NewType -> ConstantpoolStateM ()
-findReferencesNewExpr (NewExpr _ exprList) fieldDecls className = mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldDecls className) exprList
+findReferencesNewExpr :: NewExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findReferencesNewExpr (NewExpr _ exprList) fieldOrMethodDecls className = mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls className) exprList
+
+findRefMethodCallExpr :: MethodCallExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+findRefMethodCallExpr (MethodCallExpr expr name exprList) fieldOrMethodDecls className = do
+    mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls  className) exprList
+    trace "findRefMethodCallExpr" $ checkAndGenRef name fieldOrMethodDecls className
+    trace "findRefMethodCallExpr" $ return ()
 
 
-findRefMethodCallExpr :: MethodCallExpr -> [Field] -> NewType -> ConstantpoolStateM ()
-findRefMethodCallExpr (MethodCallExpr expr name exprList)  fieldDecls className = do
-    checkAndGenFieldRef name fieldDecls className
-    mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldDecls className) exprList
+unwrapToFieldList :: [FieldOrMethod] -> [Field]
+unwrapToFieldList decls = [field | ThisFieldDekl field <- decls]
 
+unwrapToMethodList :: [FieldOrMethod] -> [MethodDecl]
+unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 
+checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+checkAndGenRef name decls className = traceShow decls $ do
 
--- Todo what is this for?
-checkAndGenFieldRef :: String -> [Field] -> NewType -> ConstantpoolStateM ()
-checkAndGenFieldRef name fieldDecls className = do
-  let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) fieldDecls
-  mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
+  case decls of
+    (ThisFieldDekl _ : _) -> do
+      let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) (unwrapToFieldList decls)
+      mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
+      trace "checkAndGenRef" $ return ()
+    (ThisMethodDekl _ : _) -> do
 
+      let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> name == methodName) (unwrapToMethodList decls)
+      mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
+          let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
+          generateMethodRefConstantPool methodName methodType className) methodRefs
+    _ -> trace "_" $ return ()
 
 -- Helper functions to create specific constant pool entries
 -- The Entries are added to the state and the Info is returned for index retrieval.
