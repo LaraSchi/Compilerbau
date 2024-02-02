@@ -1,9 +1,11 @@
 module ClassFileGen where
 
+import ConstPoolGen
 import Syntax
 import Parser
 import ClassFormat
 import Data.Typeable
+import Data.List (elemIndex)
 
 -- classfile anschauen mit decodeClassFile() und dann print(...)
 
@@ -27,7 +29,7 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         numInterfaces = 0  -- no interfaces exist in minijava
         arrayInterfaces = []  -- no interfaces exist in minijava
         numFields = length fields
-        arrayFields = generateFieldsArray fields
+        arrayFields = generateFieldsArray fields cpInfos
         numMethods = length methods
         arrayMethods = generateMethodsArray methods  -- nur hier sind attributes Code drin
         numAttributes = 0  -- what? where to get information
@@ -54,17 +56,28 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
     }
 
 
--- iterieren über fielddecls und für jede fielddecl neue FieldInfo machen
-generateFieldsArray :: [Field] -> Field_Infos
-generateFieldsArray fields = 
-    let newFieldInfos :: Field_Infos
-        newFieldInfos = [Field_Info   -- dummy
-                            { af_fi = AccessFlags [acc_Public]  -- 0x0000 dummy
-                            , index_name_fi = 1   -- name_index  getindex method in CodeGen.hs (info bauen mit gebauter Info aus FieldDecl)
-                            , index_descr_fi = 1     -- descriptor_index (type) -> von FieldDecl bekommen und dann im Konstanten pool danach suchen und dann index angeben
-                            , tam_fi = 0                    -- count_attributte
-                            , array_attr_fi = []
-                            }]
+cpIndexFrom :: String -> [CP_Info] -> Int
+cpIndexFrom searchName constPoolList =
+    case elemIndex (Utf8_Info TagUtf8 (length searchName) searchName "") constPoolList of
+        Just idx -> idx + 1  -- Constant pool begins at 1.
+        Nothing  -> -1 --Todo Warning?
+
+-- Iteration über FieldList aus der AST, um die Liste aus FieldInfos zu bauen. CP wird mit übergeben.
+generateFieldsArray :: [Field] -> [CP_Info] -> Field_Infos
+generateFieldsArray fields cpInfosList =
+    let result = concatMap (\field -> buildFieldInfo field cpInfosList) fields
+    in result
+
+buildFieldInfo :: Field -> [CP_Info] -> [Field_Info]
+buildFieldInfo (FieldDecl fieldType fieldName) cpInfosList =
+    let newFieldInfos =
+            [Field_Info
+                { af_fi = AccessFlags [acc_Public]  -- 0x0000 dummy
+                , index_name_fi = cpIndexFrom fieldName cpInfosList  -- name_index
+                , index_descr_fi = cpIndexFrom (typeToString fieldType) cpInfosList -- descriptor_index (type)
+                , tam_fi = 0                    -- count_attributte
+                , array_attr_fi = []
+                }]
     in newFieldInfos
 
 

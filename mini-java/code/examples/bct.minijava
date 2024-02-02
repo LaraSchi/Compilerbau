@@ -1,6 +1,4 @@
 class bct {
-    int j =0;
     int j;
-    j=0;
     int i;
 }

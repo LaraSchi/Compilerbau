@@ -11,8 +11,9 @@ import Control.Monad (when, unless)
 import Control.Monad.State
 import Debug.Trace (traceShow)
 
-
 import Debug.Trace (trace)
+
+-- Todo Build desktiptor strings?
 
 -- State Monad
 data ConstantpoolState = ConstantpoolState {constPool :: CP_Infos}
@@ -34,12 +35,6 @@ addElement x = do
     unless (x `elem` cp) $ do
             modify (\s -> s { constPool = cp ++ [x] })
 
--- Function to add multiple elements to the list
---addElements :: [CP_Info] -> ConstantpoolStateM ()
---addElements xs = do
---    cp <- gets constPool
---    let newElements = filter (\x -> x `notElem` cp) (nub xs) -- no replications of elements
---    modify (\s -> s { constPool = cp ++ newElements })
 
 modifyAtIndex :: [a] -> Int -> a -> [a]
 modifyAtIndex list index newEntry = take (index-1) list ++ [newEntry] ++ drop index list
