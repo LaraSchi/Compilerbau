@@ -4,8 +4,8 @@ class Kreis {
     public Kreis kreisfunktion(float x) {
         Kreis k;
         k = new Kreis();
-        k.a = cos(x);
-        k.b = sin(x);
+        k.a = x;
+        k.b = x;
         return k;
         }
 }
