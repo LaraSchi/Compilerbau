@@ -14,7 +14,6 @@ import Debug.Trace (traceShow)
 import Debug.Trace (trace)
 
 -- Todo Wie funktioniert das dann mit den FieldRefs?
--- Todo Build desktiptor strings?
 
 -- State Monad
 data ConstantpoolState = ConstantpoolState {constPool :: CP_Infos}
@@ -95,7 +94,7 @@ generateClassConstantPool (Class className fields methods) = do
 -- Find Field references my iterating over Methods block
 findReferencesMethodDecl :: MethodDecl -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesMethodDecl (MethodDecl _ _ _ _ stmtList) fieldOrMethodDecls className =
-    traceShow fieldOrMethodDecls $ findReferencesStmtList stmtList fieldOrMethodDecls className
+    findReferencesStmtList stmtList fieldOrMethodDecls className
 
 findReferencesStmtList :: [Stmt] -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesStmtList stmtList fieldOrMethodDecls className =
@@ -126,7 +125,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
 
 
 -- Todo just InstVar my FieldRef?
--- Todo Integer_Info
+-- Todo Integer_Info (Konstante)
 -- Todo printstatement
 
 
@@ -161,8 +160,8 @@ findReferencesNewExpr (NewExpr _ exprList) fieldOrMethodDecls className = mapM_ 
 findRefMethodCallExpr :: MethodCallExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findRefMethodCallExpr (MethodCallExpr expr name exprList) fieldOrMethodDecls className = do
     mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls  className) exprList
-    trace "findRefMethodCallExpr" $ checkAndGenRef name fieldOrMethodDecls className
-    trace "findRefMethodCallExpr" $ return ()
+    checkAndGenRef name fieldOrMethodDecls className
+    return ()
 
 
 unwrapToFieldList :: [FieldOrMethod] -> [Field]
@@ -172,20 +171,18 @@ unwrapToMethodList :: [FieldOrMethod] -> [MethodDecl]
 unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 
 checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
-checkAndGenRef name decls className = traceShow decls $ do
-
-  case decls of
+checkAndGenRef name decls className = case decls of
     (ThisFieldDekl _ : _) -> do
       let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) (unwrapToFieldList decls)
       mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
-      trace "checkAndGenRef" $ return ()
+      --trace "checkAndGenRef" $ return ()
     (ThisMethodDekl _ : _) -> do
 
       let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> name == methodName) (unwrapToMethodList decls)
       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
           let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
           generateMethodRefConstantPool methodName methodType className) methodRefs
-    _ -> trace "_" $ return ()
+    _ -> return ()
 
 -- Helper functions to create specific constant pool entries
 -- The Entries are added to the state and the Info is returned for index retrieval.
@@ -265,7 +262,7 @@ createUtf8Entry name = do
 -- Map Type to String
 typeToString :: Type -> String
 typeToString t = case t of
-  IntT -> "I" -- Todo wrapper classes of primitive types Ljava/lang/Integer (Object Type)
+  IntT -> "I"
   BoolT -> "Z"
   CharT -> "C"
   StringT -> "java/lang/String;"  -- Object class

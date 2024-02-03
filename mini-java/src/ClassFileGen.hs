@@ -5,7 +5,7 @@ import Syntax
 import Parser
 import ClassFormat
 import Data.Typeable
-import Data.List (elemIndex)
+import Data.List (elemIndex, intercalate)
 
 -- classfile anschauen mit decodeClassFile() und dann print(...)
 
@@ -31,7 +31,7 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         numFields = length fields
         arrayFields = generateFieldsArray fields cpInfos
         numMethods = length methods
-        arrayMethods = generateMethodsArray methods  -- nur hier sind attributes Code drin
+        arrayMethods = generateMethodsArray methods  cpInfos -- nur hier sind attributes Code drin
         numAttributes = 0  -- what? where to get information
         arrayAttributes = []  -- what? where to get information
 
@@ -76,21 +76,29 @@ buildFieldInfo (FieldDecl fieldType fieldName) cpInfosList =
                 , index_name_fi = cpIndexFrom fieldName cpInfosList  -- name_index
                 , index_descr_fi = cpIndexFrom (typeToString fieldType) cpInfosList -- descriptor_index (type)
                 , tam_fi = 0                    -- count_attributte
-                , array_attr_fi = []
+                , array_attr_fi = [] -- Todo 'ConstantValue' attributes? (expl. final int i = 10;)
                 }]
     in newFieldInfos
 
 
 -- how to parse the information?
-generateMethodsArray :: [MethodDecl] -> Method_Infos
-generateMethodsArray methods = 
-    let newMethodInfos :: Method_Infos
-        newMethodInfos = []
-    in newMethodInfos
+generateMethodsArray :: [MethodDecl] -> [CP_Info] -> Method_Infos
+generateMethodsArray methods cpInfosList =
+    let methodInfos = concatMap (\method -> buildMethodInfo method cpInfosList) methods
+    in methodInfos
 
--- access flag bei MethodDecl
--- name index: Name von MethodDecl -> dann suchen im Konstantenpool
--- index über name index im Konstantenpool finden
+buildMethodInfo :: MethodDecl -> [CP_Info] -> [Method_Info]
+buildMethodInfo (MethodDecl _ outType methodName parameters _) cpInfosList =
+    let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString outType)
+        newMethod_Info =
+            [Method_Info
+                { af_mi = AccessFlags [acc_Public]  -- 0x0000 dummy
+                , index_name_mi = cpIndexFrom methodName cpInfosList  -- name_index
+                , index_descr_mi = cpIndexFrom methodType cpInfosList -- descriptor_index (type)
+                , tam_mi = 0                    -- count_attributte
+                , array_attr_mi = [] -- Todo 'Code' Attributes
+                }]
+    in newMethod_Info
 
 
 -- function to create attribute Infos?  -- nur für methods, normales Array ist leer (brauche ich das noch, wenn man nur AttributeCode hat?)
