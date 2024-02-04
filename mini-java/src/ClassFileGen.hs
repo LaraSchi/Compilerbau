@@ -79,6 +79,7 @@ buildFieldInfo (FieldDecl fieldType fieldName) cpInfosList =
                 , array_attr_fi = [] -- Todo 'ConstantValue' attributes? (expl. final int i = 10;)
                 }]
     in newFieldInfos
+buildFieldInfo (FieldRef _ _) _ = []
 
 
 -- how to parse the information?

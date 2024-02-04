@@ -80,11 +80,12 @@ generateClassConstantPool (Class className fields methods) = do
     -- Store init
     generateMethodRefConstantPool "<init>" "()V" (NewType "java/lang/Object")
     -- Store declarations (Methods and Fields)
-    mapM_ (\field -> generateFieldDeklCP field) fields
+    let fieldsAsFieldOrMethod = map ThisFieldDekl fields
+    mapM_ (\field -> generateFieldDeklCP field fieldsAsFieldOrMethod className) fields
     mapM_ (\method -> generateMethodDeklCP method) methods
     -- Iterate over methods and store references (Methods and Fields)
 
-    let fieldsAsFieldOrMethod = map ThisFieldDekl fields
+
     mapM_ (\method -> findReferencesMethodDecl method fieldsAsFieldOrMethod className) methods
     let methodsAsFieldOrMethod = map ThisMethodDekl methods
     mapM_ (\method -> findReferencesMethodDecl method methodsAsFieldOrMethod className) methods
@@ -173,8 +174,15 @@ unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 checkAndGenRef name decls className = case decls of
     (ThisFieldDekl _ : _) -> do
-      let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) (unwrapToFieldList decls)
-      mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
+      --let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) (unwrapToFieldList decls)
+      let fieldRefs = filter (\field ->
+                             case field of
+                               (FieldDecl _ fieldName) -> name == fieldName
+                               _                       -> False
+                           ) (unwrapToFieldList decls)
+
+
+      trace (show fieldRefs) $ do mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
       --trace "checkAndGenRef" $ return ()
     (ThisMethodDekl _ : _) -> do
 
@@ -187,13 +195,15 @@ checkAndGenRef name decls className = case decls of
 -- Helper functions to create specific constant pool entries
 -- The Entries are added to the state and the Info is returned for index retrieval.
 
-generateFieldDeklCP :: Field -> ConstantpoolStateM CP_Info
-generateFieldDeklCP field = case field of
+generateFieldDeklCP :: Field -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
+generateFieldDeklCP field fieldOrMethodDecls className = case field of
     (FieldDecl fieldType fieldName) -> do
         fieldNameInfo <- createUtf8Entry fieldName
         _ <- createUtf8Entry (typeToString fieldType)
-        return fieldNameInfo
-    (FieldRef fieldType fieldName) -> createUtf8Entry "FieldRefPlaceholder"  -- Placeholder entry for FieldRef
+        return ()
+    (FieldRef fieldName _) -> checkAndGenRef fieldName fieldOrMethodDecls className
+
+
 
 
 generateMethodDeklCP :: MethodDecl -> ConstantpoolStateM CP_Info
