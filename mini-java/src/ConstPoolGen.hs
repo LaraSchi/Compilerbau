@@ -108,6 +108,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt fieldOrMethodDecls className
   LocalVarDeclStmt thisType name -> do
+        -- Is it an instantiation of this class?
         checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
         when ((typeToString thisType) == (newTypeToString className)) $ do
               -- Possibly add class init MethodRef
@@ -130,8 +131,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
 
 findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldOrMethodDecls className = case expr of
-  IdentifierExpr name -> do
-    checkAndGenRef name fieldOrMethodDecls className -- Todo
+  IdentifierExpr name -> (return ()) -- Variablename
   InstVar expr name -> do
     findReferencesExpr expr fieldOrMethodDecls className
     checkAndGenRef name fieldOrMethodDecls className

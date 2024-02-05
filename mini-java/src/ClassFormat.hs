@@ -210,14 +210,41 @@ showField_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showField_
 -- Function to display Method_Info items with indices
 showMethod_Infos :: [Method_Info] -> Int -> String
 showMethod_Infos [] n = ""
-showMethod_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showMethod_Infos xss (n+1))
+showMethod_Infos (x : xss) n =
+    (show n) ++ "| Method_Info{" ++
+    "af_mi: " ++ show (af_mi x) ++ "\n" ++
+    "index_name_mi: " ++ show (index_name_mi x) ++ "\n" ++
+    "index_descr_mi: " ++ show (index_descr_mi x) ++ "\n" ++
+    "tam_mi: " ++ show (tam_mi x) ++ "\n" ++
+    "array_attr_mi:\n" ++ showAttribute_Infos (array_attr_mi x) 1 ++
+    "}\n" ++ (showMethod_Infos xss (n + 1))
+
 
 
 -- Function to display Attribute_Info items with indices
 showAttribute_Infos :: [Attribute_Info] -> Int -> String
 showAttribute_Infos [] n = ""
-showAttribute_Infos (x : xss) n = (show n) ++ "|" ++ (show x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
+showAttribute_Infos (x : xss) n = (show n) ++ "|" ++ (showAttributeInfo x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
 
+showAttributeInfo :: Attribute_Info -> String
+showAttributeInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen code exceptionsLen exceptions attributesCount attributes) =
+    "AttributeCode {\n" ++
+    "  attribute_name_index: " ++ show nameIndex ++ "\n" ++
+    "  attribute_length: " ++ show attrLen ++ "\n" ++
+    "  max_stack: " ++ show maxStack ++ "\n" ++
+    "  max_local: " ++ show maxLocal ++ "\n" ++
+    "  code_length: " ++ show codeLen ++ "\n" ++
+    "  code: " ++ showListaInt code ++ "\n" ++
+    "  exceptions_length: " ++ show exceptionsLen ++ "\n" ++
+    "  exceptions: " ++ show exceptions ++ "\n" ++
+    "  attributes_count: " ++ show attributesCount ++ "\n" ++
+    "  attributes: " ++ showAttribute_Infos attributes 1 ++ "\n" ++
+    "}\n"
+
+-- Function to format ListaInt
+showListaInt :: ListaInt -> String
+showListaInt [] = ""
+showListaInt (x:xs) = show x ++ "\n " ++ showListaInt xs
 
 -- Function to display a ClassFile
 prettyPrintClassFile :: ClassFile -> String
@@ -244,12 +271,15 @@ prettyPrintClassFile classFile =
 type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
-type ListaInt  = [Int]
+type ListaInt  = [String] -- Todo change back to [Int]
 type ConstantPool_Count  = Int
 type Interfaces_Count    = Int
 type Fields_Count        = Int
 type Methods_Count       = Int
 type Attributes_Count    = Int
 type Index_Constant_Pool = Int
+
+
+
 
 

@@ -9,7 +9,7 @@ import ClassFileGen(generateClassFile)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/explMethodRef2.minijava" -- read file
+    fileContent <- readFile "code/examples/explFieldRef2.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
     putStrLn ""
     putStrLn "parsing file content"
@@ -26,7 +26,7 @@ main = do
                 let sampleCF = generateClassFile t' sampleCP -- Todo what is StackMapTable?
                 let constPoolShow = showCP_Infos sampleCP 1
                 let result = prettyPrintClassFile sampleCF
-                putStrLn constPoolShow
+                -- putStrLn constPoolShow
                 putStrLn result
                 return ()
     -------------------------------------
