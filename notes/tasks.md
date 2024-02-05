@@ -3,6 +3,9 @@
 - Alle bsp durchlaufen lassen
 - System.out.println
 - ClassFile format überarbeiten (data für iload...)
+- advancedExamples/Addn.minijava überarbeiten
+- MethodenReference als this.method
+- Constructor? (default mit super (?), Methode überschreiben)
 
 ## Nice to have:
 

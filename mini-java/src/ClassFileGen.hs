@@ -89,7 +89,7 @@ generateMethodsArray methods cpInfosList =
     in methodInfos
 
 buildMethodInfo :: MethodDecl -> [CP_Info] -> [Method_Info]
-buildMethodInfo (MethodDecl _ outType methodName parameters _) cpInfosList =
+buildMethodInfo (MethodDecl _ outType methodName parameters blockStmt) cpInfosList =
     let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString outType)
         newMethod_Info =
             [Method_Info
@@ -97,14 +97,29 @@ buildMethodInfo (MethodDecl _ outType methodName parameters _) cpInfosList =
                 , index_name_mi = cpIndexFrom methodName cpInfosList  -- name_index
                 , index_descr_mi = cpIndexFrom methodType cpInfosList -- descriptor_index (type)
                 , tam_mi = 0                    -- count_attributte
-                , array_attr_mi = [] -- Todo 'Code' Attributes
+                , array_attr_mi = generateAttributeCodeArray blockStmt cpInfosList -- Todo 'Code' Attributes
                 }]
     in newMethod_Info
 
 
 -- function to create attribute Infos?  -- nur für methods, normales Array ist leer (brauche ich das noch, wenn man nur AttributeCode hat?)
-generateAttributesArray :: [String] -> Attribute_Infos
-generateAttributesArray attributes = 
-    let newAttributeInfos :: Attribute_Infos
-        newAttributeInfos = []
-    in newAttributeInfos
+generateAttributeCodeArray :: BlockStmt -> [CP_Info] -> Attribute_Infos
+generateAttributeCodeArray attributes cpInfosList =
+    let newAttributeInfo :: Attribute_Infos
+        newAttributeInfo =
+            [AttributeCode
+                { index_name_attr = cpIndexFrom "Code" cpInfosList  -- attribute_name_index
+                , tam_len_attr = length("Code")  -- attribute_length
+                , len_stack_attr = 0 -- Placeholder   -- max_stack
+                , len_local_attr = 0 -- Placeholder  -- max_local
+                , tam_code_attr = 0  -- Placeholder -- code_length
+                , array_code_attr = [0] -- Placeholder   -- code como array de bytes
+                , tam_ex_attr = 0 -- Placeholder        -- exceptions_length
+                , array_ex_attr = [(0, 0, 0, 0)] -- Placeholder               -- no usamos
+                , tam_atrr_attr = 0 -- Placeholder                          -- attributes_count
+                , array_attr_attr = []   -- Placeholder         :: Attribute_Infos
+                }]
+    in newAttributeInfo
+
+
+

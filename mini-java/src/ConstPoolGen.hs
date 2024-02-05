@@ -13,7 +13,6 @@ import Debug.Trace (traceShow)
 
 import Debug.Trace (trace)
 
--- Todo Wie funktioniert das dann mit den FieldRefs?
 
 -- State Monad
 data ConstantpoolState = ConstantpoolState {constPool :: CP_Infos}
@@ -125,7 +124,6 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
   _ -> (return ())
 
 
--- Todo just InstVar my FieldRef?
 -- Todo Integer_Info (Konstante)
 -- Todo printstatement
 
@@ -133,7 +131,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
 findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldOrMethodDecls className = case expr of
   IdentifierExpr name -> do
-    checkAndGenRef name fieldOrMethodDecls className
+    checkAndGenRef name fieldOrMethodDecls className -- Todo
   InstVar expr name -> do
     findReferencesExpr expr fieldOrMethodDecls className
     checkAndGenRef name fieldOrMethodDecls className
@@ -182,7 +180,7 @@ checkAndGenRef name decls className = case decls of
                            ) (unwrapToFieldList decls)
 
 
-      trace (show fieldRefs) $ do mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
+      mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
       --trace "checkAndGenRef" $ return ()
     (ThisMethodDekl _ : _) -> do
 

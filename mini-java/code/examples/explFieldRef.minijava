@@ -1,3 +1,7 @@
 class A {
-    int attr = 1;
+    int i;
+
+    public void setI(int n){
+        this.i = n;
+    }
 }
