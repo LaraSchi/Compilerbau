@@ -5,11 +5,11 @@ class Addn {
     }
     public Addn add1(int n) {
         Addn a;
-        a = new Addn(n); // Todo changed Add to Addn
+        a = new Addn(n);
         return a;
     }
     public int add2(int x) {
-        return this.n + x; // Todo this.n ? Eigentlich automatisch erkannt
+        return n + x; // Todo this.n ? Eigentlich automatisch erkannt
          // todo was wenn int n = 1; n also nicht eigentlich this.n ist.
     }
 }

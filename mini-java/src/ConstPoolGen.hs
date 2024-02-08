@@ -109,25 +109,27 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
     findReferencesStmtList blockStmt fieldOrMethodDecls className
   LocalVarDeclStmt thisType name -> do
         -- Is it an instantiation of this class?
-        checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
-        when (((typeToString thisType) == (newTypeToString className)) ) $ do -- Todo && notFieldDeklr
-              --trace (show "Variable type " ++ (typeToString thisType)) $ return ()
-              let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> (typeToString thisType) == methodName) (unwrapToMethodList fieldOrMethodDecls)
-              --trace (show methodRefs) $ return ()
-              -- Possibly add class init MethodRef
-              if (length methodRefs == 0)
-                   then do
-                       --trace (show "second Method ref" ++ (typeToString thisType)) $ return ()
-                       --trace (show "second Method ref" ++ name) $ return ()
-                       _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
-                       return ()
-                   else do
-                       --trace (show "second Method ref2" ++ show (length methodRefs == 0)) $ return ()
-                       --trace (show "second Method ref2" ++ (typeToString thisType)) $ return ()
-                       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
-                                 let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
-                                 generateMethodRefConstantPool "init" methodType className) methodRefs
-                       return ()
+        case fieldOrMethodDecls of
+            (ThisFieldDekl _) : _  -> checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
+            (ThisMethodDekl methodDecl) : _  -> do
+                when (((typeToString thisType) == (newTypeToString className)) ) $ do -- Todo && notFieldDeklr
+                      --trace (show "Variable type " ++ (typeToString thisType)) $ return ()
+                      let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> (typeToString thisType) == methodName) (unwrapToMethodList fieldOrMethodDecls)
+                      --trace (show methodRefs) $ return ()
+                      -- Possibly add class init MethodRef
+                      if (length methodRefs == 0)
+                           then do
+                               --trace (show "second Method ref" ++ (typeToString thisType)) $ return ()
+                               --trace (show "second Method ref" ++ name) $ return ()
+                               _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
+                               return ()
+                           else do
+                               --trace (show "second Method ref2" ++ show (length methodRefs == 0)) $ return ()
+                               --trace (show "second Method ref2" ++ (typeToString thisType)) $ return ()
+                               mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
+                                         let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
+                                         generateMethodRefConstantPool "<init>" methodType className) methodRefs
+                               return ()
 
   IfStmt expr blockStmt -> do
     findReferencesExpr expr fieldOrMethodDecls className

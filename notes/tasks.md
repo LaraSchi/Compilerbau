@@ -1,8 +1,10 @@
 ## TODO: 
 
 - Alle bsp durchlaufen lassen
-- Constructor: advancedExamples/Addn.minijava überarbeiten
+- advancedExamples/Addn.minijava überarbeiten
+  - Constructor
   - bei n + x: Parser macht x zu this.x
+- examples/explFieldRef3.minijava 
 - this.method
 - System.out.println als Methode
 - System.out.println in Konstantenpool
