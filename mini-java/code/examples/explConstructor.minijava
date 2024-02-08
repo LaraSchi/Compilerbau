@@ -1,5 +1,0 @@
-class bct {
-       bct() {
-         super();
-}
-}

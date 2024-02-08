@@ -74,7 +74,7 @@ data FieldOrMethod = ThisFieldDekl Field | ThisMethodDekl MethodDecl
 
 generateClassConstantPool :: Class -> ConstantpoolStateM ()
 generateClassConstantPool (Class className fields methods) = do
-    -- Store the class -- Todo only one?
+    -- Store the class
     _ <- createClassEntry className
     -- Store init
     generateMethodRefConstantPool "<init>" "()V" (NewType "java/lang/Object")
@@ -110,10 +110,25 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
   LocalVarDeclStmt thisType name -> do
         -- Is it an instantiation of this class?
         checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
-        when ((typeToString thisType) == (newTypeToString className)) $ do
+        when (((typeToString thisType) == (newTypeToString className)) ) $ do -- Todo && notFieldDeklr
+              --trace (show "Variable type " ++ (typeToString thisType)) $ return ()
+              let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> (typeToString thisType) == methodName) (unwrapToMethodList fieldOrMethodDecls)
+              --trace (show methodRefs) $ return ()
               -- Possibly add class init MethodRef
-              _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
-              return ()
+              if (length methodRefs == 0)
+                   then do
+                       --trace (show "second Method ref" ++ (typeToString thisType)) $ return ()
+                       --trace (show "second Method ref" ++ name) $ return ()
+                       _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
+                       return ()
+                   else do
+                       --trace (show "second Method ref2" ++ show (length methodRefs == 0)) $ return ()
+                       --trace (show "second Method ref2" ++ (typeToString thisType)) $ return ()
+                       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
+                                 let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
+                                 generateMethodRefConstantPool "init" methodType className) methodRefs
+                       return ()
+
   IfStmt expr blockStmt -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt fieldOrMethodDecls className
@@ -131,7 +146,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
 
 findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldOrMethodDecls className = case expr of
-  IdentifierExpr name -> (return ()) -- Variablename
+  IdentifierExpr name -> (return ()) -- Todo checkAndGenRef name fieldOrMethodDecls className? -- Variablename
   InstVar expr name -> do
     findReferencesExpr expr fieldOrMethodDecls className
     checkAndGenRef name fieldOrMethodDecls className
@@ -224,6 +239,7 @@ generateFieldRefConstantPool fieldName thisType className = do
 
 -- Function to generate constant pool entries for a method references
 generateMethodRefConstantPool :: String -> String -> NewType -> ConstantpoolStateM CP_Info
+--trace (show "in generateMethodRefConstantPool" ++ (newTypeToString className)) $
 generateMethodRefConstantPool methodName thisType className = do
       classInfo <- createClassEntry className
       classNameIdx <- getIdx classInfo

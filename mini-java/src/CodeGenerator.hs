@@ -6,7 +6,6 @@ import Syntax
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> String
 generateCodeForMethod (MethodDecl _ _ name params blockStmt) =
-  generateCodeForParameters params ++
   generateCodeForBlockStmt blockStmt ++ ", "
 
 -- Function to generate assembly code for BlockStmt
