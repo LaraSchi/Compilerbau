@@ -130,7 +130,6 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
                                          let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
                                          generateMethodRefConstantPool "<init>" methodType className) methodRefs
                                return ()
-
   IfStmt expr blockStmt -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt fieldOrMethodDecls className
@@ -139,7 +138,13 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
     findReferencesStmtList blockStmt1 fieldOrMethodDecls className
     maybe (return ()) (\stmt -> findReferencesStmtList stmt fieldOrMethodDecls className) blockStmt2
   StmtExprStmt stmtExpr -> findReferencesStmtExpr stmtExpr fieldOrMethodDecls className
+  Print stringToPrint -> trace "in print" $ do
+    createStringEntry stringToPrint
+    generateFieldRefConstantPool "out" "Ljava/io/PrintStream;" (NewType"java/lang/System")
+    generateMethodRefConstantPool "println" "(Ljava/lang/String;)V" (NewType "java/io/PrintStream")
+    return ()
   _ -> (return ())
+
 
 
 -- Todo Integer_Info (Konstante)
@@ -274,6 +279,14 @@ createClassEntry (NewType className) = do
      addElement (Class_Info TagClass classNameIdx deskr)
      return (Class_Info TagClass classNameIdx deskr)
 
+createStringEntry :: String -> ConstantpoolStateM CP_Info
+createStringEntry stringToPrint = do
+     utf8Info <- (createUtf8Entry stringToPrint)
+     stringToPrintIdx <- getIdx utf8Info
+     let deskr = stringToPrint
+     addElement (String_Info TagString stringToPrintIdx deskr)
+     return (String_Info TagString stringToPrintIdx deskr)
+
 
 -- Function for creating Utf8Info
 createUtf8Entry :: String -> ConstantpoolStateM CP_Info
@@ -297,7 +310,9 @@ typeToString t = case t of
   VoidT -> "V"
 
 newTypeToString :: NewType -> String
-newTypeToString (NewType className) = className
+newTypeToString (NewType className) = case className of
+    "void" -> "V"
+    _ -> className
 
 -- Get the type
 getInputType :: Parameter -> [String]

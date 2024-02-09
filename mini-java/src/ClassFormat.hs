@@ -66,6 +66,11 @@ data CP_Info =
                 , numi_cp               :: Int
                 , desc                  :: String
                 }
+       | String_Info
+                    { tag_cp                :: Tag
+                    , index_cp              :: Index_Constant_Pool
+                    , desc                  :: String
+                    }
         | NameAndType_Info 
                 { tag_cp                :: Tag
                 , index_name_cp         :: Index_Constant_Pool
@@ -88,9 +93,6 @@ data Tag = TagClass
          | TagInterfaceMethodRef
          | TagString
          | TagInteger
-         | TagFloat
-         | TagLong
-         | TagDouble
          | TagNameAndType
          | TagUtf8
         deriving (Show, Eq)

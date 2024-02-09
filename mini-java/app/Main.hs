@@ -9,8 +9,7 @@ import ClassFileGen(generateClassFile)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/explFieldRef3.minijava"
-    --fileContent <- readFile "code/examples/explIfElse.minijava" -- read file
+    fileContent <- readFile "code/examples/helloWorld.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
     putStrLn ""
     putStrLn "parsing file content"
