@@ -19,7 +19,7 @@ import Data.List (elemIndex, intercalate)
 generateClassFile :: Program -> CP_Infos -> ClassFile
 generateClassFile (Program (Class className fields methods) typed_bool) cpInfos =
     let -- Parse the Java class syntax and extract relevant information
-        magicValue = Magic  -- Where to get the information, "serialization process" (?)
+        magicValue = Magic  
         minVer = MinorVersion 0  
         maxVer = MajorVersion 55 
         countCP = length cpInfos
@@ -27,14 +27,14 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)  -- why the brackets (when integer is given [ ] is not needed)?
         thisClass = ThisClass {index_th = 7}  -- need to figure out the how to parse the index number
         superClass = SuperClass {index_sp = 2}
-        numInterfaces = 0  -- no interfaces exist in minijava
-        arrayInterfaces = []  -- no interfaces exist in minijava
+        numInterfaces = 0  
+        arrayInterfaces = [] 
         numFields = length fields
         arrayFields = generateFieldsArray fields cpInfos
         numMethods = length methods
-        arrayMethods = generateMethodsArray methods  cpInfos -- nur hier sind attributes Code drin
-        numAttributes = 0  -- what? where to get information
-        arrayAttributes = []  -- what? where to get information
+        arrayMethods = generateMethodsArray methods  cpInfos -- attribute Code
+        numAttributes = 0
+        arrayAttributes = []
 
     in ClassFile { 
         magic = magicValue,
@@ -113,8 +113,8 @@ generateAttributeCodeArray methodDecl cpInfosList =
                 , tam_len_attr = length("Code")  -- attribute_length
                 , len_stack_attr = 0 -- Placeholder   -- max_stack
                 , len_local_attr = 0 -- Placeholder  -- max_local
-                , tam_code_attr = 0  -- Placeholder -- code_length
-                , array_code_attr = [generateCodeForMethod methodDecl] -- Todo trun string to int (Bytes) -- Placeholder   -- code como array de bytes
+                , tam_code_attr = 4  -- Placeholder -- code_length
+                , array_code_attr = [0, 0, 0, 0] -- [generateCodeForMethod methodDecl] -- Todo trun string to int (Bytes) -- Placeholder   -- code como array de bytes
                 , tam_ex_attr = 0 -- Placeholder        -- exceptions_length
                 , array_ex_attr = [(0, 0, 0, 0)] -- Placeholder               -- no usamos
                 , tam_atrr_attr = 0 -- Placeholder                          -- attributes_count

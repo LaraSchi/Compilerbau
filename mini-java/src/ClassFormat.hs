@@ -2,6 +2,8 @@
 module ClassFormat where
 import Syntax
 import qualified Data.ByteString.Lazy as BS
+import Data.Bits
+import ByteCodeInstr
 
 -- class file format
 data ClassFile = ClassFile { magic            :: Magic
@@ -236,17 +238,20 @@ showAttributeInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen cod
     "  max_stack: " ++ show maxStack ++ "\n" ++
     "  max_local: " ++ show maxLocal ++ "\n" ++
     "  code_length: " ++ show codeLen ++ "\n" ++
-    "  code: " ++ showListaInt code ++ "\n" ++
+    "  code: \n" ++ showCode code ++ "\n" ++
     "  exceptions_length: " ++ show exceptionsLen ++ "\n" ++
     "  exceptions: " ++ show exceptions ++ "\n" ++
     "  attributes_count: " ++ show attributesCount ++ "\n" ++
     "  attributes: " ++ showAttribute_Infos attributes 1 ++ "\n" ++
     "}\n"
 
+
 -- Function to format ListaInt
-showListaInt :: ListaInt -> String
-showListaInt [] = ""
-showListaInt (x:xs) = show x ++ "\n " ++ showListaInt xs
+showCode :: ListaInt -> String
+showCode [] = ""
+showCode (x:xs) = "\t" ++ parseByteInstr x ++ "\n " ++ showCode xs
+
+
 
 -- Function to display a ClassFile
 prettyPrintClassFile :: ClassFile -> String
@@ -269,11 +274,20 @@ prettyPrintClassFile classFile =
     "  Attributes\n" ++ showAttribute_Infos (array_attributes classFile) 1
 
 
+parseByteInstr :: Int -> String
+parseByteInstr instr = 
+    let opcode = instr .&. 0xFF  -- get least significant byte (opcode)
+        argument = instr `shiftR` 8
+    in if opCodeToByteCode_wArgs opcode /= NoInstr
+        then byteCodeToString_wArgs (opCodeToByteCode_wArgs opcode) argument
+        else byteCodeToString_woArgs (opCodeToByteCode_woArgs opcode)
+
+
 
 type Tupla5Int = [(Int, Int, Int, Int, Int)]
 type Tupla2Int = [(Int, Int)]
 type Tupla4Int = [(Int, Int, Int, Int)]
-type ListaInt  = [String] -- Todo change back to [Int]
+type ListaInt  = [Int]
 type ConstantPool_Count  = Int
 type Interfaces_Count    = Int
 type Fields_Count        = Int
