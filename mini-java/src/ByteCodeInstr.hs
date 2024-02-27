@@ -20,7 +20,11 @@ data ByteCode_Instr_wArgs =
     | If_ICmpGeq
     | If_ICmpGt
     | If_ACmpEq
-    | If_ACmpNeq 
+    | If_ACmpNeq
+    | InvokeVirtual
+    | InvokeStatic
+    | InvokeSpecial
+    | InvokeDynamic 
     | NoInstr
     deriving (Show, Eq)
 
@@ -72,10 +76,6 @@ data ByteCode_Instr_woArgs =
     | PutField
     | GetStatic
     | PutStatic
-    | InvokeVirtual
-    | InvokeStatic
-    | InvokeSpecial
-    | InvokeDynamic
     | Goto
     | Goto_W
     | IfNull
@@ -116,6 +116,10 @@ byteCodeToOpCode_wArgs instr arg = case instr of
     If_ICmpGt -> 0xA4 + arg  
     If_ACmpEq -> 0xA5 + arg  
     If_ACmpNeq -> 0xA6 + arg
+    InvokeVirtual -> 0xB6
+    InvokeStatic -> 0xB8
+    InvokeSpecial -> 0xB7
+    InvokeDynamic -> 0xBA
     
 
 -- Convert bytecode instructions w/o arguments to opcodes
@@ -167,10 +171,6 @@ byteCodeToOpCode_woArgs instr = case instr of
     PutField -> 0xB5
     GetStatic -> 0xB2
     PutStatic -> 0xB3
-    InvokeVirtual -> 0xB6
-    InvokeStatic -> 0xB8
-    InvokeSpecial -> 0xB7
-    InvokeDynamic -> 0xBA
     Goto -> 0xA7
     Goto_W -> 0xC8
     IfNull -> 0xC6
@@ -210,6 +210,10 @@ opCodeToByteCode_wArgs opcode = case opcode of
     0xA4 -> If_ICmpGt
     0xA5 -> If_ACmpEq
     0xA6 -> If_ACmpNeq
+    0xB6 -> InvokeVirtual
+    0xB8 -> InvokeStatic
+    0xB7 -> InvokeSpecial
+    0xBA -> InvokeDynamic
     _ -> NoInstr
 
 
@@ -263,10 +267,6 @@ opCodeToByteCode_woArgs opcode = case opcode of
     0xB5 -> PutField
     0xB2 -> GetStatic
     0xB3 -> PutStatic
-    0xB6 -> InvokeVirtual
-    0xB8 -> InvokeStatic
-    0xB7 -> InvokeSpecial
-    0xBA -> InvokeDynamic
     0xA7 -> Goto
     0xC8 -> Goto_W
     0xC6 -> IfNull
@@ -307,6 +307,10 @@ byteCodeToString_wArgs instr arg = case instr of
     If_ICmpGt -> "if_icmpgt " ++ show arg
     If_ACmpEq -> "if_acmpeq " ++ show arg
     If_ACmpNeq -> "if_acmpne " ++ show arg
+    InvokeVirtual -> "invokevirtual " ++ show arg  -- has normally two args, are together in one integer
+    InvokeStatic -> "invokestatic " ++ show arg
+    InvokeSpecial -> "invokespecial " ++ show arg
+    InvokeDynamic -> "invokedynamic " ++ show arg
     
 
 
@@ -359,10 +363,6 @@ byteCodeToString_woArgs instr = case instr of
     PutField -> "putfield"
     GetStatic -> "getstatic"
     PutStatic -> "putstatic"
-    InvokeVirtual -> "invokevirtual"
-    InvokeStatic -> "invokestatic"
-    InvokeSpecial -> "invokespecial"
-    InvokeDynamic -> "invokedynamic"
     Goto -> "goto"
     Goto_W -> "goto_w"
     IfNull -> "ifnull"
