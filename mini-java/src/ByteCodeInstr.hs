@@ -1,4 +1,4 @@
-module ByteCodeInstr where
+module Jvm.Data.ByteCodeInstr where
 
 
 -- each bytecide instruction with arguments
@@ -28,6 +28,15 @@ data ByteCode_Instr_wArgs =
 data ByteCode_Instr_woArgs =
     Nop
     | AConst_Null
+    | IConst_m1
+    | IConst_0
+    | IConst_1
+    | IConst_2
+    | IConst_3
+    | IConst_4
+    | IConst_5
+    | LConst_0
+    | LConst_1
     | ALoad_0
     | ALoad_1
     | ALoad_2
@@ -114,6 +123,15 @@ byteCodeToOpCode_woArgs :: ByteCode_Instr_woArgs -> Int
 byteCodeToOpCode_woArgs instr = case instr of
     Nop -> 0x00
     AConst_Null -> 0x01
+    IConst_m1 -> 0x02
+    IConst_0 -> 0x03
+    IConst_1 -> 0x04
+    IConst_2 -> 0x05
+    IConst_3 -> 0x06
+    IConst_4 -> 0x07
+    IConst_5 -> 0x08
+    LConst_0 -> 0x09
+    LConst_1 -> 0x0A
     ALoad_0 -> 0x2A
     ALoad_1 -> 0x2B
     ALoad_2 -> 0x2C
@@ -200,6 +218,16 @@ opCodeToByteCode_woArgs :: Int -> ByteCode_Instr_woArgs
 opCodeToByteCode_woArgs opcode = case opcode of
     0x00 -> Nop
     0x01 -> AConst_Null
+    0x01 -> AConst_Null
+    0x02 -> IConst_m1
+    0x03 -> IConst_0
+    0x04 -> IConst_1
+    0x05 -> IConst_2
+    0x06 -> IConst_3
+    0x07 -> IConst_4
+    0x08 -> IConst_5
+    0x09 -> LConst_0
+    0x0A -> LConst_1
     0x2A -> ALoad_0
     0x2B -> ALoad_1
     0x2C -> ALoad_2
@@ -287,6 +315,15 @@ byteCodeToString_woArgs :: ByteCode_Instr_woArgs -> String
 byteCodeToString_woArgs instr = case instr of
     Nop -> "nop"
     AConst_Null -> "aconst_null"
+    IConst_m1 -> "iconst_m1"
+    IConst_0 -> "iconst_0"
+    IConst_1 -> "iconst_1"
+    IConst_2 -> "iconst_2"
+    IConst_3 -> "iconst_3"
+    IConst_4 -> "iconst_4"
+    IConst_5 -> "iconst_5"
+    LConst_0 -> "lconst_0"
+    LConst_1 -> "lconst_1"
     ALoad_0 -> "aload_0"
     ALoad_1 -> "aload_1"
     ALoad_2 -> "aload_2"
