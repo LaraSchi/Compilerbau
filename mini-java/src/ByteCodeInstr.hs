@@ -1,6 +1,12 @@
 module Jvm.Data.ByteCodeInstr where
 
 
+data ByteCode_Instrs = [ByteCode_Instr]
+
+data ByteCode_Instr = 
+    ByteCode_Instr_wArgs Int
+    | ByteCode_Instr_woArgs
+
 -- each bytecide instruction with arguments
 data ByteCode_Instr_wArgs = 
     IConst
