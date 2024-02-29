@@ -223,12 +223,21 @@ showMethod_Infos (x : xss) n =
     "array_attr_mi:\n" ++ showAttribute_Infos (array_attr_mi x) 1 ++
     "}\n" ++ (showMethod_Infos xss (n + 1))
 
+-- Function to check if an Attribute_Info instance is an AttributeCode
+isAttributeCode :: Attribute_Info -> Bool
+isAttributeCode (AttributeCode _ _ _ _ _ _ _ _ _ _) = True
+isAttributeCode _                                  = False
+
 
 
 -- Function to display Attribute_Info items with indices
 showAttribute_Infos :: [Attribute_Info] -> Int -> String
 showAttribute_Infos [] n = ""
-showAttribute_Infos (x : xss) n = (show n) ++ "|" ++ (showAttributeInfo x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
+showAttribute_Infos (x : xss) n = 
+        if isAttributeCode x
+        then (show n) ++ "|" ++ (showAttributeInfo x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
+        else show x
+
 
 showAttributeInfo :: Attribute_Info -> String
 showAttributeInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen code exceptionsLen exceptions attributesCount attributes) =

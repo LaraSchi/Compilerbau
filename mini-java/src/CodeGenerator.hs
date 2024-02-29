@@ -4,7 +4,8 @@ import Syntax
 import ByteCodeInstr
 
 -- TODO init
--- TODO change output to ByteCode_Instrs
+-- TODO change output to ints
+-- TODO state monad for max stack size
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> String -- todo: -> ByteCode_Instrs

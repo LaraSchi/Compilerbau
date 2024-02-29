@@ -1,12 +1,6 @@
 module Jvm.Data.ByteCodeInstr where
 
 
-data ByteCode_Instrs = [ByteCode_Instr]
-
-data ByteCode_Instr = 
-    ByteCode_Instr_wArgs Int
-    | ByteCode_Instr_woArgs
-
 -- each bytecide instruction with arguments
 data ByteCode_Instr_wArgs = 
     IConst
@@ -30,7 +24,14 @@ data ByteCode_Instr_wArgs =
     | InvokeVirtual
     | InvokeStatic
     | InvokeSpecial
-    | InvokeDynamic 
+    | InvokeDynamic
+    | Goto
+    | Goto_W
+    | GetField
+    | PutField
+    | GetStatic
+    | PutStatic
+    | InstanceOf 
     | NoInstr
     deriving (Show, Eq)
 
@@ -76,14 +77,7 @@ data ByteCode_Instr_woArgs =
     | IOr
     | IXor
     | I2C
-    | InstanceOf
     | New
-    | GetField
-    | PutField
-    | GetStatic
-    | PutStatic
-    | Goto
-    | Goto_W
     | IfNull
     | IfNonNull
     | Return
@@ -122,10 +116,18 @@ byteCodeToOpCode_wArgs instr arg = case instr of
     If_ICmpGt -> 0xA4 + arg  
     If_ACmpEq -> 0xA5 + arg  
     If_ACmpNeq -> 0xA6 + arg
-    InvokeVirtual -> 0xB6
-    InvokeStatic -> 0xB8
-    InvokeSpecial -> 0xB7
-    InvokeDynamic -> 0xBA
+    InvokeVirtual -> 0xB6 + arg
+    InvokeStatic -> 0xB8 + arg 
+    InvokeSpecial -> 0xB7 + arg 
+    InvokeDynamic -> 0xBA + arg
+    GetField -> 0xB4 + arg
+    PutField -> 0xB5 + arg
+    GetStatic -> 0xB2 + arg
+    PutStatic -> 0xB3 + arg
+    Goto -> 0xA7 + arg
+    Goto_W -> 0xC8 + arg
+    InstanceOf -> 0xC1 + arg
+    
     
 
 -- Convert bytecode instructions w/o arguments to opcodes
@@ -171,14 +173,7 @@ byteCodeToOpCode_woArgs instr = case instr of
     IOr -> 0x80
     IXor -> 0x82
     I2C -> 0x92
-    InstanceOf -> 0xC1
     New -> 0xBB
-    GetField -> 0xB4
-    PutField -> 0xB5
-    GetStatic -> 0xB2
-    PutStatic -> 0xB3
-    Goto -> 0xA7
-    Goto_W -> 0xC8
     IfNull -> 0xC6
     IfNonNull -> 0xC7
     Return -> 0xB1
@@ -220,6 +215,13 @@ opCodeToByteCode_wArgs opcode = case opcode of
     0xB8 -> InvokeStatic
     0xB7 -> InvokeSpecial
     0xBA -> InvokeDynamic
+    0xB4 -> GetField
+    0xB5 -> PutField
+    0xB2 -> GetStatic
+    0xB3 -> PutStatic
+    0xA7 -> Goto
+    0xC8 -> Goto_W
+    0xC1 -> InstanceOf
     _ -> NoInstr
 
 
@@ -267,14 +269,7 @@ opCodeToByteCode_woArgs opcode = case opcode of
     0x80 -> IOr
     0x82 -> IXor
     0x92 -> I2C
-    0xC1 -> InstanceOf
     0xBB -> New
-    0xB4 -> GetField
-    0xB5 -> PutField
-    0xB2 -> GetStatic
-    0xB3 -> PutStatic
-    0xA7 -> Goto
-    0xC8 -> Goto_W
     0xC6 -> IfNull
     0xC7 -> IfNonNull
     0xB1 -> Return
@@ -317,6 +312,13 @@ byteCodeToString_wArgs instr arg = case instr of
     InvokeStatic -> "invokestatic " ++ show arg
     InvokeSpecial -> "invokespecial " ++ show arg
     InvokeDynamic -> "invokedynamic " ++ show arg
+    InstanceOf -> "instanceof" ++ show arg
+    GetField -> "getfield " ++ show arg
+    PutField -> "putfield " ++ show arg
+    GetStatic -> "getstatic " ++ show arg
+    PutStatic -> "putstatic " ++ show arg
+    Goto -> "goto " ++ show arg
+    Goto_W -> "goto_w " ++ show arg
     
 
 
@@ -363,14 +365,7 @@ byteCodeToString_woArgs instr = case instr of
     IOr -> "ior"
     IXor -> "ixor"
     I2C -> "i2c"
-    InstanceOf -> "instanceof"
     New -> "new"
-    GetField -> "getfield"
-    PutField -> "putfield"
-    GetStatic -> "getstatic"
-    PutStatic -> "putstatic"
-    Goto -> "goto"
-    Goto_W -> "goto_w"
     IfNull -> "ifnull"
     IfNonNull -> "ifnonnull"
     Return -> "return"
