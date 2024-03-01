@@ -11,32 +11,44 @@ import ClassFormat
 -- Function to generate assembly code for init method
 generateInitByteCode :: [CP_Info] -> [Int]
 generateInitByteCode cp = byteCodeToOpCode_woArgs ALoad_0 ++ 
-                          (byteCodeToOpCode_w2Args InvokeSpecial 0x00 0x00) ++  -- reference to init method??
-                          (byteCodeToOpCode_woArgs Nop) ++
-                          (byteCodeToOpCode_woArgs AConst_Null) ++
-                          byteCodeToOpCode_woArgs Return
+                        (byteCodeToOpCode_w2Args InvokeSpecial 0x00 0x01) ++  -- reference to init method??
+                        byteCodeToOpCode_woArgs Return
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> [Int] -- todo: -> ByteCode_Instrs
-generateCodeForMethod (MethodDecl _ _ name params blockStmt) cp_infos =  -- TODO params auf Stack
-  generateCodeForBlockStmt blockStmt cp_infos
+generateCodeForMethod (MethodDecl visibility returnType name params blockStmt) cp_infos =  -- TODO params auf Stack
+    byteCodeToOpCode_woArgs ALoad_0 ++  -- every method starts with this instruction
+    generateCodeForBlockStmt blockStmt cp_infos ++
+    if returnType == IntT || returnType == BoolT || returnType == CharT
+        then byteCodeToOpCode_woArgs IReturn
+        else if returnType == VoidT
+            then byteCodeToOpCode_woArgs Return
+            else byteCodeToOpCode_woArgs AReturn
 
 -- Function to generate assembly code for BlockStmt
 generateCodeForBlockStmt :: BlockStmt -> [CP_Info] -> [Int] -- todo: -> ByteCode_Instrs
 generateCodeForBlockStmt [] cp_infos = []
 generateCodeForBlockStmt (stmt:stmts) cp_infos =
-  generateCodeForStmt stmt ++ generateCodeForBlockStmt stmts cp_infos
+    generateCodeForStmt stmt ++ generateCodeForBlockStmt stmts cp_infos
 
 -- Function to generate assembly code for Stmt
 generateCodeForStmt :: Stmt -> [Int] -- todo: -> ByteCode_Instrs
 generateCodeForStmt (TypedStmt stmt _) = generateCodeForStmt stmt
-generateCodeForStmt (ReturnStmt expr) = generateCodeForExpression expr
+generateCodeForStmt (ReturnStmt expr) = []  -- ireturn if int, char or boolean (bei Klassen areturn) -> bei methodcode am Ende hinzufügen?
 generateCodeForStmt (WhileStmt expr blockStmt) = generateCodeForExpression expr --Todo Blockstatement?
-generateCodeForStmt (LocalVarDeclStmt thisType name) = [] -- name
-generateCodeForStmt (LocalVarRefStmt thisType name expr) = [] ++ generateCodeForExpression expr  -- name ++ generateCodeForExpression expr
+generateCodeForStmt (LocalVarDeclStmt thisType name) = []  -- ist das nur die Deklaration ohne Zuweisung? da passiert nämlich im Code nichts
+generateCodeForStmt (LocalVarRefStmt thisType name expr) = 
+    if thisType == BoolT
+        then if expr == (BoolLitExpr True) 
+            then byteCodeToOpCode_woArgs IConst_1 ++ byteCodeToOpCode_woArgs IStore_1  -- istore nur bei erster variable ... woher weiß ich, wie viele ich schon habe
+            else if expr == (BoolLitExpr False) 
+                then byteCodeToOpCode_woArgs IConst_0 ++ byteCodeToOpCode_woArgs IStore_1  -- istore nur bei erster variable ... woher weiß ich, wie viele ich schon habe
+                else [] -- dummy
+        else [] --dummy
 generateCodeForStmt (IfStmt expr blockStmt) = generateCodeForExpression expr --Todo Blockstatement?
 generateCodeForStmt (IfElseStmt expr blockStmt maybeBlockStmt) = generateCodeForExpression expr --Todo Blockstatement?
 generateCodeForStmt (StmtExprStmt stmtExpr) = generateCodeForStmtExpr stmtExpr
+
 
 
 
@@ -44,7 +56,7 @@ generateCodeForStmt (StmtExprStmt stmtExpr) = generateCodeForStmtExpr stmtExpr
 generateCodeForStmtExpr :: StmtExpr -> [Int] -- todo: -> ByteCode_Instrs
 generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) = generateCodeForStmtExpr stmtExpr
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) =
-  generateCodeForExpression expr1 ++ generateCodeForExpression expr2
+    generateCodeForExpression expr1 ++ generateCodeForExpression expr2
 generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr
 generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr
 
@@ -73,10 +85,10 @@ generateCodeForExpression (StmtExprExpr stmtExpr) = generateCodeForStmtExpr stmt
 -- Function to generate assembly code for NewExpr
 generateCodeForNewExpr :: NewExpr -> [Int] -- todo: -> ByteCode_Instrs
 generateCodeForNewExpr (NewExpr newType args) = []
-  --"new " ++ generateCodeForNewType newType ++ ", " ++ -- Todo get index in constantpool
-  --"dup, " ++
-  --generateCodeForExpressions args ++
-  --"invokespecial " -- Todo index of a Method ref
+    --"new " ++ generateCodeForNewType newType ++ ", " ++ -- Todo get index in constantpool
+    --"dup, " ++
+    --generateCodeForExpressions args ++
+    --"invokespecial " -- Todo index of a Method ref
 
 -- Function to generate assembly code for NewType
 generateCodeForNewType :: NewType -> [Int] -- todo: -> ByteCode_Instrs
@@ -86,5 +98,5 @@ generateCodeForNewType (NewType name) = [] -- name  -- This is a simplistic appr
 generateCodeForExpressions :: [Expression] -> [Int] -- todo: -> ByteCode_Instrs
 generateCodeForExpressions [] = []
 generateCodeForExpressions (expr:exprs) =
-  generateCodeForExpression expr ++ generateCodeForExpressions exprs
+    generateCodeForExpression expr ++ generateCodeForExpressions exprs
 
