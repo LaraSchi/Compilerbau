@@ -234,13 +234,12 @@ isAttributeCode _                                  = False
 showAttribute_Infos :: [Attribute_Info] -> Int -> String
 showAttribute_Infos [] n = ""
 showAttribute_Infos (x : xss) n = 
-        if isAttributeCode x
-        then (show n) ++ "|" ++ (showAttributeInfo x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
+    if isAttributeCode x
+        then (show n) ++ "|" ++ (showCodeAttrInfo x) ++ "\n" ++ (showAttribute_Infos xss (n+1))
         else show x
 
-
-showAttributeInfo :: Attribute_Info -> String
-showAttributeInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen code exceptionsLen exceptions attributesCount attributes) =
+showCodeAttrInfo :: Attribute_Info -> String
+showCodeAttrInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen code exceptionsLen exceptions attributesCount attributes) =
     "AttributeCode {\n" ++
     "  attribute_name_index: " ++ show nameIndex ++ "\n" ++
     "  attribute_length: " ++ show attrLen ++ "\n" ++
@@ -255,10 +254,33 @@ showAttributeInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen cod
     "}\n"
 
 
--- Function to format ListaInt
+showBytes :: ListaInt -> String
+showBytes [] = ""
+showBytes (x:xs) = "\t" ++ show x ++ "\n" ++ showBytes xs
+
+
+-- Function to format ListaInt  TODO: better parsing: List only contains bytes -> when opcode with two arguments the next two list elements are the args
 showCode :: ListaInt -> String
 showCode [] = ""
-showCode (x:xs) = "\t" ++ parseByteInstr x ++ "\n " ++ showCode xs
+showCode (opc:arg1:arg2:arg3:arg4:xs) =
+    if opCodeToByteCode_w4Args opc /= No4ArgInstr
+        then "\t" ++ byteCodeToString_w4Args (opCodeToByteCode_w4Args opc) arg1 arg2 arg3 arg4 ++ "\n " ++ showCode xs
+        else if opCodeToByteCode_w2Args opc /= No2ArgInstr
+            then "\t" ++ byteCodeToString_w2Args (opCodeToByteCode_w2Args opc) arg1 arg2 ++ "\n " ++ showCode (arg3:arg4:xs)
+            else if opCodeToByteCode_w1Arg opc /= No1ArgInstr
+                then "\t" ++ byteCodeToString_w1Arg (opCodeToByteCode_w1Arg opc) arg1 ++ "\n " ++ showCode (arg2:arg3:arg4:xs)
+                else "\t" ++ byteCodeToString_woArgs (opCodeToByteCode_woArgs opc) ++ "\n " ++ showCode (arg1:arg2:arg3:arg4:xs)
+showCode (opc:arg1:arg2:xs) =
+    if opCodeToByteCode_w2Args opc /= No2ArgInstr
+        then "\t" ++ byteCodeToString_w2Args (opCodeToByteCode_w2Args opc) arg1 arg2 ++ "\n " ++ showCode xs
+        else if opCodeToByteCode_w1Arg opc /= No1ArgInstr
+            then "\t" ++ byteCodeToString_w1Arg (opCodeToByteCode_w1Arg opc) arg1 ++ "\n " ++ showCode (arg2:xs)
+            else "\t" ++ byteCodeToString_woArgs (opCodeToByteCode_woArgs opc) ++ "\n " ++ showCode (arg1:arg2:xs)
+showCode (opc:arg1:xs) = 
+    if opCodeToByteCode_w1Arg opc /= No1ArgInstr
+        then "\t" ++ byteCodeToString_w1Arg (opCodeToByteCode_w1Arg opc) arg1 ++ "\n " ++ showCode xs
+        else "\t" ++ byteCodeToString_woArgs (opCodeToByteCode_woArgs opc) ++ "\n " ++ showCode (arg1:xs)
+showCode (opc:xs) = "\t" ++ byteCodeToString_woArgs (opCodeToByteCode_woArgs opc) ++ "\n " ++ showCode xs
 
 
 
@@ -281,22 +303,6 @@ prettyPrintClassFile classFile =
     "  Methods:\n" ++ showMethod_Infos (array_methods classFile) 1 ++ "\n" ++
     "  Attributes Count: " ++ show (count_attributes classFile) ++ "\n" ++
     "  Attributes\n" ++ showAttribute_Infos (array_attributes classFile) 1
-
-
-parseByteInstr :: Int -> String
-parseByteInstr instr = 
-    let opcode = instr .&. 0xFF  -- get least significant byte (opcode)
-        argument1 = instr `shiftR` 8
-        argument2 = instr `shiftR` 16
-        argument3 = instr `shiftR` 24
-        argument4 = instr `shiftR` 32
-    in if opCodeToByteCode_w4Args opcode /= No4ArgInstr
-            then byteCodeToString_w4Args (opCodeToByteCode_w4Args opcode) argument1 argument2 argument3 argument4
-            else if opCodeToByteCode_w2Args opcode /= No2ArgInstr
-            then byteCodeToString_w2Args (opCodeToByteCode_w2Args opcode) argument1 argument2
-            else if opCodeToByteCode_w1Arg opcode /= No1ArgInstr
-                    then byteCodeToString_w1Arg (opCodeToByteCode_w1Arg opcode) argument1
-                    else byteCodeToString_woArgs (opCodeToByteCode_woArgs opcode)
 
 
 
