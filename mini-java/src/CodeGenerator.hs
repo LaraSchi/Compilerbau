@@ -7,6 +7,9 @@ import ByteCodeInstr
 -- TODO change output to ints
 -- TODO state monad for max stack size
 
+-- Function to generate assembly code for init method
+-- generateInitByteCode :: 
+
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> String -- todo: -> ByteCode_Instrs
 generateCodeForMethod (MethodDecl _ _ name params blockStmt) =

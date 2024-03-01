@@ -286,10 +286,17 @@ prettyPrintClassFile classFile =
 parseByteInstr :: Int -> String
 parseByteInstr instr = 
     let opcode = instr .&. 0xFF  -- get least significant byte (opcode)
-        argument = instr `shiftR` 8
-    in if opCodeToByteCode_wArgs opcode /= NoInstr
-        then byteCodeToString_wArgs (opCodeToByteCode_wArgs opcode) argument
-        else byteCodeToString_woArgs (opCodeToByteCode_woArgs opcode)
+        argument1 = instr `shiftR` 8
+        argument2 = instr `shiftR` 16
+        argument3 = instr `shiftR` 24
+        argument4 = instr `shiftR` 32
+    in if opCodeToByteCode_w4Args opcode /= No4ArgInstr
+            then byteCodeToString_w4Args (opCodeToByteCode_w4Args opcode) argument1 argument2 argument3 argument4
+            else if opCodeToByteCode_w2Args opcode /= No2ArgInstr
+            then byteCodeToString_w2Args (opCodeToByteCode_w2Args opcode) argument1 argument2
+            else if opCodeToByteCode_w1Arg opcode /= No1ArgInstr
+                    then byteCodeToString_w1Arg (opCodeToByteCode_w1Arg opcode) argument1
+                    else byteCodeToString_woArgs (opCodeToByteCode_woArgs opcode)
 
 
 

@@ -1,18 +1,23 @@
-module Jvm.Data.ByteCodeInstr where
+module ByteCodeInstr where
+
+import Data.Bits
 
 
--- each bytecide instruction with arguments
-data ByteCode_Instr_wArgs = 
-    IConst
-    | BIPush
-    | Ldc
-    | Ldc_W
-    | Ldc2_W
+-- every byte code instruction with one argument
+data ByteCode_Instr_w1Arg = 
+    BIPush
     | ALoad
     | AStore
     | ILoad
     | IStore
-    | If
+    | Ldc
+    | No1ArgInstr
+    deriving (Show, Eq)
+
+
+-- every byte code instruction with two arguments
+data ByteCode_Instr_w2Args = 
+    If    
     | If_ICmpEq
     | If_ICmpNeq
     | If_ICmpLeq
@@ -21,19 +26,31 @@ data ByteCode_Instr_wArgs =
     | If_ICmpGt
     | If_ACmpEq
     | If_ACmpNeq
+    | IfNull
+    | IfNonNull
     | InvokeVirtual
     | InvokeStatic
     | InvokeSpecial
-    | InvokeDynamic
     | Goto
-    | Goto_W
     | GetField
     | PutField
     | GetStatic
     | PutStatic
     | InstanceOf 
-    | NoInstr
+    | Ldc_W
+    | Ldc2_W
+    | New
+    | No2ArgInstr
     deriving (Show, Eq)
+
+
+-- every byte code instruction with four argument
+data ByteCode_Instr_w4Args = 
+    Goto_W
+    | InvokeDynamic
+    | No4ArgInstr
+    deriving (Show, Eq)
+
 
 -- each bytecode instruction w/o arguments
 data ByteCode_Instr_woArgs =
@@ -77,9 +94,6 @@ data ByteCode_Instr_woArgs =
     | IOr
     | IXor
     | I2C
-    | New
-    | IfNull
-    | IfNonNull
     | Return
     | IReturn
     | AReturn
@@ -92,41 +106,63 @@ data ByteCode_Instr_woArgs =
     | Pop
     | Pop2
     | Swap
+    | NoInstr
     deriving (Show)
 
 
+
 -- Convert bytecode instructions with arguments to opcodes
-byteCodeToOpCode_wArgs :: ByteCode_Instr_wArgs -> Int -> Int
-byteCodeToOpCode_wArgs instr arg = case instr of
-    IConst -> 0x02 + arg
-    BIPush -> 0x10 + arg  
-    Ldc -> 0x12 + arg  
-    Ldc_W -> 0x13 + arg  
-    Ldc2_W -> 0x14 + arg  
-    ALoad -> 0x19 + arg  
-    AStore -> 0x3A + arg  
-    ILoad -> 0x15 + arg  
-    IStore -> 0x36 + arg  
-    If -> 0x99 + arg  
-    If_ICmpEq -> 0x9F + arg  
-    If_ICmpNeq -> 0xA0 + arg  
-    If_ICmpLeq -> 0xA1 + arg  
-    If_ICmpLt -> 0xA2 + arg  
-    If_ICmpGeq -> 0xA3 + arg  
-    If_ICmpGt -> 0xA4 + arg  
-    If_ACmpEq -> 0xA5 + arg  
-    If_ACmpNeq -> 0xA6 + arg
-    InvokeVirtual -> 0xB6 + arg
-    InvokeStatic -> 0xB8 + arg 
-    InvokeSpecial -> 0xB7 + arg 
-    InvokeDynamic -> 0xBA + arg
-    GetField -> 0xB4 + arg
-    PutField -> 0xB5 + arg
-    GetStatic -> 0xB2 + arg
-    PutStatic -> 0xB3 + arg
-    Goto -> 0xA7 + arg
-    Goto_W -> 0xC8 + arg
-    InstanceOf -> 0xC1 + arg
+byteCodeToOpCode_w1Arg :: ByteCode_Instr_w1Arg -> Int -> Int
+byteCodeToOpCode_w1Arg opc arg = case opc of
+    BIPush -> (arg `shiftL` 8) + 0x10
+    ALoad -> (arg `shiftL` 8) + 0x19
+    AStore -> (arg `shiftL` 8) + 0x3A
+    ILoad -> (arg `shiftL` 8) + 0x15
+    IStore -> (arg `shiftL` 8) + 0x36
+    Ldc -> (arg `shiftL` 8) + 0x12
+
+
+-- Convert bytecode instructions with arguments to opcodes
+byteCodeToOpCode_w2Args :: ByteCode_Instr_w2Args -> Int -> Int -> Int
+byteCodeToOpCode_w2Args opc arg1 arg2 = case opc of
+    If -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0x99
+    If_ICmpEq -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0x9F
+    If_ICmpNeq -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA0
+    If_ICmpLeq -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA4
+    If_ICmpLt -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA1
+    If_ICmpGeq -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA2
+    If_ICmpGt -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA3
+    If_ACmpEq -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA5
+    If_ACmpNeq -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA6
+    IfNull -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xC6
+    IfNonNull -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xC7
+    InvokeVirtual -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB6
+    InvokeStatic -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB8
+    InvokeSpecial -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB7
+    Goto -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xA7
+    GetField -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB4
+    PutField -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB5
+    GetStatic -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB2
+    PutStatic -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xB3
+    InstanceOf -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xC1
+    Ldc_W -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0x13
+    Ldc2_W -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0x14
+    New -> (arg1 `shiftL` 16) + (arg2 `shiftL` 8) + 0xBB
+
+    
+-- Convert bytecode instructions with arguments to opcodes
+byteCodeToOpCode_w4Args :: ByteCode_Instr_w4Args -> Int -> Int -> Int -> Int -> Int
+byteCodeToOpCode_w4Args opc arg1 arg2 arg3 arg4 = case opc of
+    InvokeDynamic -> (arg1 `shiftL` 32) 
+                    + (arg2 `shiftL` 24) 
+                    + (0x0 `shiftL` 16) 
+                    + (0x0 `shiftL` 8) 
+                    + 0xBA
+    Goto_W -> (arg1 `shiftL` 24)
+            + (arg2 `shiftL` 24) 
+            + (arg3 `shiftL` 16) 
+            + (arg4 `shiftL` 8) 
+            + 0xC8
     
     
 
@@ -173,9 +209,6 @@ byteCodeToOpCode_woArgs instr = case instr of
     IOr -> 0x80
     IXor -> 0x82
     I2C -> 0x92
-    New -> 0xBB
-    IfNull -> 0xC6
-    IfNonNull -> 0xC7
     Return -> 0xB1
     IReturn -> 0xAC
     AReturn -> 0xB0
@@ -191,43 +224,57 @@ byteCodeToOpCode_woArgs instr = case instr of
 
 
 -- Convert opcode to bytecode instruction
-opCodeToByteCode_wArgs :: Int -> ByteCode_Instr_wArgs
-opCodeToByteCode_wArgs opcode = case opcode of
-    0x02 -> IConst
+opCodeToByteCode_w1Arg :: Int -> ByteCode_Instr_w1Arg
+opCodeToByteCode_w1Arg opc = case opc of
     0x10 -> BIPush
-    0x12 -> Ldc
-    0x13 -> Ldc_W
-    0x14 -> Ldc2_W
     0x19 -> ALoad
     0x3A -> AStore
     0x15 -> ILoad
     0x36 -> IStore
+    0x12 -> Ldc
+    _ -> No1ArgInstr
+
+
+-- Convert opcode to bytecode instruction
+opCodeToByteCode_w2Args :: Int -> ByteCode_Instr_w2Args
+opCodeToByteCode_w2Args opc = case opc of
     0x99 -> If
     0x9F -> If_ICmpEq
     0xA0 -> If_ICmpNeq
-    0xA1 -> If_ICmpLeq
-    0xA2 -> If_ICmpLt
-    0xA3 -> If_ICmpGeq
-    0xA4 -> If_ICmpGt
+    0xA4 -> If_ICmpLeq
+    0xA1 -> If_ICmpLt
+    0xA2 -> If_ICmpGeq
+    0xA3 -> If_ICmpGt
     0xA5 -> If_ACmpEq
     0xA6 -> If_ACmpNeq
+    0xC6 -> IfNull
+    0xC7 -> IfNonNull
     0xB6 -> InvokeVirtual
     0xB8 -> InvokeStatic
     0xB7 -> InvokeSpecial
-    0xBA -> InvokeDynamic
+    0xA7 -> Goto
     0xB4 -> GetField
     0xB5 -> PutField
     0xB2 -> GetStatic
     0xB3 -> PutStatic
-    0xA7 -> Goto
-    0xC8 -> Goto_W
     0xC1 -> InstanceOf
-    _ -> NoInstr
+    0x13 -> Ldc_W
+    0x14 -> Ldc2_W
+    0xBB -> New
+    _ -> No2ArgInstr
+
+
+-- Convert opcode to bytecode instruction
+opCodeToByteCode_w4Args :: Int -> ByteCode_Instr_w4Args
+opCodeToByteCode_w4Args opc = case opc of
+    0xBA -> InvokeDynamic 
+    0xC8 -> Goto_W
+    _ -> No4ArgInstr
 
 
 -- Convert opcode to bytecode instruction
 opCodeToByteCode_woArgs :: Int -> ByteCode_Instr_woArgs
-opCodeToByteCode_woArgs opcode = case opcode of
+opCodeToByteCode_woArgs opc = case opc of
     0x00 -> Nop
     0x01 -> AConst_Null
     0x01 -> AConst_Null
@@ -269,9 +316,6 @@ opCodeToByteCode_woArgs opcode = case opcode of
     0x80 -> IOr
     0x82 -> IXor
     0x92 -> I2C
-    0xBB -> New
-    0xC6 -> IfNull
-    0xC7 -> IfNonNull
     0xB1 -> Return
     0xAC -> IReturn
     0xB0 -> AReturn
@@ -284,43 +328,61 @@ opCodeToByteCode_woArgs opcode = case opcode of
     0x57 -> Pop
     0x58 -> Pop2
     0x5F -> Swap
-    _ -> error "no instruction"
+    _ -> NoInstr
 
 
 -- Function to convert bytecode instruction to string
-byteCodeToString_wArgs :: ByteCode_Instr_wArgs -> Int -> String
-byteCodeToString_wArgs instr arg = case instr of
-    IConst -> "iconst " ++ show arg
+byteCodeToString_w1Arg :: ByteCode_Instr_w1Arg -> Int -> String
+byteCodeToString_w1Arg opc arg = case opc of
     BIPush -> "bipush " ++ show arg
-    Ldc -> "ldc " ++ show arg
-    Ldc_W -> "ldc_w " ++ show arg
-    Ldc2_W -> "ldc2_w " ++ show arg
     ALoad -> "aload " ++ show arg
     AStore -> "astore " ++ show arg
     ILoad -> "iload " ++ show arg
     IStore -> "istore " ++ show arg
-    If -> "if " ++ show arg
-    If_ICmpEq -> "if_icmpeq " ++ show arg
-    If_ICmpNeq -> "if_icmpne " ++ show arg
-    If_ICmpLeq -> "if_icmple " ++ show arg
-    If_ICmpLt -> "if_icmplt " ++ show arg
-    If_ICmpGeq -> "if_icmpge " ++ show arg
-    If_ICmpGt -> "if_icmpgt " ++ show arg
-    If_ACmpEq -> "if_acmpeq " ++ show arg
-    If_ACmpNeq -> "if_acmpne " ++ show arg
-    InvokeVirtual -> "invokevirtual " ++ show arg  -- has normally two args, are together in one integer
-    InvokeStatic -> "invokestatic " ++ show arg
-    InvokeSpecial -> "invokespecial " ++ show arg
-    InvokeDynamic -> "invokedynamic " ++ show arg
-    InstanceOf -> "instanceof" ++ show arg
-    GetField -> "getfield " ++ show arg
-    PutField -> "putfield " ++ show arg
-    GetStatic -> "getstatic " ++ show arg
-    PutStatic -> "putstatic " ++ show arg
-    Goto -> "goto " ++ show arg
-    Goto_W -> "goto_w " ++ show arg
-    
+    Ldc -> "ldc " ++ show arg
 
+-- Function to convert bytecode instruction to string
+byteCodeToString_w2Args :: ByteCode_Instr_w2Args -> Int -> Int -> String
+byteCodeToString_w2Args opc arg1 arg2 = case opc of
+    If -> "if " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ICmpEq -> "if_icmpeq " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ICmpNeq -> "if_icmpne " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ICmpLeq -> "if_icmple " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ICmpLt -> "if_icmplt " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ICmpGeq -> "if_icmpge " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ICmpGt -> "if_icmpgt " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ACmpEq -> "if_acmpeq " ++ show ((arg1 `shiftL` 8) + arg2)
+    If_ACmpNeq -> "if_acmpne " ++ show ((arg1 `shiftL` 8) + arg2)
+    IfNull -> "ifnull " ++ show ((arg1 `shiftL` 8) + arg2)
+    IfNonNull -> "ifnonnull " ++ show ((arg1 `shiftL` 8) + arg2)
+    InvokeVirtual -> "invokevirtual " ++ show ((arg1 `shiftL` 8) + arg2)
+    InvokeStatic -> "invokestatic " ++ show ((arg1 `shiftL` 8) + arg2)
+    InvokeSpecial -> "invokespecial " ++ show ((arg1 `shiftL` 8) + arg2)
+    Goto -> "goto " ++ show ((arg1 `shiftL` 8) + arg2)
+    GetField -> "getfield " ++ show ((arg1 `shiftL` 8) + arg2)
+    PutField -> "putfield " ++ show ((arg1 `shiftL` 8) + arg2)
+    GetStatic -> "getstatic " ++ show ((arg1 `shiftL` 8) + arg2)
+    PutStatic -> "putstatic " ++ show ((arg1 `shiftL` 8) + arg2)
+    InstanceOf -> "instanceof" ++ show ((arg1 `shiftL` 8) + arg2)
+    Ldc_W -> "ldc_w " ++ show ((arg1 `shiftL` 8) + arg2)
+    Ldc2_W -> "ldc2_w " ++ show ((arg1 `shiftL` 8) + arg2)
+    New -> "new " ++ show ((arg1 `shiftL` 8) + arg2)
+
+
+
+-- Function to convert bytecode instruction to string
+byteCodeToString_w4Args :: ByteCode_Instr_w4Args -> Int -> Int -> Int -> Int -> String
+byteCodeToString_w4Args opc arg1 arg2 arg3 arg4 = case opc of
+    InvokeDynamic -> "invokedynamic " 
+                    ++ show ((arg1 `shiftL` 24) 
+                            + (arg2 `shiftL` 16) 
+                            + (0x0 `shiftL` 8) 
+                            + 0x0)
+    Goto_W -> "goto_w "
+                    ++ show ((arg1 `shiftL` 24) 
+                            + (arg2 `shiftL` 16) 
+                            + (arg3 `shiftL` 8) 
+                            + arg4)   
 
 -- Function to convert bytecode instruction to string
 byteCodeToString_woArgs :: ByteCode_Instr_woArgs -> String
@@ -365,9 +427,6 @@ byteCodeToString_woArgs instr = case instr of
     IOr -> "ior"
     IXor -> "ixor"
     I2C -> "i2c"
-    New -> "new"
-    IfNull -> "ifnull"
-    IfNonNull -> "ifnonnull"
     Return -> "return"
     IReturn -> "ireturn"
     AReturn -> "areturn"
