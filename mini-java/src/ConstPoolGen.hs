@@ -80,6 +80,7 @@ generateClassConstantPool (Class className fields methods) = do
     generateMethodRefConstantPool "<init>" "()V" (NewType "java/lang/Object")
     -- Store declarations (Methods and Fields)
     let fieldsAsFieldOrMethod = map ThisFieldDekl fields
+
     mapM_ (\field -> generateFieldDeklCP field fieldsAsFieldOrMethod className) fields
     mapM_ (\method -> generateMethodDeklCP method) methods
     -- Iterate over methods and store references (Methods and Fields)
@@ -108,19 +109,16 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt fieldOrMethodDecls className
   LocalVarDeclStmt thisType name maybeExpr -> do
-        -- Is it an instantiation of this class?
         case fieldOrMethodDecls of
+            -- is it a FieldRef?
             (ThisFieldDekl _) : _  -> checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
+            -- is it a Methodref?
             (ThisMethodDekl methodDecl) : _  -> do
-                when (((typeToString thisType) == (newTypeToString className)) ) $ do -- Todo && notFieldDeklr
-                      --trace (show "Variable type " ++ (typeToString thisType)) $ return ()
+                when (((typeToString thisType) == (newTypeToString className)) ) $ do
                       let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> (typeToString thisType) == methodName) (unwrapToMethodList fieldOrMethodDecls)
-                      --trace (show methodRefs) $ return ()
                       -- Possibly add class init MethodRef
-                      if (length methodRefs == 0)
+                      if (length methodRefs == 0) -- Todo  why?
                            then do
-                               --trace (show "second Method ref" ++ (typeToString thisType)) $ return ()
-                               --trace (show "second Method ref" ++ name) $ return ()
                                _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
                                return ()
                            else do
@@ -128,28 +126,31 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
                                          let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
                                          generateMethodRefConstantPool "<init>" methodType className) methodRefs
                                return ()
+            [] -> return ()
   IfElseStmt expr blockStmt1 blockStmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt1 fieldOrMethodDecls className
     maybe (return ()) (\stmt -> findReferencesStmtList stmt fieldOrMethodDecls className) blockStmt2
   StmtExprStmt stmtExpr -> findReferencesStmtExpr stmtExpr fieldOrMethodDecls className
-  Print stringToPrint -> trace "in print" $ do
+  Print stringToPrint -> do
     createStringEntry stringToPrint
     generateFieldRefConstantPool "out" "Ljava/io/PrintStream;" (NewType"java/lang/System")
     generateMethodRefConstantPool "println" "(Ljava/lang/String;)V" (NewType "java/io/PrintStream")
     return ()
-  _ -> (return ())
+
 
 findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldOrMethodDecls className = case expr of
-  TypedExpr expr _ -> findReferencesExpr expr fieldOrMethodDecls className
-  SuperExpr -> (return ()) -- Todo
-  SuperExpr -> (return ()) -- Todo
+  TypedExpr e _ -> do
+        findReferencesExpr e fieldOrMethodDecls className
+  ThisExpr -> (return ())
+  SuperExpr -> (return ())
   LocalOrFieldVarExpr name -> trace ("LocalOrFieldVarExpr is found: " ++ name) $ return ()
   FieldVarExpr name -> checkAndGenRef name fieldOrMethodDecls className -- Todo
   LocalVarExpr name -> checkAndGenRef name fieldOrMethodDecls className -- Todo
-  InstVarExpr expr name -> do
-    findReferencesExpr expr fieldOrMethodDecls className
+  InstVarExpr e name -> do
+    trace ("InstVarExpr is found: " ++ name) $ return ()
+    findReferencesExpr e fieldOrMethodDecls className
     checkAndGenRef name fieldOrMethodDecls className -- Todo What is this? # FieldRef im CP
   UnaryOpExpr _ e -> findReferencesExpr e fieldOrMethodDecls className
   BinOpExpr e1 _ e2 -> do
@@ -202,7 +203,6 @@ checkAndGenRef name decls className = case decls of
 
 
       mapM_ (\(FieldDecl fieldType fieldName maybeExpr) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
-      --trace "checkAndGenRef" $ return ()
     (ThisMethodDekl _ : _) -> do
 
       let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> name == methodName) (unwrapToMethodList decls)
@@ -211,6 +211,7 @@ checkAndGenRef name decls className = case decls of
           generateMethodRefConstantPool methodName methodType className) methodRefs
     _ -> return ()
 
+----------------------------------------------------------------------------
 -- Helper functions to create specific constant pool entries
 -- The Entries are added to the state and the Info is returned for index retrieval.
 
@@ -221,10 +222,7 @@ generateFieldDeklCP field fieldOrMethodDecls className = case field of
         _ <- createUtf8Entry (typeToString fieldType)
         return ()
     (FieldDecl fieldType fieldName expr) -> checkAndGenRef fieldName fieldOrMethodDecls className
-    -- (FieldRef fieldName _) -> checkAndGenRef fieldName fieldOrMethodDecls className -- Todo
 
-
-    -- Todo data Field = FieldDecl Type String (Maybe Expression)
 
 
 
@@ -248,7 +246,6 @@ generateFieldRefConstantPool fieldName thisType className = do
 
 -- Function to generate constant pool entries for a method references
 generateMethodRefConstantPool :: String -> String -> NewType -> ConstantpoolStateM CP_Info
---trace (show "in generateMethodRefConstantPool" ++ (newTypeToString className)) $
 generateMethodRefConstantPool methodName thisType className = do
       classInfo <- createClassEntry className
       classNameIdx <- getIdx classInfo

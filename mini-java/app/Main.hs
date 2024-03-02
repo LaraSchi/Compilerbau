@@ -10,8 +10,9 @@ import ClassFileGen(generateClassFile)
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/explWhile.minijava" -- read file
+    fileContent <- readFile "code/advancedExamples/addN.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
+
     putStrLn ""
     putStrLn "parsing file content"
     putStrLn ""
@@ -24,6 +25,7 @@ main = do
             Right t' -> do
                 print t'
                 let sampleCP = startBuildProcess t' -- Todo uncomment
+                putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
                 putStrLn constPoolShow
 
