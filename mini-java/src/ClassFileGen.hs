@@ -7,6 +7,7 @@ import Parser
 import ClassFormat
 import Data.Typeable
 import Data.List (elemIndex, intercalate)
+import ByteCodeInstr
 
 
 generateClassFile :: Program -> CP_Infos -> ClassFile
@@ -100,7 +101,7 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
 generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> Attribute_Infos
 generateAttributeCodeArray methodDecl cpInfosList =
     let newAttributeInfo :: Attribute_Infos
-        code = [0, 0, 0, 0]                 -- Placeholder TODO: call function to build code
+        code = convertToByteCode (generateCodeForMethod methodDecl cpInfosList) -- [0, 0, 0, 0]                 -- Placeholder TODO: call function to build code
         newAttributeInfo =
             [AttributeCode
                 { index_name_attr = cpIndexFrom "Code" cpInfosList  -- attribute_name_index
@@ -115,4 +116,8 @@ generateAttributeCodeArray methodDecl cpInfosList =
                 , array_attr_attr = []
                 }]
     in newAttributeInfo
+
+convertToByteCode :: [ByteCodeInstrs] -> [Int]
+convertToByteCode [] = []
+convertToByteCode (i:is) = convertInstrToByteCode i ++ convertToByteCode is
 
