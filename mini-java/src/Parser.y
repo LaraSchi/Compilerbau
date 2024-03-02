@@ -123,6 +123,7 @@ Expression
   : this                            { ThisExpr }
   | super                           { SuperExpr }
   | identifier                      { LocalOrFieldVarExpr $1 }
+  | StmtExpr                        { StmtExprExpr $1 }
   | this '.' identifier             { FieldVarExpr $3 }
   | Expression '.' identifier       { InstVarExpr $1 $3 }
   | UnaryOperator Expression        { UnaryOpExpr $1 $2 }
@@ -132,7 +133,6 @@ Expression
   | char                            { CharLitExpr $1 }
   | string                          { StringLitExpr $1 }
   | null                            { Null }
-  | StmtExpr                        { StmtExprExpr $1 }
   | '(' Expression ')'              { $2 }
 
 
@@ -143,6 +143,8 @@ NewExpression
 MethodCall
   : Expression '.' identifier '(' ArgumentList ')' { MethodCallExpr $1 $3 $5 }
   | Expression '.' identifier '(' ')'              { MethodCallExpr $1 $3 [] }
+  | this '.' identifier '(' ArgumentList ')'       { MethodCallExpr Null $3 $5 }
+  | this '.' identifier '(' ')'                    { MethodCallExpr Null $3 [] }
   | identifier '(' ArgumentList ')'                { MethodCallExpr Null $1 $3 }
   | identifier '('  ')'                            { MethodCallExpr Null $1 [] }
 
