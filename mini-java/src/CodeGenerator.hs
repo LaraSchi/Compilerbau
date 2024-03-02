@@ -10,12 +10,18 @@ import Data.Char (ord)
 -- TODO branchoffset 
 -- TODO state monad:
     -- stack max size
+    -- list of local vars to get index for store and load instructions
     -- list of istore_x
     -- list of iload_x
     -- line number for branchoffsets and stuff  -- vielleicht keine gute Idee, muss eine bessere her: 
                                                     -- Vielleicht immer nur die lens als Argumente als Branchoffset eingeben
                                                     -- wenn Liste fertig ist: über Liste iterieren und die Zahlen mit index + len ersetzen
     -- return type of method 
+
+-- TODO: Idee für Iload und istore Zeug -> mit Namen der Variable im CP nach Index suchen und den einfach als index nehmen 
+        -- -> geht nicht, local vars sind nicht im CP (aber man könnte Liste von vars in State monad führen)
+
+-- TODO: unnötige Intr aus Datenstruktur schmeißen
     
 
 -- Function to generate assembly code for init method
@@ -108,12 +114,12 @@ generateCodeForExpression :: Expression -> [ByteCodeInstrs] -- todo: -> ByteCode
 generateCodeForExpression (TypedExpr expr _) = generateCodeForExpression expr
 generateCodeForExpression (ThisExpr) = []
 generateCodeForExpression (SuperExpr) = []
-generateCodeForExpression (FieldVarExpr name) = []
-generateCodeForExpression (LocalVarExpr name) = []
+generateCodeForExpression (FieldVarExpr name) = [(ILoad 0)] -- dummy TODO: search with name for the index of this variable
+generateCodeForExpression (LocalVarExpr name) = [(ILoad 0)] -- dummy TODO: search with name for the index of this variable
 generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr -- ++ name  im neuen Parser nicht vorhanden
 generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr
 generateCodeForExpression (BinOpExpr expr1 _ expr2) = generateCodeForExpression expr1 ++ generateCodeForExpression expr2
-generateCodeForExpression (IntLitExpr intVal) = []  -- "iconst_" ++ show intVal
+generateCodeForExpression (IntLitExpr intVal) = [(BIPush intVal)]  -- "iconst_" ++ show intVal
 generateCodeForExpression (BoolLitExpr bool) = case bool of
     True -> [(IConst_1)]
     False -> [(IConst_0)]
