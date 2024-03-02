@@ -39,7 +39,11 @@ data Visibility = Public
 data Stmt = TypedStmt Stmt Type
           | ReturnStmt Expression
           | WhileStmt Expression BlockStmt
-          | LocalVarDeclStmt Type String (Maybe Expression)
+          | LocalVarDecStmt Type String (Maybe Expression)
+          | VarRefParse String Expression -- noch nicht sicher, ob Field oder Local
+          | LocalVarRef String Expression -- LocalRef
+          | FieldVarRef String Expression -- FieldRef (zugeordnet oder durch this.)
+          | IfStmt Expression BlockStmt
           | IfElseStmt Expression BlockStmt (Maybe BlockStmt)
           | StmtExprStmt StmtExpr
           | Print String
@@ -47,7 +51,7 @@ data Stmt = TypedStmt Stmt Type
           deriving (Show, Eq, Read)
 
 data StmtExpr = TypedStmtExpr StmtExpr Type
-              | AssignmentStmt Expression Expression
+              | AssignmentStmt Expression Expression -- #TODO: first Expr -> String
               | NewExpression NewExpr
               | MethodCall MethodCallExpr
               deriving (Show, Eq, Read)
@@ -55,10 +59,8 @@ data StmtExpr = TypedStmtExpr StmtExpr Type
 data Expression = TypedExpr Expression Type 
                 | ThisExpr
                 | SuperExpr
-                | LocalOrFieldVarExpr String -- noch nicht sicher, ob Field oder Local
-                | FieldVarExpr String
-                | LocalVarExpr String
-                | InstVarExpr Expression String  -- ## FieldRef im CP TODO: Maybe This vllt?
+                | IdentifierExpr String --LocalOrFieldVar
+                | InstVar Expression String  -- ## FieldRef im CP TODO: Maybe This vllt?
                 | UnaryOpExpr UnaryOperator Expression
                 | BinOpExpr Expression BinaryOperator Expression
                 | IntLitExpr Int
