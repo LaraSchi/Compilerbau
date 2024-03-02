@@ -37,8 +37,9 @@ generateCodeForStmt :: Stmt -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
 generateCodeForStmt (TypedStmt stmt _) = generateCodeForStmt stmt
 generateCodeForStmt (ReturnStmt expr) = []  -- ireturn if int, char or boolean (bei Klassen areturn) -> bei methodcode am Ende hinzufügen?
 generateCodeForStmt (WhileStmt expr blockStmt) = generateCodeForExpression expr --Todo Blockstatement?
+{-
 generateCodeForStmt (LocalVarDeclStmt thisType name) = []  -- ist das nur die Deklaration ohne Zuweisung? da passiert nämlich im Code nichts
-generateCodeForStmt (LocalVarRefStmt thisType name expr) = 
+generateCodeForStmt (LocalVarRefStmt thisType name expr) =   im neuen Parser nicht so vorhanden
     if thisType == BoolT
         then if expr == (BoolLitExpr True) 
             then [IConst_1] ++ [IStore_1]  -- istore nur bei erster variable ... woher weiß ich, wie viele ich schon habe
@@ -47,6 +48,7 @@ generateCodeForStmt (LocalVarRefStmt thisType name expr) =
                 else [] -- dummy
         else [] --dummy
 generateCodeForStmt (IfStmt expr blockStmt) = generateCodeForExpression expr --Todo Blockstatement?
+-}
 generateCodeForStmt (IfElseStmt expr blockStmt maybeBlockStmt) = generateCodeForExpression expr --Todo Blockstatement?
 generateCodeForStmt (StmtExprStmt stmtExpr) = generateCodeForStmtExpr stmtExpr
 
@@ -69,10 +71,10 @@ generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) =
 -- Function to generate assembly code for Expression
 generateCodeForExpression :: Expression -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
 generateCodeForExpression (TypedExpr expr _) = generateCodeForExpression expr
-generateCodeForExpression (ThisExpr) = []
-generateCodeForExpression (SuperExpr) = []
-generateCodeForExpression (IdentifierExpr name) = []  -- This is a simplistic approach
-generateCodeForExpression (InstVar expr name) = generateCodeForExpression expr -- ++ name
+-- generateCodeForExpression (ThisExpr) = []  im neuen Parser nicht vorhanden
+-- generateCodeForExpression (SuperExpr) = []  im neuen Parser nicht vorhanden
+-- generateCodeForExpression (IdentifierExpr name) = []  -- This is a simplistic approach im neuen Parser nicht vorhanden
+-- generateCodeForExpression (InstVar expr name) = generateCodeForExpression expr -- ++ name  im neuen Parser nicht vorhanden
 generateCodeForExpression (UnaryOpExpr _ expr) = generateCodeForExpression expr
 generateCodeForExpression (BinOpExpr expr1 _ expr2) = generateCodeForExpression expr1 ++ generateCodeForExpression expr2
 generateCodeForExpression (IntLitExpr intVal) = []  -- "iconst_" ++ show intVal
