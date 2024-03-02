@@ -4,13 +4,22 @@ import Syntax
 import ByteCodeInstr
 import ClassFormat
 import Data.List (findIndex)
+import Data.Char (ord)
 
 -- TODO init
--- TODO change output to ints
--- TODO state monad for max stack size
+-- TODO branchoffset 
+-- TODO state monad:
+    -- stack max size
+    -- list of istore_x
+    -- list of iload_x
+    -- line number for branchoffsets and stuff  -- vielleicht keine gute Idee, muss eine bessere her: 
+                                                    -- Vielleicht immer nur die lens als Argumente als Branchoffset eingeben
+                                                    -- wenn Liste fertig ist: über Liste iterieren und die Zahlen mit index + len ersetzen
+    -- return type of method 
+    
 
 -- Function to generate assembly code for init method
-generateInitByteCode :: [CP_Info] -> [ByteCodeInstrs]
+generateInitByteCode :: [CP_Info] -> [ByteCodeInstrs]  -- TODO: benutzen wenn im AST nicht gegeben
 generateInitByteCode cp = [ALoad_0] ++
                         [(InvokeSpecial 0x00 (getIndexByDesc ("java/lang/Object" ++ "." ++ "<init>" ++ ":" ++ "()V") cp))] -- reference to init method TODO: what if there are multiple inits
                         ++ [Return]
@@ -18,50 +27,76 @@ generateInitByteCode cp = [ALoad_0] ++
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
 generateCodeForMethod (MethodDecl visibility returnType name params blockStmt) cp_infos =  -- TODO params auf Stack
-    [ALoad_0] ++  -- every method starts with this instruction
-    generateCodeForBlockStmt blockStmt cp_infos ++
-    if returnType == IntT || returnType == BoolT || returnType == CharT
-        then [IReturn]
-        else if returnType == VoidT
-            then [Return]
-            else [AReturn]
+    generateCodeForBlockStmt blockStmt cp_infos 
+    
 
 -- Function to generate assembly code for BlockStmt
 generateCodeForBlockStmt :: BlockStmt -> [CP_Info] -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
 generateCodeForBlockStmt [] cp_infos = []
 generateCodeForBlockStmt (stmt:stmts) cp_infos =
-    generateCodeForStmt stmt ++ generateCodeForBlockStmt stmts cp_infos
+    generateCodeForStmt stmt cp_infos ++ generateCodeForBlockStmt stmts cp_infos
 
 -- Function to generate assembly code for Stmt
-generateCodeForStmt :: Stmt -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
-generateCodeForStmt (TypedStmt stmt _) = generateCodeForStmt stmt
-generateCodeForStmt (ReturnStmt expr) = []  -- ireturn if int, char or boolean (bei Klassen areturn) -> bei methodcode am Ende hinzufügen?
-generateCodeForStmt (WhileStmt expr blockStmt) = generateCodeForExpression expr --Todo Blockstatement?
-{-
-generateCodeForStmt (LocalVarDeclStmt thisType name) = []  -- ist das nur die Deklaration ohne Zuweisung? da passiert nämlich im Code nichts
-generateCodeForStmt (LocalVarRefStmt thisType name expr) =   im neuen Parser nicht so vorhanden
-    if thisType == BoolT
-        then if expr == (BoolLitExpr True) 
-            then [IConst_1] ++ [IStore_1]  -- istore nur bei erster variable ... woher weiß ich, wie viele ich schon habe
-            else if expr == (BoolLitExpr False) 
-                then [IConst_0] ++ [IStore_1]  -- istore nur bei erster variable ... woher weiß ich, wie viele ich schon habe
-                else [] -- dummy
-        else [] --dummy
-generateCodeForStmt (IfStmt expr blockStmt) = generateCodeForExpression expr --Todo Blockstatement?
+generateCodeForStmt :: Stmt -> [CP_Info] -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
+generateCodeForStmt (TypedStmt stmt _) cp_infos = generateCodeForStmt stmt cp_infos
+-- Return
+generateCodeForStmt (ReturnStmt expr) cp_infos = 
+    (generateCodeForExpression expr) {-++ 
+    if monad.returnType == IntT || monad.returnType == BoolT || monad.returnType == CharT  -- TODO: get return type of methode from state monad
+        then [IReturn]
+        else if monad.returnType == VoidT
+            then [Return]
+            else [AReturn]-}
+-- While
+generateCodeForStmt (WhileStmt expr blockStmt) cp_infos = 
+    let code = generateCodeForBlockStmt blockStmt cp_infos
+        code_expr = generateCodeForExpression expr  -- current line number from monad to add branchoffset
+    in code ++ code_expr
+-- LocalVar Decl 
+generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
+    case maybeExpr of
+        Just expr -> generateCodeForExpression expr ++
+            if var_type == BoolT || var_type == CharT || var_type == IntT
+                then [(IStore 0)]  -- TODO: richtigen Store Befehl aus State Monad nehmen
+                else [(AStore 0)]  -- TODO: richtigen Store Befehl aus State Monad nehmen 
+        Nothing -> []  -- nur Decl ergibt keinen Binärcode, bei später Zuweisung ist es AssignmentStmt 
+-- If Else  !! nur ifcmp* werden verwendet; javac hat Sonderinstruktionen wenn Vergleich mit 0 durchgeführt wird, aber unnötig
+generateCodeForStmt (IfElseStmt expr blockStmt maybeBlockStmt) cp_infos = 
+    let code = generateCodeForBlockStmt blockStmt cp_infos
+        code2 = case maybeBlockStmt of
+            Just block -> [(Goto 0x0 0x0)] ++ generateCodeForBlockStmt block cp_infos
+            Nothing -> []
+        code_expr = (generateCodeForIfElseStmtExpression expr 0x0 0x0)  -- current line number from monad to add branchoffset
+    in code_expr ++ code ++ code2  -- goto muss irgendwo noch rein
+-- Stmt Expr Stmt
+generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr
+
+
+{- Function to build byte code for if else statement
+    currently only works with if_icmp* (so int, char and boolean) 
+    -> need type of expr1 or expr2 to choose between if_icmp* and if_acmp*
 -}
-generateCodeForStmt (IfElseStmt expr blockStmt maybeBlockStmt) = generateCodeForExpression expr --Todo Blockstatement?
-generateCodeForStmt (StmtExprStmt stmtExpr) = generateCodeForStmtExpr stmtExpr
-
-
-
+generateCodeForIfElseStmtExpression :: Expression -> Int -> Int -> [ByteCodeInstrs] 
+generateCodeForIfElseStmtExpression (BinOpExpr expr1 binop expr2) len1 len2 = 
+    let if_code = case binop of
+            Equal -> [(If_ICmpNeq 0x0 0x0)]
+            NotEqual -> [(If_ICmpEq) 0x0 0x0]
+            Less -> [(If_ICmpGeq) 0x0 0x0]
+            Greater -> [(If_ICmpLeq) 0x0 0x0]
+            LessEq -> [(If_ICmpGt) 0x0 0x0]
+            GreaterEq -> [(If_ICmpLt) 0x0 0x0]
+    in (generateCodeForExpression expr1) ++ (generateCodeForExpression expr2) ++ if_code 
 
 -- Function to generate assembly code for StmtExpr
 generateCodeForStmtExpr :: StmtExpr -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
 generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) = generateCodeForStmtExpr stmtExpr
+-- Assign Stmt
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) =
-    generateCodeForExpression expr1 ++ generateCodeForExpression expr2
-generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr
-generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr
+    (generateCodeForExpression expr1) ++ (generateCodeForExpression expr2)
+-- New
+generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr  -- TODO ??
+-- Method call
+generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr  -- TODO ??
 
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
@@ -71,17 +106,20 @@ generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) =
 -- Function to generate assembly code for Expression
 generateCodeForExpression :: Expression -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
 generateCodeForExpression (TypedExpr expr _) = generateCodeForExpression expr
--- generateCodeForExpression (ThisExpr) = []  im neuen Parser nicht vorhanden
--- generateCodeForExpression (SuperExpr) = []  im neuen Parser nicht vorhanden
--- generateCodeForExpression (IdentifierExpr name) = []  -- This is a simplistic approach im neuen Parser nicht vorhanden
--- generateCodeForExpression (InstVar expr name) = generateCodeForExpression expr -- ++ name  im neuen Parser nicht vorhanden
-generateCodeForExpression (UnaryOpExpr _ expr) = generateCodeForExpression expr
+generateCodeForExpression (ThisExpr) = []
+generateCodeForExpression (SuperExpr) = []
+generateCodeForExpression (FieldVarExpr name) = []
+generateCodeForExpression (LocalVarExpr name) = []
+generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr -- ++ name  im neuen Parser nicht vorhanden
+generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr
 generateCodeForExpression (BinOpExpr expr1 _ expr2) = generateCodeForExpression expr1 ++ generateCodeForExpression expr2
 generateCodeForExpression (IntLitExpr intVal) = []  -- "iconst_" ++ show intVal
-generateCodeForExpression (BoolLitExpr _) = []
-generateCodeForExpression (CharLitExpr _) = []
-generateCodeForExpression (StringLitExpr _) = []
-generateCodeForExpression (Null) = []
+generateCodeForExpression (BoolLitExpr bool) = case bool of
+    True -> [(IConst_1)]
+    False -> [(IConst_0)]
+generateCodeForExpression (CharLitExpr (character:str)) = [(BIPush (ord character))] 
+generateCodeForExpression (StringLitExpr _) = []  -- noch nicht unterstützt
+generateCodeForExpression (Null) = [(AConst_Null)]
 generateCodeForExpression (StmtExprExpr stmtExpr) = generateCodeForStmtExpr stmtExpr
 
 
