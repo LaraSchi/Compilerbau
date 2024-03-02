@@ -4,6 +4,6 @@ class ControlClass {
     }
 
     public void check(int a) {
-        add(1, 2);
+        this.add(1, 2);
     }
 }

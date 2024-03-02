@@ -8,11 +8,9 @@ import Data.Typeable
 import ClassFileGen(generateClassFile)
 
 
-
-
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/helloWorld.minijava" -- read file
+    fileContent <- readFile "code/examples/explWhile.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
     putStrLn ""
     putStrLn "parsing file content"
@@ -25,13 +23,13 @@ main = do
             Left _   -> print "false"
             Right t' -> do
                 print t'
-                --putStrLn (show (t' . renderStrict))
-                let sampleCP = startBuildProcess t'
-                let sampleCF = generateClassFile t' sampleCP -- Todo what is StackMapTable?
+                let sampleCP = startBuildProcess t' -- Todo uncomment
                 let constPoolShow = showCP_Infos sampleCP 1
-                let result = prettyPrintClassFile sampleCF
-                -- putStrLn constPoolShow
-                putStrLn result
+                putStrLn constPoolShow
+
+                -- let sampleCF = generateClassFile t' sampleCP -- Todo what is StackMapTable?
+                -- let result = prettyPrintClassFile sampleCF -- Todo uncomment
+                -- putStrLn result
                 return ()
     -------------------------------------
 {- 

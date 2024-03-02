@@ -70,7 +70,7 @@ generateFieldsArray fields cpInfosList =
     in result
 
 buildFieldInfo :: Field -> [CP_Info] -> [Field_Info]
-buildFieldInfo (FieldDecl fieldType fieldName) cpInfosList =
+buildFieldInfo (FieldDecl fieldType fieldName maybeExpr) cpInfosList =
     let newFieldInfos =
             [Field_Info
                 { af_fi = AccessFlags [acc_Public]  -- 0x0000 dummy
@@ -80,7 +80,6 @@ buildFieldInfo (FieldDecl fieldType fieldName) cpInfosList =
                 , array_attr_fi = [] -- Todo 'ConstantValue' attributes? (expl. final int i = 10;)
                 }]
     in newFieldInfos
-buildFieldInfo (FieldRef _ _) _ = []
 
 
 -- how to parse the information?

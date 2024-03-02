@@ -107,7 +107,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
   WhileStmt expr blockStmt -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt fieldOrMethodDecls className
-  LocalVarDeclStmt thisType name -> do
+  LocalVarDeclStmt thisType name maybeExpr -> do
         -- Is it an instantiation of this class?
         case fieldOrMethodDecls of
             (ThisFieldDekl _) : _  -> checkAndGenRef name fieldOrMethodDecls className -- Possibly add FieldRef
@@ -124,15 +124,10 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
                                _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
                                return ()
                            else do
-                               --trace (show "second Method ref2" ++ show (length methodRefs == 0)) $ return ()
-                               --trace (show "second Method ref2" ++ (typeToString thisType)) $ return ()
                                mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
                                          let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
                                          generateMethodRefConstantPool "<init>" methodType className) methodRefs
                                return ()
-  IfStmt expr blockStmt -> do
-    findReferencesExpr expr fieldOrMethodDecls className
-    findReferencesStmtList blockStmt fieldOrMethodDecls className
   IfElseStmt expr blockStmt1 blockStmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmtList blockStmt1 fieldOrMethodDecls className
@@ -145,24 +140,28 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
     return ()
   _ -> (return ())
 
-
-
--- Todo Integer_Info (Konstante)
--- Todo printstatement
-
-
 findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldOrMethodDecls className = case expr of
-  IdentifierExpr name -> (return ()) -- Todo checkAndGenRef name fieldOrMethodDecls className? -- Variablename
-  InstVar expr name -> do
+  TypedExpr expr _ -> findReferencesExpr expr fieldOrMethodDecls className
+  SuperExpr -> (return ()) -- Todo
+  SuperExpr -> (return ()) -- Todo
+  LocalOrFieldVarExpr name -> trace ("LocalOrFieldVarExpr is found: " ++ name) $ return ()
+  FieldVarExpr name -> checkAndGenRef name fieldOrMethodDecls className -- Todo
+  LocalVarExpr name -> checkAndGenRef name fieldOrMethodDecls className -- Todo
+  InstVarExpr expr name -> do
     findReferencesExpr expr fieldOrMethodDecls className
-    checkAndGenRef name fieldOrMethodDecls className
+    checkAndGenRef name fieldOrMethodDecls className -- Todo What is this? # FieldRef im CP
   UnaryOpExpr _ e -> findReferencesExpr e fieldOrMethodDecls className
   BinOpExpr e1 _ e2 -> do
     findReferencesExpr e1 fieldOrMethodDecls className
     findReferencesExpr e2 fieldOrMethodDecls className
+  IntLitExpr number -> (return ())
+  BoolLitExpr bool -> (return ())
+  CharLitExpr string -> (return ())
+  StringLitExpr string -> (return ())
+  Null -> (return ())
   StmtExprExpr stmtExpr -> findReferencesStmtExpr stmtExpr fieldOrMethodDecls className
-  _ -> (return ())
+  -- _ -> (return ()) -- Todo
 
 findReferencesStmtExpr :: StmtExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesStmtExpr stmtExpr fieldOrMethodDecls className = case stmtExpr of
@@ -191,18 +190,18 @@ unwrapToFieldList decls = [field | ThisFieldDekl field <- decls]
 unwrapToMethodList :: [FieldOrMethod] -> [MethodDecl]
 unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 
+-- Todo ref without checking?
 checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 checkAndGenRef name decls className = case decls of
     (ThisFieldDekl _ : _) -> do
-      --let fieldRefs = filter (\(FieldDecl _ fieldName) -> name == fieldName) (unwrapToFieldList decls)
       let fieldRefs = filter (\field ->
                              case field of
-                               (FieldDecl _ fieldName) -> name == fieldName
+                               (FieldDecl _ fieldName maybeExpr) -> name == fieldName
                                _                       -> False
                            ) (unwrapToFieldList decls)
 
 
-      mapM_ (\(FieldDecl fieldType fieldName) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
+      mapM_ (\(FieldDecl fieldType fieldName maybeExpr) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
       --trace "checkAndGenRef" $ return ()
     (ThisMethodDekl _ : _) -> do
 
@@ -217,12 +216,15 @@ checkAndGenRef name decls className = case decls of
 
 generateFieldDeklCP :: Field -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 generateFieldDeklCP field fieldOrMethodDecls className = case field of
-    (FieldDecl fieldType fieldName) -> do
+    (FieldDecl fieldType fieldName Nothing) -> do
         fieldNameInfo <- createUtf8Entry fieldName
         _ <- createUtf8Entry (typeToString fieldType)
         return ()
-    (FieldRef fieldName _) -> checkAndGenRef fieldName fieldOrMethodDecls className
+    (FieldDecl fieldType fieldName expr) -> checkAndGenRef fieldName fieldOrMethodDecls className
+    -- (FieldRef fieldName _) -> checkAndGenRef fieldName fieldOrMethodDecls className -- Todo
 
+
+    -- Todo data Field = FieldDecl Type String (Maybe Expression)
 
 
 
