@@ -18,7 +18,7 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         maxVer = MajorVersion 55 
         countCP = length cpInfos
         arrayCP = cpInfos
-        accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)  -- why the brackets (when integer is given [ ] is not needed)?
+        accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)
         thisClass = ThisClass {index_th = 7}  -- TODO parse the index number
         superClass = SuperClass {index_sp = 2}
         numInterfaces = 0  
@@ -36,7 +36,6 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         maxver = maxVer,
         count_cp = countCP,
         array_cp = arrayCP,
-        -- Populate other fields here based on the parsed syntax
         acfg = accessFlag,
         this = thisClass,
         super = superClass,
