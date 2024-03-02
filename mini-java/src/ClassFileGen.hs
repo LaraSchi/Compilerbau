@@ -8,13 +8,6 @@ import ClassFormat
 import Data.Typeable
 import Data.List (elemIndex, intercalate)
 
--- classfile anschauen mit decodeClassFile() und dann print(...)
-
-
--- main bct.class
--- x = decodeClassFile(bct.class)
--- print(x)
-
 
 generateClassFile :: Program -> CP_Infos -> ClassFile
 generateClassFile (Program (Class className fields methods) typed_bool) cpInfos =
@@ -25,7 +18,7 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         countCP = length cpInfos
         arrayCP = cpInfos
         accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)  -- why the brackets (when integer is given [ ] is not needed)?
-        thisClass = ThisClass {index_th = 7}  -- need to figure out the how to parse the index number
+        thisClass = ThisClass {index_th = 7}  -- TODO parse the index number
         superClass = SuperClass {index_sp = 2}
         numInterfaces = 0  
         arrayInterfaces = [] 
@@ -73,7 +66,7 @@ buildFieldInfo :: Field -> [CP_Info] -> [Field_Info]
 buildFieldInfo (FieldDecl fieldType fieldName maybeExpr) cpInfosList =
     let newFieldInfos =
             [Field_Info
-                { af_fi = AccessFlags [acc_Public]  -- 0x0000 dummy
+                { af_fi = AccessFlags [acc_Public] 
                 , index_name_fi = cpIndexFrom fieldName cpInfosList  -- name_index
                 , index_descr_fi = cpIndexFrom (typeToString fieldType) cpInfosList -- descriptor_index (type)
                 , tam_fi = 0                    -- count_attributte
@@ -91,33 +84,35 @@ generateMethodsArray methods cpInfosList =
 buildMethodInfo :: MethodDecl -> [CP_Info] -> [Method_Info]
 buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt) cpInfosList =
     let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString outType)
+        attributes_array = generateAttributeCodeArray methodDecl cpInfosList
         newMethod_Info =
             [Method_Info
-                { af_mi = AccessFlags [acc_Public]  -- 0x0000 dummy
+                { af_mi = AccessFlags [acc_Public]  
                 , index_name_mi = cpIndexFrom methodName cpInfosList  -- name_index
                 , index_descr_mi = cpIndexFrom methodType cpInfosList -- descriptor_index (type)
-                , tam_mi = 0                    -- count_attributte
-                , array_attr_mi = generateAttributeCodeArray methodDecl cpInfosList -- Todo 'Code' Attributes
+                , tam_mi = length attributes_array
+                , array_attr_mi = attributes_array
                 }]
     in newMethod_Info
 
 
--- function to create attribute Infos?  -- nur für methods, normales Array ist leer (brauche ich das noch, wenn man nur AttributeCode hat?)
+-- function to create attribute Infos?
 generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> Attribute_Infos
 generateAttributeCodeArray methodDecl cpInfosList =
     let newAttributeInfo :: Attribute_Infos
+        code = [0, 0, 0, 0]                 -- Placeholder TODO: call function to build code
         newAttributeInfo =
             [AttributeCode
                 { index_name_attr = cpIndexFrom "Code" cpInfosList  -- attribute_name_index
-                , tam_len_attr = length("Code")  -- attribute_length
-                , len_stack_attr = 0 -- Placeholder   -- max_stack
-                , len_local_attr = 0 -- Placeholder  -- max_local
-                , tam_code_attr = 0  -- Placeholder -- code_length
-                , array_code_attr = [0, 0, 0, 0] -- generateCodeForMethod methodDecl -- Todo trun string to int (Bytes) -- Placeholder   -- code como array de bytes
-                , tam_ex_attr = 0 -- Placeholder        -- exceptions_length
-                , array_ex_attr = [(0, 0, 0, 0)] -- Placeholder               -- no usamos
-                , tam_atrr_attr = 0 -- Placeholder                          -- attributes_count
-                , array_attr_attr = []   -- Placeholder         :: Attribute_Infos
+                , tam_len_attr = 0          -- Placeholder          -- attribute_length
+                , len_stack_attr = 0        -- Placeholder          -- max_stack
+                , len_local_attr = 0        -- Placeholder          -- max_local
+                , tam_code_attr = length code
+                , array_code_attr = code
+                , tam_ex_attr = 0
+                , array_ex_attr = []
+                , tam_atrr_attr = 0
+                , array_attr_attr = []
                 }]
     in newAttributeInfo
 
