@@ -29,14 +29,15 @@ Syntax: The compiler supports a subset of syntactically correct Java classes wit
 Type Checking: A type-checking phase ensures that the abstract syntax tree is well-typed according to the specified restrictions.
 Usage
 
+- Todo
+
 ## Usage
 
 To use the MiniJava compiler, follow these steps:
 
-1. [Clone the repository.](#c)
+1. [Clone the repository.]()
 2. [Build the compiler.]()
 3. [Run the compiler.]()
-4. [Installation]()
 
 
 # Installation 
@@ -50,32 +51,25 @@ git clone https://github.com/LaraSchi/Compilerbau.git
 
 # Building the Compiler
 
-stack build 
-
 To build the compiler, follow these steps:
 
 ```markdown
 cd mini-java-compiler
+stack build
 ```
-# Add specific build instructions here
-Running Tests
+
+# Running Tests
 
 To run the tests, execute the following commands:
+```markdown
+stack test
+```
 
-bash
-Copy code
-cd mini-java-compiler
-# Add specific test instructions here
-Documentation
+# Running the Compiler
+ With the following commands you can run our main. 
+```markdown
+stack ghci
+:main
+```
 
-Check the docs directory for documentation on the project. It includes specifications, design decisions, and any relevant information about the compiler.
-
-Contributing
-
-If you would like to contribute to the MiniJava compiler, please follow the guidelines in CONTRIBUTING.md.
-
-License
-
-This project is licensed under the [Your License] License - see the LICENSE.md file for details.
-
-Feel free to customize this template based on your specific project details and structure. Add sections as needed and provide clear instructions for users who want to clone, build, and run your MiniJava compiler.
+To compile a specific MiniJava code, modify the 'fileContent' path in the Main.hs file (line 13) to point to the file containing the desired code for compilation.
