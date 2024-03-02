@@ -9,7 +9,7 @@ class Addn {
         return a;
     }
     public int add2(int x) {
-        return n + x; // Todo this.n ? Eigentlich automatisch erkannt
-         // todo was wenn int n = 1; n also nicht eigentlich this.n ist.
+        return n + x;
+
     }
 }

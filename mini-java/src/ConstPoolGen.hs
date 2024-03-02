@@ -317,3 +317,5 @@ newTypeToString (NewType className) = case className of
 -- Get the type
 getInputType :: Parameter -> [String]
 getInputType (Parameter this_type string) = [typeToString this_type]
+
+

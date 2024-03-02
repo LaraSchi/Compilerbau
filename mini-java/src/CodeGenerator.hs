@@ -3,6 +3,7 @@ module CodeGenerator where
 import Syntax
 import ByteCodeInstr
 import ClassFormat
+import Data.List (findIndex)
 
 -- TODO init
 -- TODO change output to ints
@@ -10,9 +11,10 @@ import ClassFormat
 
 -- Function to generate assembly code for init method
 generateInitByteCode :: [CP_Info] -> [Int]
-generateInitByteCode cp = byteCodeToOpCode_woArgs ALoad_0 ++ 
-                        (byteCodeToOpCode_w2Args InvokeSpecial 0x00 0x01) ++  -- reference to init method??
-                        byteCodeToOpCode_woArgs Return
+generateInitByteCode cp = byteCodeToOpCode_woArgs ALoad_0 ++
+                        (byteCodeToOpCode_w2Args InvokeSpecial 0x00 0x01)
+                        ++ getIndexByDesc ("java/lang/Object" ++ "." ++ "<init>" ++ ":" ++ "()V") cp-- reference to init method
+                        ++ byteCodeToOpCode_woArgs Return
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> [Int] -- todo: -> ByteCode_Instrs
@@ -100,3 +102,11 @@ generateCodeForExpressions [] = []
 generateCodeForExpressions (expr:exprs) =
     generateCodeForExpression expr ++ generateCodeForExpressions exprs
 
+----------------------------------------------------------------------
+-- Helper function for constant pool
+
+getIndexByDesc :: String -> [CP_Info] -> [Int]
+getIndexByDesc descriptor cpList =
+    case findIndex (\cpInfo -> desc cpInfo == descriptor) cpList of
+        Just idx -> [idx + 1] -- Constant pool begins at 1.
+        Nothing  -> [-1]
