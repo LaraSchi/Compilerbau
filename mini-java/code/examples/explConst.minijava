@@ -1,3 +1,0 @@
-class Beispiel {
-    final int MEINE_KONSTANTE = 10;
-}

@@ -6,10 +6,11 @@
   - bei n + x: Parser macht x zu this.x
 - examples/explFieldRef3.minijava 
 - this.method
+- System.out.println mit " " statt ~. 
 - System.out.println als Methode
 - System.out.println in Konstantenpool
-- Konstanten liste
-- ClassFile format überarbeiten (data für iload...)
+
+
 
 ## Nice to have:
 
@@ -17,3 +18,4 @@
 - classfile automatisch ausführen
 - [Class]
 - access flags klassen bis auf generisch und abstract
+- Visibility upgrade (final, public, private)
