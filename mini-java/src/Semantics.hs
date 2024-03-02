@@ -37,7 +37,7 @@ fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds})
 
 typesOf :: [Field] -> [(String, Type)]
 typesOf []                 = []
-typesOf (FieldDecl t s:ys) = (s,t):typesOf ys
+typesOf (FieldDecl t s me:ys) = (s,t):typesOf ys
 typesOf (_:ys)               = typesOf ys
 
 fillTypesSetMethod :: [MethodDecl] -> TypeStateM ()
@@ -67,15 +67,15 @@ checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- mapM checkStmt stmts
     return $ TypedStmt (WhileStmt eTyped stmtsTyped) VoidT
-checkStmt v@(LocalVarDeclStmt t s)          = do
+checkStmt v@(LocalVarDeclStmt t s Nothing)          = do
     locals <- gets fieldTypeset
-    modify (\state -> state {fieldTypeset = (s,t):locals}) 
-    return $ TypedStmt v t
-checkStmt v@(LocalVarRefStmt t s e)          = do
+    modify (\state -> state {fieldTypeset = (s,t):locals})
+    return $ TypedStmt (LocalVarDeclStmt t s Nothing) t
+checkStmt v@(LocalVarDeclStmt t s (Just e))          = do
     locals <- gets fieldTypeset
-    modify (\state -> state {fieldTypeset = (s,t):locals}) 
+    modify (\state -> state {fieldTypeset = (s,t):locals})
     eTyped <- checkTypeExpr t e
-    return $ TypedStmt (LocalVarRefStmt t s eTyped) t
+    return $ TypedStmt (LocalVarDeclStmt t s (Just eTyped)) t
 checkStmt (IfElseStmt e bs Nothing)         = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- mapM checkStmt bs
@@ -99,8 +99,8 @@ checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
 checkExpr :: Expression -> TypeStateM Expression
 checkExpr ThisExpr             = gets classType >>= \t -> return $ TypedExpr ThisExpr t
 checkExpr SuperExpr            = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
-checkExpr (IdentifierExpr i)   = checkIdentifier i
-checkExpr v@(InstVar _ _)      = return $ TypedExpr v StringT
+checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
+checkExpr v@(InstVarExpr _ _)      = return $ TypedExpr v StringT -- #TODO: korrigieren
 checkExpr (UnaryOpExpr op e)   = checkUnary op e
 checkExpr (BinOpExpr e1 op e2) = checkBinary e1 op e2
 checkExpr e@(IntLitExpr _)     = return $ TypedExpr e IntT
@@ -110,14 +110,18 @@ checkExpr e@(StringLitExpr _)  = return $ TypedExpr e StringT
 checkExpr Null                 = return $ TypedExpr Null VoidT
 checkExpr (StmtExprExpr se)    = checkStmtExpr se >>= \seTyped -> return $ TypedExpr (StmtExprExpr seTyped) (getTypeSE seTyped)
 checkExpr _                    = error "checkExpr called on already typed Expression"
- 
+
+-- #TODO: lookup noch spezifizieren, ob wirklich in jeweiliger FUnktion
 checkIdentifier :: String -> TypeStateM Expression
 checkIdentifier s = do
     state <- get
-    let typeSet = localTypeset state ++ fieldTypeset state
-    case lookup s $ localTypeset state ++ fieldTypeset state of
-        Just t -> return $ TypedExpr (IdentifierExpr s) t
-        _      -> return $ TypedExpr (IdentifierExpr s) VoidT -- #TODO: stimmt das?
+    let localSet = localTypeset state
+    let fieldSet = fieldTypeset state
+    case lookup s localSet of
+        Just localT -> return $ TypedExpr (LocalVarExpr s) localT
+        _      -> case lookup s fieldSet of
+                    Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
+                    _           -> error "Vars müssen deklariert werden" -- #TODO: schöner
 
 -- #TODO: evtl. umschreiben
 checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
@@ -162,7 +166,7 @@ checkStmtExpr _                       = error "checkStmtExpr called on already t
 
 -- #TODO: AssignmentStmt _> AssignStmt rename
 checkAssign :: StmtExpr -> TypeStateM StmtExpr
-checkAssign (AssignmentStmt var@(InstVar _ s) e) = do
+checkAssign (AssignmentStmt var@(InstVarExpr _ s) e) = do
     state <- get
     case lookup s $ localTypeset state ++ fieldTypeset state of
         Nothing -> error $ s ++ " has not been initialized" 
