@@ -7,9 +7,12 @@ import ConstPoolGen (startBuildProcess)
 import Data.Typeable
 import ClassFileGen(generateClassFile)
 
+
+
+
 main :: IO ()
 main = do
-    fileContent <- readFile "code/examples/explClass.minijava" -- read file
+    fileContent <- readFile "code/examples/helloWorld.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
     putStrLn ""
     putStrLn "parsing file content"
@@ -22,6 +25,7 @@ main = do
             Left _   -> print "false"
             Right t' -> do
                 print t'
+                --putStrLn (show (t' . renderStrict))
                 let sampleCP = startBuildProcess t'
                 let sampleCF = generateClassFile t' sampleCP -- Todo what is StackMapTable?
                 let constPoolShow = showCP_Infos sampleCP 1
@@ -30,7 +34,6 @@ main = do
                 putStrLn result
                 return ()
     -------------------------------------
-
 {- 
 TODO: 
     - Prüfen, ob Grammatik vollständig und ggf. erweitern.

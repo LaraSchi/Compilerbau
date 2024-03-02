@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      ByteCodeInstr
       ClassFileGen
       ClassFormat
       CodeGenerator
@@ -46,6 +47,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , mtl
+    , prettyprinter
   default-language: Haskell2010
 
 executable mini-java-exe
@@ -63,6 +65,7 @@ executable mini-java-exe
   build-depends:
       base >=4.7 && <5
     , mini-java
+    , prettyprinter
   default-language: Haskell2010
 
 test-suite mini-java-test
@@ -87,4 +90,5 @@ test-suite mini-java-test
     , hspec
     , hspec-discover
     , mini-java
+    , prettyprinter
   default-language: Haskell2010

@@ -1,0 +1,3 @@
+class intInfo {
+    int x = 10;
+}
