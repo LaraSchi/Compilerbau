@@ -23,7 +23,7 @@ main = do
     putStrLn fileContent
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
-        Right t -> case checkSemantics ({- addInit -} t) of
+        Right t -> case checkSemantics (addInit t) of
             Left _   -> print "false"
             Right t' -> do
                 print t'
