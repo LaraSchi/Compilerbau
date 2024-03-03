@@ -60,9 +60,11 @@ checkMethod (MethodDecl v t s ps stmts) = do
     classT <- gets classType
     return $ MethodDecl v t s ps typedStmts
 
+checkBlock :: BlockStmtList -> TypeStateM (BlockStmtList, Type)
+checkBlock stmts = mapM checkStmt stmts >>= \bT -> return (bT, VoidT)
 
 checkStmt :: Stmt -> TypeStateM Stmt
-checkStmt (Block stmts)                     = mapM checkStmt stmts >>= \bT -> return $ TypedStmt (Block bT) (getTypeS bT)
+checkStmt (Block stmts)                     = checkBlock stmts >>= \(bT, ty) -> return $ TypedStmt (Block bT) ty
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -205,9 +207,9 @@ getTypeSE :: StmtExpr -> Type
 getTypeSE (TypedStmtExpr _ t) = t
 getTypeSE _                    = error "blub"
 
-getTypeS :: StmtExpr -> Type
+getTypeS :: Stmt -> Type
 getTypeS (TypedStmt _ t) = t
-getTypeS _                    = error "blub"
+getTypeS _               = error "blub"
 
 -- Debug Helper 
 
