@@ -1,6 +1,7 @@
 module Main (main) where
 
 import Parser (parse)
+import Syntax
 import Semantics(checkSemantics)
 import ClassFormat
 import ConstPoolGen (startBuildProcess)
@@ -12,8 +13,8 @@ import System.Directory
 
 main :: IO ()
 main = do
-    --fileContent <- readFile "code/semantikCheckExamples/missingReturn.minijava" -- read file
-    fileContent <- readFile "code/examples/test.minijava" -- read file
+    fileContent <- readFile "code/advancedExamples/test.minijava" -- read file
+    --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
     putStrLn "parsing file content"
@@ -22,7 +23,7 @@ main = do
     putStrLn fileContent
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
-        Right t -> case checkSemantics t of
+        Right t -> case checkSemantics ({- addInit -} t) of
             Left _   -> print "false"
             Right t' -> do
                 print t'
@@ -34,7 +35,7 @@ main = do
                 -- let sampleCF = generateClassFile t' sampleCP -- Todo
                 -- let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 -- putStrLn result
-                return ()
+                --return ()
     -------------------------------------
 -- Laras Beispiel durchlauf Funktion
 checkAllExamples :: IO()
@@ -57,7 +58,22 @@ parseAndCheck folder s = do
             Left _   -> print "false"
             Right t' -> print t'
 
+addInit :: Program -> Program
+addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
+    then Program (Class n fs (init:md)) t
+    else p
+        where init = MethodDecl 
+                    Public 
+                    (NewTypeT n) 
+                    name 
+                    params
+                    (Block assigns)
+              fieldVars = map (\(FieldDecl t n v) -> (n, t)) fs
+              params = map (\(n,t) -> Parameter t n) fieldVars
+              assigns = map (\(n,_) -> StmtExprStmt (AssignmentStmt (FieldVarExpr n) (FieldVarExpr n))) fieldVars
 
+initMissing :: String -> [MethodDecl] -> Bool
+initMissing name = not . any (\(MethodDecl _ _ func _ _) -> name == func)
 {-
 TODO: 
     - Prüfen, ob Grammatik vollständig und ggf. erweitern.

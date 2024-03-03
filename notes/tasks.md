@@ -8,11 +8,16 @@
 
 - Char zu char
 - init Funktion immer reinhauen "<init>", und dann Vars aus Init als Field
+- Void -> VoidT!!!
 
 - Semantikcheck
+
     - welche Regeln fehlen noch?
 
-        - BlockStmts type
+        immer mit aktuellen Type vergleichen!! 
+
+        - BlockStmts type -> check
+        - While 
         - Funktionstypen prüfen?
         - Assign korrekt machen
 

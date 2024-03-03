@@ -2,6 +2,7 @@ module Semantics ( checkSemantics ) where
 
 import Syntax
 import Control.Monad.State (gets, get, modify, State, runState)
+import Control.Monad (when)
 
 import Debug.Trace --Debugging, TODO: remove
 
@@ -9,6 +10,7 @@ import Debug.Trace --Debugging, TODO: remove
 data TypeState = TypeState { classType        :: Type,
                              localTypeset     :: [(String, Type)],
                              fieldTypeset     :: [(String, Type)],
+                             blockType        :: Type,
                              errors           :: [String] }
                              deriving Show 
 
@@ -21,7 +23,7 @@ checkSemantics p = case runTypeStateM p of
 
 
 runTypeStateM :: Program -> (Program, [String])
-runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] []
+runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] VoidT []
 
 checkSProg :: Program -> TypeStateM Program
 checkSProg (Program (Class n fd md) _) = do
@@ -60,16 +62,25 @@ checkMethod (MethodDecl v t s ps stmts) = do
     classT <- gets classType
     return $ MethodDecl v t s ps typedStmts
 
-checkBlock :: BlockStmtList -> TypeStateM (BlockStmtList, Type)
-checkBlock stmts = mapM checkStmt stmts >>= \bT -> return (bT, VoidT)
+checkBlockS :: Stmt -> TypeStateM Stmt
+checkBlockS s@(ReturnStmt e) = do
+    ty <- gets blockType
+    sTyped <- checkStmt s
+    when (ty == VoidT) $ modify (\state -> state {blockType = getTypeS sTyped}) 
+    checkStmt s
+checkBlockS s = checkStmt s
 
 checkStmt :: Stmt -> TypeStateM Stmt
-checkStmt (Block stmts)                     = checkBlock stmts >>= \(bT, ty) -> return $ TypedStmt (Block bT) ty
+checkStmt (Block stmts)                     = do
+    bT <- mapM checkBlockS stmts
+    ty <- gets blockType
+    modify (\state -> state {blockType = VoidT})
+    return $ TypedStmt (Block bT) ty
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- checkStmt stmts
-    return $ TypedStmt (WhileStmt eTyped stmtsTyped) $ getTypeE eTyped -- TODO: Hier Typ vom BLock
+    return $ TypedStmt (WhileStmt eTyped stmtsTyped) $ getTypeS stmtsTyped -- TODO: Hier Typ vom BLock
 checkStmt v@(LocalVarDeclStmt t s Nothing)          = do
     locals <- gets localTypeset
     modify (\state -> state {localTypeset = (s,t):locals})
