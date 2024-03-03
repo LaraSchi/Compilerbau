@@ -105,7 +105,7 @@ checkExpr (UnaryOpExpr op e)   = checkUnary op e
 checkExpr (BinOpExpr e1 op e2) = checkBinary e1 op e2
 checkExpr e@(IntLitExpr _)     = return $ TypedExpr e IntT
 checkExpr e@(BoolLitExpr _)    = return $ TypedExpr e BoolT
-checkExpr e@(CharLitExpr [_])  = return $ TypedExpr e CharT -- #TODO: evtl nochmal iwo prüfen, das char
+checkExpr e@(CharLitExpr _)  = return $ TypedExpr e CharT -- #TODO: evtl nochmal iwo prüfen, das char
 checkExpr e@(StringLitExpr _)  = return $ TypedExpr e StringT
 checkExpr Null                 = return $ TypedExpr Null VoidT
 checkExpr (StmtExprExpr se)    = checkStmtExpr se >>= \seTyped -> return $ TypedExpr (StmtExprExpr seTyped) (getTypeSE seTyped)

@@ -5,7 +5,7 @@ module Lexer (alexScanTokens, Token(..)) where
 %wrapper "basic"
 
 $digit  = 0-9
-$char   = [a-zA-Z]
+$char   = [a-zA-Z_0-9]
 $string = [a-zA-Z_0-9]
 
 tokens :-
