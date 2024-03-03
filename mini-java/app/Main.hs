@@ -12,8 +12,8 @@ import System.Directory
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/semantikCheckExamples/missingReturn.minijava" -- read file
-    --fileContent <- readFile "code/examples/bct.minijava" -- read file
+    --fileContent <- readFile "code/semantikCheckExamples/missingReturn.minijava" -- read file
+    fileContent <- readFile "code/examples/test.minijava" -- read file
 
     putStrLn ""
     putStrLn "parsing file content"

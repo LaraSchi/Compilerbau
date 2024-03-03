@@ -1,0 +1,12 @@
+class A {
+int attr;
+
+public int add(int a, int b) {
+        return a + b;
+    }
+
+public int meth(Boolean x) {
+    return this.add(1, 2);
+
+ }
+}
