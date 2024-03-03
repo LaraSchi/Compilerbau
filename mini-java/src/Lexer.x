@@ -16,6 +16,7 @@ tokens :-
   int                       { \_ -> IntTypeT }
   boolean                   { \_ -> BooleanTypeT }
   char                      { \_ -> CharTypeT }
+  void                      { \_ -> VoidTypeT }
   new                       { \_ -> NewT }
   return                    { \_ -> ReturnT }
   while                     { \_ -> WhileT }
@@ -62,6 +63,7 @@ data Token = ClassT
            | IntTypeT
            | BooleanTypeT
            | CharTypeT
+           | VoidTypeT
            | NewT
            | ReturnT
            | WhileT

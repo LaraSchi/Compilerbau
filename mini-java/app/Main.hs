@@ -72,6 +72,7 @@ addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
               params = map (\(n,t) -> Parameter t n) fieldVars
               assigns = map (\(n,_) -> StmtExprStmt (AssignmentStmt (FieldVarExpr n) (FieldVarExpr n))) fieldVars
 
+-- TODO: init Funktion Variablen als Field
 initMissing :: String -> [MethodDecl] -> Bool
 initMissing name = not . any (\(MethodDecl _ _ func _ _) -> name == func)
 {-

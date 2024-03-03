@@ -19,6 +19,7 @@ import Control.Monad.Except
   intType                   { IntTypeT }
   booleanType               { BooleanTypeT }
   charType                  { CharTypeT }
+  voidType                  { VoidTypeT }
   new                       { NewT }
   return                    { ReturnT }
   while                     { WhileT }
@@ -74,6 +75,7 @@ Type
   : intType                   { IntT }
   | booleanType               { BoolT }
   | charType                  { CharT }
+  | voidType                  { VoidT }
   | Newtype                   { NewTypeT $1 }
 
 Fields

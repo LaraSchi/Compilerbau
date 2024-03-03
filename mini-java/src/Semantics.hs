@@ -133,11 +133,11 @@ checkIdentifier s = do
     state <- get
     let localSet = localTypeset state
     let fieldSet = fieldTypeset state
-    case lookup s localSet of
-        Just localT -> return $ TypedExpr (LocalVarExpr s) localT
-        _      -> case lookup s fieldSet of
-                    Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
-                    _           -> error "Vars müssen deklariert werden" -- #TODO: schöner
+    case lookup s fieldSet of
+        Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
+        _           -> case lookup s localSet of
+                        Just localT -> return $ TypedExpr (LocalVarExpr s) localT
+                        _      -> error "Vars müssen deklariert werden" -- #TODO: schöner
 
 -- #TODO: evtl. umschreiben
 checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
