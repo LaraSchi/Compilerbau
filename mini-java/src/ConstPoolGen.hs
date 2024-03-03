@@ -23,9 +23,6 @@ type ConstantpoolStateM = State ConstantpoolState
 getConstantpool :: ConstantpoolState -> [CP_Info]
 getConstantpool = constPool
 
-startBuildProcess :: Program -> [CP_Info]
-startBuildProcess p = getConstantpool $ snd $ runState (do (generateConstantPool p)) $ ConstantpoolState []
-
 -- Helper Functions to assist in handling the State Monad
 addElement :: CP_Info -> ConstantpoolStateM ()
 -- Only adds, if the list does not contain the element yet.
@@ -34,10 +31,8 @@ addElement x = do
     unless (x `elem` cp) $ do
             modify (\s -> s { constPool = cp ++ [x] })
 
-
 modifyAtIndex :: [a] -> Int -> a -> [a]
 modifyAtIndex list index newEntry = take (index-1) list ++ [newEntry] ++ drop index list
-
 
 -- Modify an entry at a given index
 modifyEntryAtIndex :: Int -> CP_Info -> ConstantpoolStateM ()
@@ -63,6 +58,9 @@ getCurrentIdx = do
     return (if null cp then 1 else length cp + 1)
 
 -- Generation --------------------------------------------------
+startBuildProcess :: Program -> [CP_Info]
+startBuildProcess p = getConstantpool $ snd $ runState (do (generateConstantPool p)) $ ConstantpoolState []
+
 generateConstantPool :: Program -> ConstantpoolStateM ()
 generateConstantPool (Program classes typed_bool) = do
     generateClassConstantPool classes

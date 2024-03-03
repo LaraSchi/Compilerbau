@@ -6,14 +6,18 @@ import Semantics(checkSemantics)
 import ClassFormat
 import ConstPoolGen (startBuildProcess)
 import Data.Typeable
--- import ClassFileGen(generateClassFile)
+import ClassFileGen(generateClassFile)
+
 
 import System.Directory
 
 
+
+
 main :: IO ()
 main = do
-    fileContent <- readFile "code/advancedExamples/test.minijava" -- read file
+
+    fileContent <- readFile "code/examples/explIfElse.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -30,12 +34,12 @@ main = do
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
-                putStrLn constPoolShow
-
-                -- let sampleCF = generateClassFile t' sampleCP -- Todo
-                -- let result = prettyPrintClassFile sampleCF -- Todo uncomment
-                -- putStrLn result
-                --return ()
+                -- putStrLn constPoolShow
+                putStrLn "Generating Class File"
+                let sampleCF = generateClassFile t' sampleCP -- Todo
+                let result = prettyPrintClassFile sampleCF -- Todo uncomment
+                putStrLn result
+                return ()
     -------------------------------------
 -- Laras Beispiel durchlauf Funktion
 checkAllExamples :: IO()
