@@ -102,7 +102,7 @@ checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT -- #TOD
 checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
 checkExpr v@(FieldVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
 checkExpr v@(LocalVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
-checkExpr v@(InstVarExpr _ _)       = return $ TypedExpr v StringT -- #TODO: korrigieren
+checkExpr (InstVarExpr e s)       = checkExpr e >>= \eTyped -> return $ TypedExpr (InstVarExpr eTyped s) StringT -- #TODO: korrigieren, was für ein Typ?
 checkExpr (UnaryOpExpr op e)        = checkUnary op e
 checkExpr (BinOpExpr e1 op e2)      = checkBinary e1 op e2
 checkExpr e@(IntLitExpr _)          = return $ TypedExpr e IntT
@@ -171,10 +171,8 @@ checkAssign :: StmtExpr -> TypeStateM StmtExpr
 checkAssign (AssignmentStmt e1 e2) = do
     e1T <- checkExpr e1 
     e2T <- checkExpr e2
-    if getTypeE e1T == getTypeE e2T
-        then return $ TypedStmtExpr (AssignmentStmt e1T e2T) (getTypeE e1T)
-        else error "assignment failed, not same type"
-    -- #TODO: check if object v has attribut s
+    -- #TODO: e1 muss var sein? und als Var it jeweiligen Typ abspeichern
+    return $ TypedStmtExpr (AssignmentStmt e1T e2T) (getTypeE e2T)
 
 checkNew :: NewExpr -> TypeStateM StmtExpr
 checkNew (NewExpr cn es) = do

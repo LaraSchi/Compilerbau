@@ -7,10 +7,12 @@ import ConstPoolGen (startBuildProcess)
 import Data.Typeable
 import ClassFileGen(generateClassFile)
 
+import System.Directory
+
 
 main :: IO ()
 main = do
-    fileContent <- readFile "code/advancedExamples/addN.minijava" -- read file
+    fileContent <- readFile "code/semantikCheckExamples/missingReturn.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -34,6 +36,27 @@ main = do
                 -- putStrLn result
                 return ()
     -------------------------------------
+-- Laras Beispiel durchlauf Funktion
+checkAllExamples :: IO()
+checkAllExamples = do
+    files1 <- listDirectory "code/examples/"
+    mapM_ parseAndCheck files1
+
+parseAndCheck :: String -> IO ()
+parseAndCheck s = do
+    fileContent <- readFile $ "code/examples/" ++ s -- read file
+    putStrLn ""
+    putStrLn $ "parsing checked file content: " ++ s
+    putStrLn ""
+    putStrLn "File Content:"
+    putStrLn fileContent
+    case parse fileContent of
+        Left _  -> putStrLn "Term could not be parsed."
+        Right t -> case checkSemantics t of
+            Left _   -> print "false"
+            Right t' -> print t'
+ 
+
 {- 
 TODO: 
     - Prüfen, ob Grammatik vollständig und ggf. erweitern.

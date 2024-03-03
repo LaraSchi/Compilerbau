@@ -1,0 +1,5 @@
+class ControlClass {
+    public int check() {
+        int a = 0;
+    }
+}
