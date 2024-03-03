@@ -64,7 +64,8 @@ Program
 Class
   : class Newtype '{' Fields MethodDecls '}'    { Class $2 $4 $5 }
   | class Newtype '{' Fields '}'                { Class $2 $4 [] }
-  | class Newtype '{' MethodDecls '}'               { Class $2 [] $4 }
+  | class Newtype '{' MethodDecls '}'           { Class $2 [] $4 }
+  | class Newtype '{' '}'                       { Class $2 [] [] }
 
 Newtype
   : identifier            { NewType $1 }
