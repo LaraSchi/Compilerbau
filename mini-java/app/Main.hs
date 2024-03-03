@@ -39,12 +39,13 @@ main = do
 -- Laras Beispiel durchlauf Funktion
 checkAllExamples :: IO()
 checkAllExamples = do
-    files1 <- listDirectory "code/examples/"
-    mapM_ parseAndCheck files1
+    let folder = "code/semantikCheckExamples/"
+    files1 <- listDirectory folder
+    mapM_ (parseAndCheck folder) files1
 
-parseAndCheck :: String -> IO ()
-parseAndCheck s = do
-    fileContent <- readFile $ "code/examples/" ++ s -- read file
+parseAndCheck :: String -> String -> IO ()
+parseAndCheck folder s = do
+    fileContent <- readFile $ folder ++ s -- read file
     putStrLn ""
     putStrLn $ "parsing checked file content: " ++ s
     putStrLn ""

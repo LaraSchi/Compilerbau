@@ -16,13 +16,13 @@ data Field = FieldDecl Type String (Maybe Expression)
                deriving (Show, Eq, Read)
 
 
-data MethodDecl = MethodDecl Visibility Type String [Parameter] BlockStmt
+data MethodDecl = MethodDecl Visibility Type String [Parameter] Stmt
                 deriving (Show, Eq, Read)
 
 data Parameter = Parameter Type String
                deriving (Show, Eq, Read)
 
-type BlockStmt =  [Stmt]
+type BlockStmtList = [Stmt]
 
 data Type = IntT
           | BoolT
@@ -37,10 +37,11 @@ data Visibility = Public
           deriving (Show, Eq, Read)
 
 data Stmt = TypedStmt Stmt Type
+          | Block BlockStmtList
           | ReturnStmt Expression
-          | WhileStmt Expression BlockStmt
+          | WhileStmt Expression Stmt
           | LocalVarDeclStmt Type String (Maybe Expression)
-          | IfElseStmt Expression BlockStmt (Maybe BlockStmt)
+          | IfElseStmt Expression Stmt (Maybe Stmt)
           | StmtExprStmt StmtExpr
           | Print String
           -- Vllt hier Field Ref zum Verändern von fieldVars? 

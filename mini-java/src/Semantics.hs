@@ -54,7 +54,7 @@ buildFuncType (MethodDecl _ t n ps _) = (n, FuncT paramFunc t) : paramTypes
 
 checkMethod :: MethodDecl -> TypeStateM MethodDecl
 checkMethod (MethodDecl v t s ps stmts) = do
-    typedStmts <- mapM checkStmt stmts
+    typedStmts <- checkStmt stmts
     locals <- gets localTypeset
     fields <- gets fieldTypeset
     classT <- gets classType
@@ -62,11 +62,12 @@ checkMethod (MethodDecl v t s ps stmts) = do
 
 
 checkStmt :: Stmt -> TypeStateM Stmt
+checkStmt (Block stmts)                     = mapM checkStmt stmts >>= \bT -> return $ TypedStmt (Block bT) (getTypeS bT)
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
-    stmtsTyped <- mapM checkStmt stmts
-    return $ TypedStmt (WhileStmt eTyped stmtsTyped) VoidT
+    stmtsTyped <- checkStmt stmts
+    return $ TypedStmt (WhileStmt eTyped stmtsTyped) $ getTypeE eTyped -- TODO: Hier Typ vom BLock
 checkStmt v@(LocalVarDeclStmt t s Nothing)          = do
     locals <- gets localTypeset
     modify (\state -> state {localTypeset = (s,t):locals})
@@ -78,12 +79,12 @@ checkStmt v@(LocalVarDeclStmt t s (Just e))          = do
     return $ TypedStmt (LocalVarDeclStmt t s (Just eTyped)) t
 checkStmt (IfElseStmt e bs Nothing)         = do
     eTyped     <- checkTypeExpr BoolT e 
-    stmtsTyped <- mapM checkStmt bs
+    stmtsTyped <- checkStmt bs
     return $ TypedStmt (IfElseStmt eTyped stmtsTyped Nothing) VoidT
 checkStmt (IfElseStmt e bs1 (Just bs2))      = do
     eT   <- checkTypeExpr BoolT e  
-    bsT1 <- mapM checkStmt bs1
-    bsT2 <- mapM checkStmt bs2
+    bsT1 <- checkStmt bs1
+    bsT2 <- checkStmt bs2
     return $ TypedStmt (IfElseStmt eT bsT1 (Just bsT2)) VoidT
 checkStmt (StmtExprStmt se)                 = checkStmtExpr se >>= \seT -> return $ TypedStmt (StmtExprStmt seT) VoidT
 checkStmt s                                 = return $ TypedStmt s VoidT
@@ -194,6 +195,7 @@ checkMethodCall (MethodCallExpr e s es) = do
     esTyped <- mapM checkExpr es
     return $ MethodCallExpr eTyped s esTyped
 
+-- checkBlockStmt ::
 
 getTypeE :: Expression -> Type
 getTypeE (TypedExpr _ t) = t
@@ -202,6 +204,10 @@ getTypeE _               = error "blub"
 getTypeSE :: StmtExpr -> Type
 getTypeSE (TypedStmtExpr _ t) = t
 getTypeSE _                    = error "blub"
+
+getTypeS :: StmtExpr -> Type
+getTypeS (TypedStmt _ t) = t
+getTypeS _                    = error "blub"
 
 -- Debug Helper 
 

@@ -63,6 +63,7 @@ executable mini-java-exe
     , happy
   build-depends:
       base >=4.7 && <5
+    , directory
     , mini-java
   default-language: Haskell2010
 

@@ -102,9 +102,11 @@ ParameterList
 Parameter
   : Type identifier       { Parameter $1 $2 }
 
-BlockStmt
+BlockStmt : BlockStmtList     { Block $1 }
+
+BlockStmtList
   : Stmt                      { [$1] }
-  | Stmt BlockStmt            { $1 : $2 }
+  | Stmt BlockStmtList            { $1 : $2 }
 
 Stmt
   : ReturnStmt ';'           { $1 }

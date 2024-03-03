@@ -1,16 +1,31 @@
 ## TODO: 
 
 - Alle bsp durchlaufen lassen
-- advancedExamples/Addn.minijava überarbeiten
-  - Constructor
-  - bei n + x: Parser macht x zu this.x
-- examples/explFieldRef3.minijava 
-- this.method
-- System.out.println mit " " statt ~. 
-- System.out.println als Methode
 - System.out.println in Konstantenpool
 
 
+## TODO (Lara):
+
+- Char zu char
+- init Funktion immer reinhauen "<init>", und dann Vars aus Init als Field
+
+- Semantikcheck
+    - welche Regeln fehlen noch?
+
+        - BlockStmts type
+        - Funktionstypen prüfen?
+        - Assign korrekt machen
+
+    - Beispiele
+    - return Regel
+- advancedExamples/Addn.minijava prüfen:
+  - Constructor
+  - bei n + x: Parser macht x zu this.x
+- examples/explFieldRef3.minijava prüfen
+- this.method prüfen
+- String parsen können
+    - System.out.println mit " " statt ~. 
+    - System.out.println als Methode
 
 ## Nice to have:
 
