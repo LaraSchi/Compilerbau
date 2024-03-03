@@ -32,12 +32,12 @@ generateInitByteCode cp = [ALoad_0] ++
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
-generateCodeForMethod (MethodDecl visibility returnType name params blockStmt) cp_infos =  -- TODO params auf Stack
+generateCodeForMethod (MethodDecl visibility returnType name params (Block blockStmt)) cp_infos =  -- TODO params auf Stack
     generateCodeForBlockStmt blockStmt cp_infos 
     
 
 -- Function to generate assembly code for BlockStmt
-generateCodeForBlockStmt :: BlockStmt -> [CP_Info] -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
+generateCodeForBlockStmt :: BlockStmtList -> [CP_Info] -> [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
 generateCodeForBlockStmt [] cp_infos = []
 generateCodeForBlockStmt (stmt:stmts) cp_infos =
     generateCodeForStmt stmt cp_infos ++ generateCodeForBlockStmt stmts cp_infos
@@ -54,7 +54,7 @@ generateCodeForStmt (ReturnStmt expr) cp_infos =
             then [Return]
             else [AReturn]-}
 -- While
-generateCodeForStmt (WhileStmt expr blockStmt) cp_infos = 
+generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = 
     let code = generateCodeForBlockStmt blockStmt cp_infos
         code_expr = generateCodeForExpression expr  -- current line number from monad to add branchoffset
     in code ++ code_expr
@@ -67,10 +67,10 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
                 else [(AStore 0)]  -- TODO: richtigen Store Befehl aus State Monad nehmen 
         Nothing -> []  -- nur Decl ergibt keinen Binärcode, bei später Zuweisung ist es AssignmentStmt 
 -- If Else  !! nur ifcmp* werden verwendet; javac hat Sonderinstruktionen wenn Vergleich mit 0 durchgeführt wird, aber unnötig
-generateCodeForStmt (IfElseStmt expr blockStmt maybeBlockStmt) cp_infos = 
+generateCodeForStmt (IfElseStmt expr (Block blockStmt) maybeBlockStmt) cp_infos = 
     let code = generateCodeForBlockStmt blockStmt cp_infos
         code2 = case maybeBlockStmt of
-            Just block -> [(Goto 0x0 0x0)] ++ generateCodeForBlockStmt block cp_infos
+            Just (Block block) -> [(Goto 0x0 0x0)] ++ generateCodeForBlockStmt block cp_infos
             Nothing -> []
         code_expr = (generateCodeForIfElseStmtExpression expr 0x0 0x0)  -- current line number from monad to add branchoffset
     in code_expr ++ code ++ code2  -- goto muss irgendwo noch rein
