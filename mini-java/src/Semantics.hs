@@ -68,12 +68,12 @@ checkStmt (WhileStmt e stmts)               = do
     stmtsTyped <- mapM checkStmt stmts
     return $ TypedStmt (WhileStmt eTyped stmtsTyped) VoidT
 checkStmt v@(LocalVarDeclStmt t s Nothing)          = do
-    locals <- gets fieldTypeset
-    modify (\state -> state {fieldTypeset = (s,t):locals})
+    locals <- gets localTypeset
+    modify (\state -> state {localTypeset = (s,t):locals})
     return $ TypedStmt (LocalVarDeclStmt t s Nothing) t
 checkStmt v@(LocalVarDeclStmt t s (Just e))          = do
-    locals <- gets fieldTypeset
-    modify (\state -> state {fieldTypeset = (s,t):locals})
+    locals <- gets localTypeset
+    modify (\state -> state {localTypeset = (s,t):locals})
     eTyped <- checkTypeExpr t e
     return $ TypedStmt (LocalVarDeclStmt t s (Just eTyped)) t
 checkStmt (IfElseStmt e bs Nothing)         = do
