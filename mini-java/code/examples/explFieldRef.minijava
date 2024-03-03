@@ -2,6 +2,6 @@ class A {
     int i;
 
     public void setI(int n){
-        i = n;
+        this.i = n;
     }
 }

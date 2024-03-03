@@ -5,7 +5,7 @@ import Semantics(checkSemantics)
 import ClassFormat
 import ConstPoolGen (startBuildProcess)
 import Data.Typeable
-import ClassFileGen(generateClassFile)
+-- import ClassFileGen(generateClassFile)
 
 import System.Directory
 
@@ -26,12 +26,12 @@ main = do
             Left _   -> print "false"
             Right t' -> do
                 print t'
-                let sampleCP = startBuildProcess t' -- Todo uncomment
+                let sampleCP = startBuildProcess t'
                 putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
                 putStrLn constPoolShow
 
-                -- let sampleCF = generateClassFile t' sampleCP -- Todo what is StackMapTable?
+                -- let sampleCF = generateClassFile t' sampleCP -- Todo
                 -- let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 -- putStrLn result
                 return ()
@@ -56,9 +56,9 @@ parseAndCheck folder s = do
         Right t -> case checkSemantics t of
             Left _   -> print "false"
             Right t' -> print t'
- 
 
-{- 
+
+{-
 TODO: 
     - Prüfen, ob Grammatik vollständig und ggf. erweitern.
         -> fehlt: 

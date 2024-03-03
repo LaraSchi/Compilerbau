@@ -58,6 +58,12 @@
   ,   "name"      : "While"
   ,   "input"     : "class LoopClass {\n\n  public int countToTen() {\n    int j;\n    int i = 0;\n    while (i < 10) {\n      i = i + 1;\n    }\n    return i;\n  }\n}"
   ,   "expected"  : "1|Utf8_Info {tag_cp = TagUtf8, tam_cp = 9, cad_cp = \"LoopClass\", desc = \"\"}\n2|Class_Info {tag_cp = TagClass, index_cp = 1, desc = \"LoopClass\"}\n3|Utf8_Info {tag_cp = TagUtf8, tam_cp = 16, cad_cp = \"java/lang/Object\", desc = \"\"}\n4|Class_Info {tag_cp = TagClass, index_cp = 3, desc = \"java/lang/Object\"}\n5|Utf8_Info {tag_cp = TagUtf8, tam_cp = 6, cad_cp = \"<init>\", desc = \"\"}\n6|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"()V\", desc = \"\"}\n7|NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 5, index_descr_cp = 6, desc = \"<init>:()V\"}\n8|MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 4, index_nameandtype_cp = 7, desc = \"java/lang/Object.<init>:()V\"}\n9|Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = \"Code\", desc = \"\"}\n10|Utf8_Info {tag_cp = TagUtf8, tam_cp = 10, cad_cp = \"countToTen\", desc = \"\"}\n11|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"()I\", desc = \"\"}\n"
+  },
+  {
+    "no"        : "11"
+  ,   "name"      : "EmptyClass"
+  ,   "input"     : "class EmptyClass {\n}"
+  ,   "expected"  : "1|Utf8_Info {tag_cp = TagUtf8, tam_cp = 10, cad_cp = \"EmptyClass\", desc = \"\"}\n2|Class_Info {tag_cp = TagClass, index_cp = 1, desc = \"EmptyClass\"}\n3|Utf8_Info {tag_cp = TagUtf8, tam_cp = 16, cad_cp = \"java/lang/Object\", desc = \"\"}\n4|Class_Info {tag_cp = TagClass, index_cp = 3, desc = \"java/lang/Object\"}\n5|Utf8_Info {tag_cp = TagUtf8, tam_cp = 6, cad_cp = \"<init>\", desc = \"\"}\n6|Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = \"()V\", desc = \"\"}\n7|NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 5, index_descr_cp = 6, desc = \"<init>:()V\"}\n8|MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 4, index_nameandtype_cp = 7, desc = \"java/lang/Object.<init>:()V\"}\n9|Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = \"Code\", desc = \"\"}\n"
   }
 ]
 

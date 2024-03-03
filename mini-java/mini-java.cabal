@@ -26,9 +26,7 @@ source-repository head
 library
   exposed-modules:
       ByteCodeInstr
-      ClassFileGen
       ClassFormat
-      CodeGenerator
       ConstPoolGen
       Lexer
       Lib
