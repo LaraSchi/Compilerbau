@@ -1,0 +1,6 @@
+class Addn {
+    int n;
+    public void Addn(int n) {
+        this.n = n;
+    }
+}
