@@ -97,19 +97,21 @@ checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
 -- TODO: alle Expr typen 
 -- TODO: evtl. zu haskell typen? 
 checkExpr :: Expression -> TypeStateM Expression
-checkExpr ThisExpr             = gets classType >>= \t -> return $ TypedExpr ThisExpr t
-checkExpr SuperExpr            = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
+checkExpr ThisExpr                  = gets classType >>= \t -> return $ TypedExpr ThisExpr t
+checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
 checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
-checkExpr v@(InstVarExpr _ _)      = return $ TypedExpr v StringT -- #TODO: korrigieren
-checkExpr (UnaryOpExpr op e)   = checkUnary op e
-checkExpr (BinOpExpr e1 op e2) = checkBinary e1 op e2
-checkExpr e@(IntLitExpr _)     = return $ TypedExpr e IntT
-checkExpr e@(BoolLitExpr _)    = return $ TypedExpr e BoolT
-checkExpr e@(CharLitExpr _)  = return $ TypedExpr e CharT -- #TODO: evtl nochmal iwo prüfen, das char
-checkExpr e@(StringLitExpr _)  = return $ TypedExpr e StringT
-checkExpr Null                 = return $ TypedExpr Null VoidT
-checkExpr (StmtExprExpr se)    = checkStmtExpr se >>= \seTyped -> return $ TypedExpr (StmtExprExpr seTyped) (getTypeSE seTyped)
-checkExpr _                    = error "checkExpr called on already typed Expression"
+checkExpr v@(FieldVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
+checkExpr v@(LocalVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
+checkExpr v@(InstVarExpr _ _)       = return $ TypedExpr v StringT -- #TODO: korrigieren
+checkExpr (UnaryOpExpr op e)        = checkUnary op e
+checkExpr (BinOpExpr e1 op e2)      = checkBinary e1 op e2
+checkExpr e@(IntLitExpr _)          = return $ TypedExpr e IntT
+checkExpr e@(BoolLitExpr _)         = return $ TypedExpr e BoolT
+checkExpr e@(CharLitExpr _)  =      return $ TypedExpr e CharT -- #TODO: evtl nochmal iwo prüfen, das char
+checkExpr e@(StringLitExpr _)       = return $ TypedExpr e StringT
+checkExpr Null                      = return $ TypedExpr Null VoidT
+checkExpr (StmtExprExpr se)         = checkStmtExpr se >>= \seTyped -> return $ TypedExpr (StmtExprExpr seTyped) (getTypeSE seTyped)
+checkExpr _                         = error "checkExpr called on already typed Expression"
 
 -- #TODO: lookup noch spezifizieren, ob wirklich in jeweiliger FUnktion
 checkIdentifier :: String -> TypeStateM Expression
@@ -151,7 +153,7 @@ checkSameExpr e1 e2 t = do
     e2T <- checkExpr e2
     let equal = getTypeE e1T == getTypeE e2T        -- Are ExprTypes equal?
     if equal && (t == getTypeE e1T || t == VoidT)   -- equal & Both have required type
-        then return (e1,e2) 
+        then return (e1T,e2T) 
         else semanticsError "checkSameExpr" $ show e1T ++ " & " ++ show e2T ++ ", with Type " ++ show t ++ ", but type e1, e2: " ++ show (getTypeE e1T) ++ " " ++ show (getTypeE e2T) 
 
 
@@ -166,17 +168,13 @@ checkStmtExpr _                       = error "checkStmtExpr called on already t
 
 -- #TODO: AssignmentStmt _> AssignStmt rename
 checkAssign :: StmtExpr -> TypeStateM StmtExpr
-checkAssign (AssignmentStmt var@(InstVarExpr _ s) e) = do
-    state <- get
-    case lookup s $ localTypeset state ++ fieldTypeset state of
-        Nothing -> error $ s ++ " has not been initialized" 
-        Just t  -> checkTypeExpr t e >>= \eT -> return $ TypedStmtExpr (AssignmentStmt var eT) t
+checkAssign (AssignmentStmt e1 e2) = do
+    e1T <- checkExpr e1 
+    e2T <- checkExpr e2
+    if getTypeE e1T == getTypeE e2T
+        then return $ TypedStmtExpr (AssignmentStmt e1T e2T) (getTypeE e1T)
+        else error "assignment failed, not same type"
     -- #TODO: check if object v has attribut s
-checkAssign t@(AssignmentStmt _ _)             = do
-    return $ TypedStmtExpr t VoidT
-    -- #TODO: check if e has same type as v
-    -- #TODO: StmtExpr has type VoidT 
-checkAssign _                                = error "checkAssign is called on a StmtExpr, which is not AssignmentStmt"
 
 checkNew :: NewExpr -> TypeStateM StmtExpr
 checkNew (NewExpr cn es) = do
