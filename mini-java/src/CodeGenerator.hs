@@ -10,7 +10,6 @@ import Control.Monad.State
 import Debug.Trace
 
 -- TODO init wenn empty init method im AST -> erst nach Änderung in Syntax möglich mit eigenem return Typ für Init
--- TODO Wann FieldVarExpr für Zuweisung und wann zum Laden als Wert?
 -- TODO how to get max stack size in classfile?
 -- TODO how does monad behave when method call happens
 -- TODO branchoffset 
@@ -27,6 +26,7 @@ data GlobalVars = GlobalVars
     , currentStackSize :: Int -- current stack size
     , currentByteCodeSize :: Int -- current byte code array size
     , localVars :: [String] -- list of defined local variables to choose index for iload, istore, ...
+    , typesOfLocalVars :: [Type]
     , returnType :: Type  -- method return type
     } deriving (Show)
 
@@ -51,6 +51,9 @@ getReturnType = gets returnType
 getLocalVars :: GlobalVarsMonad [String]
 getLocalVars = gets localVars
 
+getLocalVarTypes :: GlobalVarsMonad [Type]
+getLocalVarTypes = gets typesOfLocalVars
+
 
 -- Function to add an integer to the max size
 addToMaxStackSize :: Int -> GlobalVarsMonad ()
@@ -67,7 +70,10 @@ setReturnType x = modify (\s -> s { returnType = x })                           
 
 -- Function to add an element to the stack
 addToLocalVars :: String -> GlobalVarsMonad ()
-addToLocalVars x = modify (\s -> s { localVars = x : localVars s })
+addToLocalVars x = modify (\s -> s { localVars = localVars s ++ [x] })
+
+addToLocalVarTypes :: Type -> GlobalVarsMonad ()
+addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s ++ [x] })
 
 
 
@@ -84,7 +90,7 @@ startBuildGenCodeProcess m cp =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
     in result
     where
-    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT }
+    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], returnType = VoidT }
                         
 
 {-
@@ -141,14 +147,17 @@ generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = do
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
     case maybeExpr of
         Just expr -> do
-            (addToLocalVars name)
+            addToLocalVars name
+            addToLocalVarTypes var_type
+            varTypeList <- getLocalVarTypes
             localVarList <- getLocalVars
             codeForExpr <- generateCodeForExpression expr
             if var_type == BoolT || var_type == CharT || var_type == IntT
-                then return (codeForExpr ++ [(getIStoreByIndex (((length localVarList) - 1) - (getVarIndex name localVarList)))])                                         -- ist das richtig so
-                else return (codeForExpr ++ [(getAStoreByIndex (((length localVarList) - 1) - (getVarIndex name localVarList)))])  
+                then return (codeForExpr ++ [(getIStoreByIndex (getVarIndex name localVarList))])                                         -- ist das richtig so
+                else return (codeForExpr ++ [(getAStoreByIndex (getVarIndex name localVarList))])  
         Nothing -> do
-            (addToLocalVars name)
+            addToLocalVars name
+            addToLocalVarTypes var_type
             return []
 -- If Else  !! nur ifcmp* werden verwendet; javac hat Sonderinstruktionen wenn Vergleich mit 0 durchgeführt wird, aber unnötig
 generateCodeForStmt (IfElseStmt expr (Block blockStmt) maybeBlockStmt) cp_infos = do
@@ -188,19 +197,24 @@ generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) = generateCodeForStmtExpr stm
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
     codeExpr1 <- generateCodeForAssign expr1
     codeExpr2 <- generateCodeForExpression expr2
-    return (codeExpr2 ++ codeExpr1)                                                                     -- muss wahrscheinlich so herum gemacht werden
+    case codeExpr1 of
+        [(PutField _ _)] -> return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)        -- wenn assignemnt auf field: aload dann was und dann putfield
+        _ -> return (codeExpr2 ++ codeExpr1)                                                                   
 -- New
 generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr  -- TODO ??
 -- Method call
 generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr  -- TODO ??
 
 generateCodeForAssign :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForAssign (FieldVarExpr name) = do                                              -- stimmt das so?
+generateCodeForAssign (TypedExpr expr _) = generateCodeForAssign expr
+generateCodeForAssign (FieldVarExpr name) = return [(PutField 0x0 0x0)]                 -- TODO verweis auf cp mit name
+generateCodeForAssign (LocalVarExpr name) = do
     varList <- getLocalVars
-    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
-generateCodeForAssign (LocalVarExpr name) = do                                              -- stimmt das so?
-    varList <- getLocalVars
-    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
+    varTypeList <- getLocalVarTypes
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
+    if var_type == BoolT || var_type == IntT || var_type == CharT
+        then return [(getIStoreByIndex (getVarIndex name varList))]
+        else return [(getAStoreByIndex (getVarIndex name varList))]
 
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> GlobalVarsMonad [ByteCodeInstrs]
@@ -215,12 +229,14 @@ generateCodeForExpression :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForExpression (TypedExpr expr _) = generateCodeForExpression expr
 generateCodeForExpression (ThisExpr) = return []                                                -- welcher Fall ist das?
 generateCodeForExpression (SuperExpr) = return []                                               -- welcher Fall ist das?
-generateCodeForExpression (FieldVarExpr name) = do                                              -- stimmt das so?
+generateCodeForExpression (FieldVarExpr name) = return [ALoad_0, (GetField 0x0 0x0)]            -- TODO referenz auf cp über name
+generateCodeForExpression (LocalVarExpr name) = do                                              
     varList <- getLocalVars
-    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
-generateCodeForExpression (LocalVarExpr name) = do                                              -- stimmt das so?
-    varList <- getLocalVars
-    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
+    varTypeList <- getLocalVarTypes
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
+    if var_type == BoolT || var_type == IntT || var_type == CharT
+        then return [(getILoadByIndex (getVarIndex name varList))]
+        else return [(getALoadByIndex (getVarIndex name varList))]
 generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr              -- TODO: eigentlich nur relevant, wenn man mehrere Klassen hat?
 generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr
 generateCodeForExpression (BinOpExpr expr1 _ expr2) = do
@@ -258,13 +274,19 @@ generateCodeForExpressions (expr:exprs) = do
     return (codeForExpr ++ codeForExprs)
 
 ----------------------------------------------------------------------
--- Helper functions to get list index of variable
+-- Helper functions to get list index of variable  (offset of 1 is accounted since load_0 and store_0 are not used)
 getVarIndex :: String -> [String] -> Int
 getVarIndex _ [] = -1                                                                   -- theoretisch müsste der error Fall noch abgefangen werden
 getVarIndex var_name (var:vars)
-    | var_name == var  = 0
+    | var_name == var  = 1
     | otherwise = if indexRest == -1 then -1 else 1 + indexRest
     where indexRest = getVarIndex var_name vars
+
+getTypeFromIndex :: Int -> [Type] -> Type
+getTypeFromIndex index (t:ts) = 
+    if (index - 1) == 0
+        then t
+        else getTypeFromIndex (index - 1) ts
     
 ----------------------------------------------------------------------
 -- Helper functions to get store and load instr

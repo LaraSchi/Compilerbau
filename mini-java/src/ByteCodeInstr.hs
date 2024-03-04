@@ -289,14 +289,14 @@ convertInstrToString instr = case instr of
     (If_ACmpNeq arg1 arg2) -> "if_acmpne" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
     (IfNull arg1 arg2) -> "ifnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
     (IfNonNull arg1 arg2) -> "ifnonnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
-    (InvokeVirtual arg1 arg2) -> "invokevirtual" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (InvokeStatic arg1 arg2) -> "invokestatic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (InvokeSpecial arg1 arg2) -> "invokespecial" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
+    (InvokeVirtual arg1 arg2) -> "invokevirtual" ++ "\t#" ++ show (arg1 + arg2)
+    (InvokeStatic arg1 arg2) -> "invokestatic" ++ "\t#" ++ show (arg1 + arg2)
+    (InvokeSpecial arg1 arg2) -> "invokespecial" ++ "\t#" ++ show (arg1 + arg2)
     (Goto arg1 arg2) -> "goto" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
-    (GetField arg1 arg2) -> "getfield" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (PutField arg1 arg2) -> "putfield" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (GetStatic arg1 arg2) -> "getstatic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (PutStatic arg1 arg2) -> "putstatic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
+    (GetField arg1 arg2) -> "getfield" ++ "\t#" ++ show (arg1 + arg2)
+    (PutField arg1 arg2) -> "putfield" ++ "\t#" ++ show (arg1 + arg2)
+    (GetStatic arg1 arg2) -> "getstatic" ++ "\t#" ++ show (arg1 + arg2)
+    (PutStatic arg1 arg2) -> "putstatic" ++ "\t#" ++ show (arg1 + arg2)
     (InstanceOf arg1 arg2) -> "instanceof" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
     (Ldc_W arg1 arg2) -> "ldc_w" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
     (Ldc2_W arg1 arg2) -> "ldc2_w" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
