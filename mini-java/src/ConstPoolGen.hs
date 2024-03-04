@@ -110,7 +110,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
                        return ()
                     Nothing -> do
                         _ <- generateMethodRefConstantPool "<init>" "()V" className
-                        return ()
+                        return () -- Todo
   IfElseStmt expr stmt1 stmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt1 fieldOrMethodDecls className

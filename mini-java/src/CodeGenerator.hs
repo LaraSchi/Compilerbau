@@ -8,9 +8,6 @@ import Data.Char (ord)
 import Data.Bits
 
 import Control.Monad.State
-import Control.Monad (when)
-import Data.List
-import ConstPoolGen
 import Debug.Trace
 
 -- TODO init wenn empty init method im AST -> erst nach Änderung in Syntax möglich mit eigenem return Typ für Init
@@ -33,7 +30,6 @@ data GlobalVars = GlobalVars
     , localVars :: [String] -- list of defined local variables to choose index for iload, istore, ...
     , typesOfLocalVars :: [Type]
     , returnType :: Type  -- method return type
-    , className :: String
     } deriving (Show)
 
 -- Define a type synonym for the state monad
@@ -60,8 +56,6 @@ getLocalVars = gets localVars
 getLocalVarTypes :: GlobalVarsMonad [Type]
 getLocalVarTypes = gets typesOfLocalVars
 
-getClassName :: GlobalVarsMonad String
-getClassName = gets className
 
 -- Function to add an integer to the max size
 addToMaxStackSize :: Int -> GlobalVarsMonad ()
@@ -83,8 +77,6 @@ addToLocalVars x = modify (\s -> s { localVars = localVars s ++ [x] })
 addToLocalVarTypes :: Type -> GlobalVarsMonad ()
 addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s ++ [x] })
 
-setClassName :: String -> GlobalVarsMonad ()
-setClassName name = modify (\s -> s { className = name })
 
 
 ----------------------------------------------------------------------
@@ -95,12 +87,12 @@ generateInitByteCode cp = return ([ALoad_0] ++
                         [(InvokeSpecial 0x00 (getIndexByDesc ("java/lang/Object" ++ "." ++ "<init>" ++ ":" ++ "()V") cp))]
                         ++ [Return])
 
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [ByteCodeInstrs]
-startBuildGenCodeProcess m cp className =
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
+startBuildGenCodeProcess m cp =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
     in result
     where
-    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className }
+    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], returnType = VoidT }
                         
 
 -- Function to generate assembly code for a Method
@@ -128,10 +120,10 @@ generateCodeForBlockStmt (stmt:stmts) cp_infos = do
 
 -- Function to generate assembly code for Stmt
 generateCodeForStmt :: Stmt -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForStmt (TypedStmt stmt _) cp_infos = trace ("TypedStmt" ++ show(stmt)) $ generateCodeForStmt stmt cp_infos
+generateCodeForStmt (TypedStmt stmt _) cp_infos = generateCodeForStmt stmt cp_infos
 generateCodeForStmt (Block stmts) cp_infos = generateCodeForBlockStmt stmts cp_infos
 -- Return
-generateCodeForStmt (ReturnStmt expr) cp_infos = trace ("Return" ++ show expr) $ do
+generateCodeForStmt (ReturnStmt expr) cp_infos = do 
     codeForExpr <- (generateCodeForExpression expr)
     retType <- getReturnType
     if retType == IntT || retType == BoolT || retType == CharT  
@@ -155,51 +147,30 @@ generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = do
     code_expr <- generateCodeForExpression expr  -- current line number from monad to add branchoffset
     return (code ++ code_expr)
 -- LocalVar Decl 
-generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = trace ("in Loac" ++ show name ++ ", " ++ show maybeExpr) $ do
-    -- Add a Konstruktor
-    className <- getClassName
-
-    if typeToString var_type == className
-        then do
-            case maybeExpr of
-                        Just (TypedExpr (StmtExprExpr (TypedStmtExpr (NewExpression (NewExpr (NewType thisType) exprs)) _)) _) -> do
-                           let methodType = if null exprs
-                                                 then "()V"
-                                                 else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) exprs) ++ ")V"
-                           let deskr = (className ++ "." ++ "<init>" ++ ":" ++ methodType)
-                           let idx = getIndexByDesc deskr cp_infos
-
-                           return [(InvokeSpecial 0x00 idx)] -- Todo is 0x00 correct here?
-
-                        Nothing -> do
-                            let deskr = (className ++ "." ++ "<init>" ++ ":()V")
-                            let idx = getIndexByDesc deskr cp_infos
-                            return [(InvokeSpecial 0x00 idx)] -- Todo is 0x00 correct here?
-        else do
-            case maybeExpr of
-                Just expr -> do
-                    addToLocalVars name
-                    addToLocalVarTypes var_type
-                    localVarList <- getLocalVars
-                    codeForExpr <- generateCodeForExpression expr
-                    if var_type == BoolT || var_type == CharT || var_type == IntT
-                        then do
-                            let index = (getVarIndex name localVarList)
-                            if index <= 3
-                                then addToCurrentByteCodeSize 1
-                                else addToCurrentByteCodeSize 2
-                            return (codeForExpr ++ [(getIStoreByIndex index)])
-                        else do
-                            let index = (getVarIndex name localVarList)
-                            if index <= 3
-                                then addToCurrentByteCodeSize 1
-                                else addToCurrentByteCodeSize 2
-                            return (codeForExpr ++ [(getAStoreByIndex index)])
-                Nothing -> do
-                    addToLocalVars name
-                    addToLocalVarTypes var_type
-                    return []
-
+generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
+    case maybeExpr of
+        Just expr -> do
+            addToLocalVars name
+            addToLocalVarTypes var_type
+            localVarList <- getLocalVars
+            codeForExpr <- generateCodeForExpression expr
+            if var_type == BoolT || var_type == CharT || var_type == IntT
+                then do
+                    let index = (getVarIndex name localVarList)
+                    if index <= 3
+                        then addToCurrentByteCodeSize 1
+                        else addToCurrentByteCodeSize 2
+                    return (codeForExpr ++ [(getIStoreByIndex index)])
+                else do
+                    let index = (getVarIndex name localVarList)
+                    if index <= 3
+                        then addToCurrentByteCodeSize 1
+                        else addToCurrentByteCodeSize 2
+                    return (codeForExpr ++ [(getAStoreByIndex index)])
+        Nothing -> do
+            addToLocalVars name
+            addToLocalVarTypes var_type
+            return []
 -- If Else  !! nur ifcmp* werden verwendet; javac hat Sonderinstruktionen wenn Vergleich mit 0 durchgeführt wird, aber unnötig
 generateCodeForStmt (IfElseStmt expr (Block blockStmt) maybeBlockStmt) cp_infos = do
     code <- generateCodeForBlockStmt blockStmt cp_infos
@@ -236,35 +207,28 @@ generateCodeForIfElseStmtExpression (BinOpExpr expr1 binop expr2) len1 len2 = do
 generateCodeForStmtExpr :: StmtExpr -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) = generateCodeForStmtExpr stmtExpr
 -- Assign Stmt
-generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = trace ("AssignmentStmt" ++ show expr2) $ do
-    -- codeExpr1 <- generateCodeForAssign expr1
+generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
+    codeExpr1 <- generateCodeForAssign expr1
     codeExpr2 <- generateCodeForExpression expr2
-    return []
-    -- Todo uncomment
-    {-
     case codeExpr1 of
         [(PutField _ _)] -> do
             addToCurrentByteCodeSize 1
             return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)   -- wenn assignemnt auf field: aload dann was und dann putfield
-        _ -> return (codeExpr2 ++ codeExpr1)    -}
+        _ -> return (codeExpr2 ++ codeExpr1)                                                                   
 -- New
 generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr                                      -- TODO ??
 -- Method call
 generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr              -- TODO ??
 
 generateCodeForAssign :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForAssign (TypedExpr expr _) = trace ("TypedExpr " ++  show expr)generateCodeForAssign expr
+generateCodeForAssign (TypedExpr expr _) = generateCodeForAssign expr
 generateCodeForAssign (FieldVarExpr name) = do
     addToCurrentByteCodeSize 3
     return [(PutField 0x0 0x0)]                                                                                 -- TODO verweis auf cp mit name
 generateCodeForAssign (LocalVarExpr name) = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
-    --let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
-    let var_type = if null varList || null varTypeList
-                      then VoidT  -- Todo this needs to be catched. What is the default type if both lists are empty?
-                      else getTypeFromIndex (getVarIndex name varList) varTypeList
-
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
     if var_type == BoolT || var_type == IntT || var_type == CharT
         then do
             let index = (getVarIndex name varList)
@@ -281,38 +245,26 @@ generateCodeForAssign (LocalVarExpr name) = do
 
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) = trace ("generateCodeForMethodCallExpr" ++  show expr) $ do
-    -- Todo uncomment
+generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) = do
+    --generateCodeForExpression expr ++ generateCodeForExpressions exprList
     codeForExpr <- generateCodeForExpression expr
     codeForExprs <- generateCodeForExpressions exprList
-    return []
-
-    --
-    --return (codeForExpr ++ codeForExprs)
+    return (codeForExpr ++ codeForExprs)
 
 -- Function to generate assembly code for Expression
 generateCodeForExpression :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForExpression (TypedExpr expr _) = trace("typed expr " ++ (show expr)) $ generateCodeForExpression expr
+generateCodeForExpression (TypedExpr expr _) = generateCodeForExpression expr
 generateCodeForExpression (ThisExpr) = return []                                                -- welcher Fall ist das?
 generateCodeForExpression (SuperExpr) = return []                                               -- welcher Fall ist das?
 generateCodeForExpression (FieldVarExpr name) = do
     addToCurrentByteCodeSize 4
     return [ALoad_0, (GetField 0x0 0x0)]            -- TODO referenz auf cp über name
-generateCodeForExpression (LocalVarExpr name) = trace ("in LocalVarExpr1") $ do
-    --trace(" in LocalVarExpr2 ")$ return ()
+generateCodeForExpression (LocalVarExpr name) = do                                              
     varList <- getLocalVars
-    trace(" in LocalVarExpr2 " ++  (show varList)) $ return ()
     varTypeList <- getLocalVarTypes
-    trace(" in LocalVarExpr3 " ++  (show varTypeList)) $ return ()
-    return []
-
-    let var_type = if null varList || null varTypeList
-                      then VoidT  -- Todo this needs to be catched. What is the default type if both lists are empty?
-                      else  VoidT -- Todo  getTypeFromIndex (getVarIndex name varList) varTypeList
-
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
     if var_type == BoolT || var_type == IntT || var_type == CharT
         then do
-
             let index = (getVarIndex name varList)
             if index <= 3
                 then addToCurrentByteCodeSize 1
@@ -324,7 +276,6 @@ generateCodeForExpression (LocalVarExpr name) = trace ("in LocalVarExpr1") $ do
                 then addToCurrentByteCodeSize 1
                 else addToCurrentByteCodeSize 2
             return [(getALoadByIndex (getVarIndex name varList))]
-
 generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr              -- TODO: eigentlich nur relevant, wenn man mehrere Klassen hat?
 generateCodeForExpression (UnaryOpExpr un_op expr) = do
     codeExpr <- generateCodeForExpression expr
@@ -347,7 +298,6 @@ generateCodeForExpression (UnaryOpExpr un_op expr) = do
 generateCodeForExpression (BinOpExpr expr1 bin_op expr2) = do
     codeExpr1 <- generateCodeForExpression expr1
     codeExpr2 <- generateCodeForExpression expr2
-
     case bin_op of
         Plus -> do 
             addToCurrentByteCodeSize 1
@@ -423,7 +373,6 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) = do
                         IConst_0]
             addToCurrentByteCodeSize 8
             return code
-
 generateCodeForExpression (IntLitExpr intVal) = do
     if intVal > 127
         then do

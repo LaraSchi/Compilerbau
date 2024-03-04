@@ -17,7 +17,7 @@ import System.Directory
 main :: IO ()
 main = do
 
-    fileContent <- readFile "code/examples/explMethodRef2.minijava" -- read file
+    fileContent <- readFile "code/examples/explMethodRef.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
