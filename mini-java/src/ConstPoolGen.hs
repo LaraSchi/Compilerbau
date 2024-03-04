@@ -108,7 +108,9 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
                                              else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) exprs) ++ ")V"
                        _ <- generateMethodRefConstantPool "<init>" methodType className
                        return ()
-                    _ -> return () -- Todo
+                    Nothing -> do
+                        _ <- generateMethodRefConstantPool "<init>" "()V" className
+                        return () -- Todo
   IfElseStmt expr stmt1 stmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt1 fieldOrMethodDecls className
@@ -193,7 +195,7 @@ generateFieldDeklCP field className = case field of
     (FieldDecl fieldType fieldName expr) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className
 
 generateMethodDeklCP :: MethodDecl -> ConstantpoolStateM CP_Info
-generateMethodDeklCP (MethodDecl _ this_type methodName parameters _) = trace (show this_type) $ do
+generateMethodDeklCP (MethodDecl _ this_type methodName parameters _) = do
     methodNameInfo <- createUtf8Entry methodName
     _ <- createUtf8Entry ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
     _ <- createUtf8Entry "Code"
