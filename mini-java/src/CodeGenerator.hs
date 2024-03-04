@@ -173,7 +173,7 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
             localVarList <- getLocalVars
             codeForExpr <- generateCodeForExpression expr
             let codeWithoutPop =
-                    if isExprNewExpression expr
+                    if isExprWithPopInstr expr
                         then init codeForExpr -- delete last element (Pop instr.)
                         else codeForExpr
             if var_type == BoolT || var_type == CharT || var_type == IntT
@@ -233,7 +233,7 @@ generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
     codeExpr1 <- generateCodeForAssign expr1
     codeExpr2 <- generateCodeForExpression expr2
     let codeWithoutPop =
-            if isExprNewExpression expr2
+            if isExprWithPopInstr expr2
                 then init codeExpr2 -- delete last element (Pop instr.)
                 else codeExpr2
     case codeExpr1 of
@@ -242,7 +242,7 @@ generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
             return ([ALoad_0] ++ codeWithoutPop ++ codeExpr1)
         _ -> return (codeWithoutPop ++ codeExpr1)                                                                  
 -- New
-generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr                                      -- TODO ??
+generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr
 -- Method call
 generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr              -- TODO ??
 
@@ -272,10 +272,12 @@ generateCodeForAssign (LocalVarExpr name) = do
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) = do
-    --generateCodeForExpression expr ++ generateCodeForExpressions exprList
-    codeForExpr <- generateCodeForExpression expr
+    -- codeForExpr <- generateCodeForExpression expr  -- not needed since expr is always ThisExpr resulting in aload_0, because we only consider one class
     codeForExprs <- generateCodeForExpressions exprList
-    return (codeForExpr ++ codeForExprs)
+    return ([ALoad_0] ++ 
+            codeForExprs ++ 
+            [(InvokeVirtual 0x0 0x0),
+            Pop])  -- needs to be deleted if method call expr is part of assignment or local var decl
 
 -- Function to generate assembly code for Expression
 generateCodeForExpression :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
@@ -436,7 +438,7 @@ generateCodeForNewExpr (NewExpr newType args) = do
 
 -- Function to generate assembly code for NewType
 generateCodeForNewType :: NewType -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForNewType (NewType name) = return [] -- name  -- This is a simplistic approach
+generateCodeForNewType (NewType name) = return []
 
 -- Function to generate assembly code for Expressions
 generateCodeForExpressions :: [Expression] -> GlobalVarsMonad [ByteCodeInstrs]
@@ -450,9 +452,10 @@ generateCodeForExpressions (expr:exprs) = do
 
 ----------------------------------------------------------------------
 -- Helper function to check if new object is used in assignment or local var decl
-isExprNewExpression :: Expression -> Bool
-isExprNewExpression (TypedExpr (StmtExprExpr (TypedStmtExpr (NewExpression _) _)) _) = True
-isExprNewExpression _ = False
+isExprWithPopInstr :: Expression -> Bool
+isExprWithPopInstr (TypedExpr (StmtExprExpr (TypedStmtExpr (NewExpression _) _)) _) = True
+isExprWithPopInstr (TypedExpr (StmtExprExpr (TypedStmtExpr (MethodCall _) _ )) _) = True
+isExprWithPopInstr _ = False
 
 ----------------------------------------------------------------------
 -- Helper functions to get list index of variable  (offset of 1 is accounted since load_0 and store_0 are not used)
