@@ -6,18 +6,15 @@ import ClassFormat
 import Data.List (findIndex)
 import Data.Char (ord)
 import Data.Bits
-
 import Control.Monad.State
+import ConstPoolGen
 import Debug.Trace
 
--- TODO init wenn empty init method im AST -> erst nach Änderung in Syntax möglich mit eigenem return Typ für Init
 -- TODO how to get max stack size in classfile?
 -- TODO branchoffset 
--- TODO unary Ops
+-- TODO unary: Not
 -- TODO CharLitExpr in Char
--- TODO test and check state monad usage:
 -- TODO: unnötige Instr aus Datenstruktur schmeißen
--- TODO: max value for int
 
 
 ----------------------------------------------------------------------
@@ -30,6 +27,7 @@ data GlobalVars = GlobalVars
     , localVars :: [String] -- list of defined local variables to choose index for iload, istore, ...
     , typesOfLocalVars :: [Type]
     , returnType :: Type  -- method return type
+    , className :: String
     } deriving (Show)
 
 -- Define a type synonym for the state monad
@@ -55,6 +53,9 @@ getLocalVars = gets localVars
 
 getLocalVarTypes :: GlobalVarsMonad [Type]
 getLocalVarTypes = gets typesOfLocalVars
+
+getClassName :: GlobalVarsMonad String
+getClassName = gets className
 
 
 -- Function to add an integer to the max size
@@ -87,31 +88,48 @@ generateInitByteCode cp = return ([ALoad_0] ++
                         [(InvokeSpecial 0x00 (getIndexByDesc ("java/lang/Object" ++ "." ++ "<init>" ++ ":" ++ "()V") cp))]
                         ++ [Return])
 
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
-startBuildGenCodeProcess m cp =
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [ByteCodeInstrs]
+startBuildGenCodeProcess m cp className =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
     in result
     where
-    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], returnType = VoidT }
+    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className }
                         
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = 
+generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = do
+    className <- getClassName
+    let initCode =
+            if name == className
+                then let deskr = (className ++ "." ++ "<init>" ++ ":()V")
+                         idx = getIndexByDesc deskr cp_infos 
+                     -- in [(ALoad_0), (InvokeSpecial ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF))]
+                     in [(ALoad_0), (InvokeSpecial 0x0 idx)]                                                    -- TODO CP Ref
+                else []
+    addParamsToMonad params
     if retType == VoidT
         then do -- TODO params auf Stack check if empty init -> generateInitByteCode
             setReturnType retType                                                           
             stmtInstructions <- generateCodeForStmt stmt cp_infos
-            let code = stmtInstructions ++ [Return]
+            let code = initCode ++ stmtInstructions ++ [Return]
             addToCurrentByteCodeSize 1
-            return (code)                                                       -- TODO: wenn aber return dran steht, dann gibt es zweimal return!!!
+            return (code)                                                       -- TODO: wenn aber return dran steht, dann gibt es zweimal return!!! -> geht eh nicht durch den Parser
         else do
-            setReturnType retType                                                           
-            generateCodeForStmt stmt cp_infos
+            setReturnType retType
+            code <- generateCodeForStmt stmt cp_infos
+            return (code)
     
 
+addParamsToMonad :: [Parameter] -> GlobalVarsMonad [ByteCodeInstrs]
+addParamsToMonad [] = return []
+addParamsToMonad ((Parameter p_type p_name):params) = do
+    addToLocalVars p_name
+    addToLocalVarTypes p_type
+    addParamsToMonad params
+
 -- Function to generate assembly code for BlockStmt
-generateCodeForBlockStmt :: BlockStmtList -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
+generateCodeForBlockStmt :: BlockStmtList -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForBlockStmt [] cp_infos = return []
 generateCodeForBlockStmt (stmt:stmts) cp_infos = do
     codeForStmt <- generateCodeForStmt stmt cp_infos
@@ -142,9 +160,9 @@ generateCodeForStmt (ReturnStmt expr) cp_infos = do
                 return (code)
 
 -- While
-generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = do
+generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = do                                            -- TODO
     code <- generateCodeForBlockStmt blockStmt cp_infos
-    code_expr <- generateCodeForExpression expr  -- current line number from monad to add branchoffset
+    code_expr <- generateCodeForExpression expr
     return (code ++ code_expr)
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
@@ -213,7 +231,7 @@ generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
     case codeExpr1 of
         [(PutField _ _)] -> do
             addToCurrentByteCodeSize 1
-            return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)   -- wenn assignemnt auf field: aload dann was und dann putfield
+            return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)
         _ -> return (codeExpr2 ++ codeExpr1)                                                                   
 -- New
 generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr                                      -- TODO ??
@@ -258,7 +276,7 @@ generateCodeForExpression (ThisExpr) = return []                                
 generateCodeForExpression (SuperExpr) = return []                                               -- welcher Fall ist das?
 generateCodeForExpression (FieldVarExpr name) = do
     addToCurrentByteCodeSize 4
-    return [ALoad_0, (GetField 0x0 0x0)]            -- TODO referenz auf cp über name
+    return [ALoad_0, (GetField 0x0 0x0)]                                                        -- TODO referenz auf cp über name
 generateCodeForExpression (LocalVarExpr name) = do                                              
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
@@ -311,7 +329,7 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) = do
         Divide -> do
             addToCurrentByteCodeSize 1
             return (codeExpr1 ++ codeExpr2 ++ [IDiv])
-        --And -> return ([]) ??
+        --And -> return ([]) ??                                                                                     -- TODO
         --Or -> return ([]) ??
         Equal -> do
             byteCodeSize <- getCurrentByteCodeSize
@@ -391,7 +409,7 @@ generateCodeForExpression (BoolLitExpr bool) = case bool of
 generateCodeForExpression (CharLitExpr (character:str)) = do
     addToCurrentByteCodeSize 2
     return [(BIPush (ord character))]
-generateCodeForExpression (StringLitExpr _) = return []                                         -- noch nicht unterstützt
+generateCodeForExpression (StringLitExpr _) = return []
 generateCodeForExpression (Null) = do
     addToCurrentByteCodeSize 1
     return [(AConst_Null)]
