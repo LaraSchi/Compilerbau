@@ -261,6 +261,7 @@ generateCodeForAssign (LocalVarExpr name) = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
     --let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
+
     let var_type = if null varList || null varTypeList
                       then VoidT  -- Todo this needs to be catched. What is the default type if both lists are empty?
                       else getTypeFromIndex (getVarIndex name varList) varTypeList
