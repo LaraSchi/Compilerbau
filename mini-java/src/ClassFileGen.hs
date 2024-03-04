@@ -27,7 +27,7 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         numFields = length fields
         arrayFields = generateFieldsArray fields cpInfos
         numMethods = length methods
-        arrayMethods = generateMethodsArray methods  cpInfos -- attribute Code
+        arrayMethods = generateMethodsArray methods  cpInfos (newTypeToString className) -- attribute Code
         numAttributes = 0
         arrayAttributes = []
 
@@ -79,16 +79,16 @@ buildFieldInfo (FieldDecl fieldType fieldName maybeExpr) cpInfosList =
 
 
 -- how to parse the information?
-generateMethodsArray :: [MethodDecl] -> [CP_Info] -> Method_Infos
-generateMethodsArray methods cpInfosList =
-    let methodInfos = concatMap (\method -> buildMethodInfo method cpInfosList) methods
+generateMethodsArray :: [MethodDecl] -> [CP_Info] -> String -> Method_Infos
+generateMethodsArray methods cpInfosList className =
+    let methodInfos = concatMap (\method -> buildMethodInfo method cpInfosList className) methods
     in methodInfos
 
-buildMethodInfo :: MethodDecl -> [CP_Info] -> [Method_Info]
-buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt) cpInfosList =
+buildMethodInfo :: MethodDecl -> [CP_Info] -> String -> [Method_Info]
+buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt) cpInfosList className =
     let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString outType)
         attributes_array = do
-            generateAttributeCodeArray methodDecl cpInfosList
+            generateAttributeCodeArray methodDecl cpInfosList className
         newMethod_Info =
             [Method_Info
                 { af_mi = AccessFlags [acc_Public]  
@@ -100,10 +100,10 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
     in newMethod_Info
 
 -- function to create attribute Infos?
-generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> Attribute_Infos
-generateAttributeCodeArray methodDecl cpInfosList =
+generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> String -> Attribute_Infos
+generateAttributeCodeArray methodDecl cpInfosList className =
     let newAttributeInfo :: Attribute_Infos
-        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList)
+        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList className)
 
         newAttributeInfo =
             [AttributeCode
