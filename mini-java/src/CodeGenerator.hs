@@ -9,7 +9,10 @@ import Data.Char (ord)
 import Control.Monad.State
 import Debug.Trace
 
--- TODO init wenn empty init method im AST
+-- TODO init wenn empty init method im AST -> erst nach Änderung in Syntax möglich mit eigenem return Typ für Init
+-- TODO Wann FieldVarExpr für Zuweisung und wann zum Laden als Wert?
+-- TODO how to get max stack size in classfile?
+-- TODO how does monad behave when method call happens
 -- TODO branchoffset 
 -- TODO CharLitExpr in Char
 -- TODO test and check state monad usage:
@@ -77,6 +80,15 @@ generateInitByteCode cp = return ([ALoad_0] ++
                         ++ [Return])
 
 startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
+startBuildGenCodeProcess m cp =
+    let (result, finalState) = runState (generateCodeForMethod m cp) initialState
+    in result
+    where
+    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT }
+                        
+
+{-
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
 startBuildGenCodeProcess m cp = do
 
     --runState (generateCodeForMethod m cp) (GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT })
@@ -84,16 +96,19 @@ startBuildGenCodeProcess m cp = do
     let result = evalState (generateCodeForMethod m cp) (GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT })
 
     result
+-}
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = do -- TODO params auf Stack check if empty init -> generateInitByteCode
-    addToMaxStackSize 1
-    setReturnType retType                                                           -- ist das richtig so???
-    currentMaxSize <- getMaxSize
-    traceShow ("Current Max Size: " ++ show currentMaxSize) $ return []
-    --return []
-    --generateCodeForBlockStmt stmt cp_infos
+generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = 
+    if retType == VoidT
+        then do -- TODO params auf Stack check if empty init -> generateInitByteCode
+            setReturnType retType                                                           
+            stmtInstructions <- generateCodeForStmt stmt cp_infos
+            return (stmtInstructions ++ [Return])
+        else do
+            setReturnType retType                                                           
+            generateCodeForStmt stmt cp_infos
     
 
 -- Function to generate assembly code for BlockStmt
@@ -107,6 +122,7 @@ generateCodeForBlockStmt (stmt:stmts) cp_infos = do
 -- Function to generate assembly code for Stmt
 generateCodeForStmt :: Stmt -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForStmt (TypedStmt stmt _) cp_infos = generateCodeForStmt stmt cp_infos
+generateCodeForStmt (Block stmts) cp_infos = generateCodeForBlockStmt stmts cp_infos
 -- Return
 generateCodeForStmt (ReturnStmt expr) cp_infos = do 
     codeForExpr <- (generateCodeForExpression expr)
@@ -129,8 +145,8 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
             localVarList <- getLocalVars
             codeForExpr <- generateCodeForExpression expr
             if var_type == BoolT || var_type == CharT || var_type == IntT
-                then return (codeForExpr ++ [(getIStoreByIndex (getVarIndex name localVarList))])                                         -- ist das richtig so
-                else return (codeForExpr ++ [(getAStoreByIndex (getVarIndex name localVarList))])  
+                then return (codeForExpr ++ [(getIStoreByIndex (((length localVarList) - 1) - (getVarIndex name localVarList)))])                                         -- ist das richtig so
+                else return (codeForExpr ++ [(getAStoreByIndex (((length localVarList) - 1) - (getVarIndex name localVarList)))])  
         Nothing -> do
             (addToLocalVars name)
             return []
@@ -170,13 +186,21 @@ generateCodeForStmtExpr :: StmtExpr -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) = generateCodeForStmtExpr stmtExpr
 -- Assign Stmt
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
-    codeExpr1 <- generateCodeForExpression expr1
+    codeExpr1 <- generateCodeForAssign expr1
     codeExpr2 <- generateCodeForExpression expr2
-    return (codeExpr1 ++ codeExpr2)
+    return (codeExpr2 ++ codeExpr1)                                                                     -- muss wahrscheinlich so herum gemacht werden
 -- New
 generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr  -- TODO ??
 -- Method call
 generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr  -- TODO ??
+
+generateCodeForAssign :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
+generateCodeForAssign (FieldVarExpr name) = do                                              -- stimmt das so?
+    varList <- getLocalVars
+    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
+generateCodeForAssign (LocalVarExpr name) = do                                              -- stimmt das so?
+    varList <- getLocalVars
+    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
 
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> GlobalVarsMonad [ByteCodeInstrs]
@@ -193,14 +217,13 @@ generateCodeForExpression (ThisExpr) = return []                                
 generateCodeForExpression (SuperExpr) = return []                                               -- welcher Fall ist das?
 generateCodeForExpression (FieldVarExpr name) = do                                              -- stimmt das so?
     varList <- getLocalVars
-    return [(getILoadByIndex (getVarIndex name varList))]
+    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
 generateCodeForExpression (LocalVarExpr name) = do                                              -- stimmt das so?
     varList <- getLocalVars
-    return [(getILoadByIndex (getVarIndex name varList))]
-generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr              -- TODO
+    return [(getILoadByIndex (((length varList) - 1) - (getVarIndex name varList)))]
+generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr              -- TODO: eigentlich nur relevant, wenn man mehrere Klassen hat?
 generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr
 generateCodeForExpression (BinOpExpr expr1 _ expr2) = do
--- generateCodeForExpression expr1 ++ generateCodeForExpression expr2
     codeExpr1 <- generateCodeForExpression expr1
     codeExpr2 <- generateCodeForExpression expr2
     return (codeExpr1 ++ codeExpr2)
@@ -215,7 +238,7 @@ generateCodeForExpression (StmtExprExpr stmtExpr) = generateCodeForStmtExpr stmt
 
 
 -- Function to generate assembly code for NewExpr
-generateCodeForNewExpr :: NewExpr -> GlobalVarsMonad [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
+generateCodeForNewExpr :: NewExpr -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForNewExpr (NewExpr newType args) = return []
     --"new " ++ generateCodeForNewType newType ++ ", " ++ -- Todo get index in constantpool
     --"dup, " ++
@@ -223,11 +246,11 @@ generateCodeForNewExpr (NewExpr newType args) = return []
     --"invokespecial " -- Todo index of a Method ref
 
 -- Function to generate assembly code for NewType
-generateCodeForNewType :: NewType -> GlobalVarsMonad [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
+generateCodeForNewType :: NewType -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForNewType (NewType name) = return [] -- name  -- This is a simplistic approach
 
 -- Function to generate assembly code for Expressions
-generateCodeForExpressions :: [Expression] -> GlobalVarsMonad [ByteCodeInstrs] -- todo: -> ByteCode_Instrs
+generateCodeForExpressions :: [Expression] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForExpressions [] = return []
 generateCodeForExpressions (expr:exprs) = do
     codeForExpr <- generateCodeForExpression expr
@@ -237,7 +260,7 @@ generateCodeForExpressions (expr:exprs) = do
 ----------------------------------------------------------------------
 -- Helper functions to get list index of variable
 getVarIndex :: String -> [String] -> Int
-getVarIndex _ [] = -1
+getVarIndex _ [] = -1                                                                   -- theoretisch müsste der error Fall noch abgefangen werden
 getVarIndex var_name (var:vars)
     | var_name == var  = 0
     | otherwise = if indexRest == -1 then -1 else 1 + indexRest

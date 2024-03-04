@@ -103,8 +103,7 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
 generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> Attribute_Infos
 generateAttributeCodeArray methodDecl cpInfosList =
     let newAttributeInfo :: Attribute_Infos
-        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList)-- Todo delete the comment (generateCodeForMethod methodDecl cpInfosList) -- [0, 0, 0, 0]                 -- Placeholder TODO: call function to build code
-
+        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList)
 
         newAttributeInfo =
             [AttributeCode
