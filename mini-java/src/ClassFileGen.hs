@@ -120,7 +120,3 @@ generateAttributeCodeArray methodDecl cpInfosList =
                 }]
     in newAttributeInfo
 
-convertToByteCode :: [ByteCodeInstrs] -> [Int]
-convertToByteCode [] = []
-convertToByteCode (i:is) = convertInstrToByteCode i ++ convertToByteCode is
-

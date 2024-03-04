@@ -274,25 +274,30 @@ convertByteCodeToInstr [opc] = case opc of
     _ -> NoInstr
 
 
+convertToByteCode :: [ByteCodeInstrs] -> [Int]
+convertToByteCode [] = []
+convertToByteCode (i:is) = convertInstrToByteCode i ++ convertToByteCode is
+
+
 convertInstrToString :: ByteCodeInstrs -> String
 convertInstrToString instr = case instr of
     (InvokeDynamic arg1 arg2 arg3 arg4) -> "invokedynamic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2 ++ "\t#" ++ show arg3 ++ "\t#" ++ show arg4
     (Goto_W arg1 arg2 arg3 arg4) -> "goto_w" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2 ++ "\t" ++ show arg3 ++ "\t" ++ show arg4
     (If arg1 arg2) -> "if" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ICmpEq arg1 arg2) -> "if_icmpeq" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ICmpNeq arg1 arg2) -> "if_icmpne" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ICmpLeq arg1 arg2) -> "if_icmple" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ICmpLt arg1 arg2) -> "if_icmplt" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ICmpGeq arg1 arg2) -> "if_icmpge" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ICmpGt arg1 arg2) -> "if_icmpgt" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ACmpEq arg1 arg2) -> "if_acmpeq" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
-    (If_ACmpNeq arg1 arg2) -> "if_acmpne" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
+    (If_ICmpEq arg1 arg2) -> "if_icmpeq" ++ "\t" ++ show (arg1 + arg2)
+    (If_ICmpNeq arg1 arg2) -> "if_icmpne" ++ "\t" ++ show (arg1 + arg2)
+    (If_ICmpLeq arg1 arg2) -> "if_icmple" ++ "\t" ++ show (arg1 + arg2)
+    (If_ICmpLt arg1 arg2) -> "if_icmplt" ++ "\t" ++ show (arg1 + arg2)
+    (If_ICmpGeq arg1 arg2) -> "if_icmpge" ++ "\t" ++ show (arg1 + arg2)
+    (If_ICmpGt arg1 arg2) -> "if_icmpgt" ++ "\t" ++ show (arg1 + arg2)
+    (If_ACmpEq arg1 arg2) -> "if_acmpeq" ++ "\t" ++ show (arg1 + arg2)
+    (If_ACmpNeq arg1 arg2) -> "if_acmpne" ++ "\t" ++ show (arg1 + arg2)
     (IfNull arg1 arg2) -> "ifnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
     (IfNonNull arg1 arg2) -> "ifnonnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
     (InvokeVirtual arg1 arg2) -> "invokevirtual" ++ "\t#" ++ show (arg1 + arg2)
     (InvokeStatic arg1 arg2) -> "invokestatic" ++ "\t#" ++ show (arg1 + arg2)
     (InvokeSpecial arg1 arg2) -> "invokespecial" ++ "\t#" ++ show (arg1 + arg2)
-    (Goto arg1 arg2) -> "goto" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
+    (Goto arg1 arg2) -> "goto" ++ "\t\t" ++ show (arg1 + arg2)
     (GetField arg1 arg2) -> "getfield" ++ "\t#" ++ show (arg1 + arg2)
     (PutField arg1 arg2) -> "putfield" ++ "\t#" ++ show (arg1 + arg2)
     (GetStatic arg1 arg2) -> "getstatic" ++ "\t#" ++ show (arg1 + arg2)
@@ -301,7 +306,7 @@ convertInstrToString instr = case instr of
     (Ldc_W arg1 arg2) -> "ldc_w" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
     (Ldc2_W arg1 arg2) -> "ldc2_w" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
     (New arg1 arg2) -> "new" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (BIPush arg1) -> "bipush" ++ "\t" ++ show arg1
+    (BIPush arg1) -> "bipush" ++ "\t\t" ++ show arg1
     (ALoad arg1) -> "aload" ++ "\t" ++ show arg1
     (AStore arg1) -> "astore" ++ "\t" ++ show arg1
     (ILoad arg1) -> "iload" ++ "\t" ++ show arg1

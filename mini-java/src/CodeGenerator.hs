@@ -5,6 +5,7 @@ import ByteCodeInstr
 import ClassFormat
 import Data.List (findIndex)
 import Data.Char (ord)
+import Data.Bits
 
 import Control.Monad.State
 import Debug.Trace
@@ -66,7 +67,7 @@ addToCurrentByteCodeSize :: Int -> GlobalVarsMonad ()
 addToCurrentByteCodeSize x = modify (\s -> s { currentByteCodeSize = currentByteCodeSize s + x })
 
 setReturnType :: Type -> GlobalVarsMonad ()
-setReturnType x = modify (\s -> s { returnType = x })                                         -- ist das richtig so???
+setReturnType x = modify (\s -> s { returnType = x })                                         
 
 -- Function to add an element to the stack
 addToLocalVars :: String -> GlobalVarsMonad ()
@@ -82,7 +83,7 @@ addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s +
 -- Function to generate assembly code for init method
 generateInitByteCode :: [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateInitByteCode cp = return ([ALoad_0] ++
-                        [(InvokeSpecial 0x00 (getIndexByDesc ("java/lang/Object" ++ "." ++ "<init>" ++ ":" ++ "()V") cp))] -- reference to init method TODO: what if there are multiple inits
+                        [(InvokeSpecial 0x00 (getIndexByDesc ("java/lang/Object" ++ "." ++ "<init>" ++ ":" ++ "()V") cp))]
                         ++ [Return])
 
 startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
@@ -93,17 +94,6 @@ startBuildGenCodeProcess m cp =
     initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], returnType = VoidT }
                         
 
-{-
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> [ByteCodeInstrs]
-startBuildGenCodeProcess m cp = do
-
-    --runState (generateCodeForMethod m cp) (GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT })
-    let result = evalState (return []) (GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT })
-    let result = evalState (generateCodeForMethod m cp) (GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, localVars = [], returnType = VoidT })
-
-    result
--}
-
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = 
@@ -111,7 +101,9 @@ generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos 
         then do -- TODO params auf Stack check if empty init -> generateInitByteCode
             setReturnType retType                                                           
             stmtInstructions <- generateCodeForStmt stmt cp_infos
-            return (stmtInstructions ++ [Return])
+            let code = stmtInstructions ++ [Return]
+            addToCurrentByteCodeSize 1
+            return (code)                                                       -- TODO: wenn aber return dran steht, dann gibt es zweimal return!!!
         else do
             setReturnType retType                                                           
             generateCodeForStmt stmt cp_infos
@@ -134,10 +126,20 @@ generateCodeForStmt (ReturnStmt expr) cp_infos = do
     codeForExpr <- (generateCodeForExpression expr)
     retType <- getReturnType
     if retType == IntT || retType == BoolT || retType == CharT  
-        then return (codeForExpr ++ [IReturn])
+        then do
+            let code = codeForExpr ++ [IReturn]
+            addToCurrentByteCodeSize 1
+            return (code)
         else if retType == VoidT
-            then return (codeForExpr ++ [Return])
-            else return (codeForExpr ++ [AReturn])
+            then do
+                let code = codeForExpr ++ [Return]
+                addToCurrentByteCodeSize 1
+                return (code)
+            else do
+                let code = codeForExpr ++ [AReturn]
+                addToCurrentByteCodeSize 1
+                return (code)
+
 -- While
 generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = do
     code <- generateCodeForBlockStmt blockStmt cp_infos
@@ -149,12 +151,21 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
         Just expr -> do
             addToLocalVars name
             addToLocalVarTypes var_type
-            varTypeList <- getLocalVarTypes
             localVarList <- getLocalVars
             codeForExpr <- generateCodeForExpression expr
             if var_type == BoolT || var_type == CharT || var_type == IntT
-                then return (codeForExpr ++ [(getIStoreByIndex (getVarIndex name localVarList))])                                         -- ist das richtig so
-                else return (codeForExpr ++ [(getAStoreByIndex (getVarIndex name localVarList))])  
+                then do
+                    let index = (getVarIndex name localVarList)
+                    if index <= 3
+                        then addToCurrentByteCodeSize 1
+                        else addToCurrentByteCodeSize 2
+                    return (codeForExpr ++ [(getIStoreByIndex index)])
+                else do
+                    let index = (getVarIndex name localVarList)
+                    if index <= 3
+                        then addToCurrentByteCodeSize 1
+                        else addToCurrentByteCodeSize 2
+                    return (codeForExpr ++ [(getAStoreByIndex index)])
         Nothing -> do
             addToLocalVars name
             addToLocalVarTypes var_type
@@ -165,12 +176,13 @@ generateCodeForStmt (IfElseStmt expr (Block blockStmt) maybeBlockStmt) cp_infos 
     code2 <- case maybeBlockStmt of
         Just (Block block) -> do
             codeForBlock <- generateCodeForBlockStmt block cp_infos
+            addToCurrentByteCodeSize 3
             return ([(Goto 0x0 0x0)] ++ codeForBlock)
         Nothing -> return []
     code_expr <- (generateCodeForIfElseStmtExpression expr 0x0 0x0)  -- current line number from monad to add branchoffset
-    return(code_expr ++ code ++ code2)  -- goto muss irgendwo noch rein
+    return (code_expr ++ code ++ code2)  -- goto muss irgendwo noch rein
 -- Stmt Expr Stmt
-generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr  -- TODO
+generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr
 
 
 {- Function to build byte code for if else statement
@@ -198,23 +210,37 @@ generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
     codeExpr1 <- generateCodeForAssign expr1
     codeExpr2 <- generateCodeForExpression expr2
     case codeExpr1 of
-        [(PutField _ _)] -> return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)        -- wenn assignemnt auf field: aload dann was und dann putfield
+        [(PutField _ _)] -> do
+            addToCurrentByteCodeSize 1
+            return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)   -- wenn assignemnt auf field: aload dann was und dann putfield
         _ -> return (codeExpr2 ++ codeExpr1)                                                                   
 -- New
-generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr  -- TODO ??
+generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr                                      -- TODO ??
 -- Method call
-generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr  -- TODO ??
+generateCodeForStmtExpr (MethodCall methodCallExpr) = generateCodeForMethodCallExpr methodCallExpr              -- TODO ??
 
 generateCodeForAssign :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForAssign (TypedExpr expr _) = generateCodeForAssign expr
-generateCodeForAssign (FieldVarExpr name) = return [(PutField 0x0 0x0)]                 -- TODO verweis auf cp mit name
+generateCodeForAssign (FieldVarExpr name) = do
+    addToCurrentByteCodeSize 3
+    return [(PutField 0x0 0x0)]                                         -- TODO verweis auf cp mit name
 generateCodeForAssign (LocalVarExpr name) = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
     let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
     if var_type == BoolT || var_type == IntT || var_type == CharT
-        then return [(getIStoreByIndex (getVarIndex name varList))]
-        else return [(getAStoreByIndex (getVarIndex name varList))]
+        then do
+            let index = (getVarIndex name varList)
+            if index <= 3
+                then addToCurrentByteCodeSize 1
+                else addToCurrentByteCodeSize 2
+            return [(getIStoreByIndex index)]
+        else do 
+            let index = (getVarIndex name varList)
+            if index <= 3
+                then addToCurrentByteCodeSize 1
+                else addToCurrentByteCodeSize 2
+            return [(getAStoreByIndex index)]
 
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> GlobalVarsMonad [ByteCodeInstrs]
@@ -229,27 +255,123 @@ generateCodeForExpression :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForExpression (TypedExpr expr _) = generateCodeForExpression expr
 generateCodeForExpression (ThisExpr) = return []                                                -- welcher Fall ist das?
 generateCodeForExpression (SuperExpr) = return []                                               -- welcher Fall ist das?
-generateCodeForExpression (FieldVarExpr name) = return [ALoad_0, (GetField 0x0 0x0)]            -- TODO referenz auf cp über name
+generateCodeForExpression (FieldVarExpr name) = do
+    addToCurrentByteCodeSize 4
+    return [ALoad_0, (GetField 0x0 0x0)]            -- TODO referenz auf cp über name
 generateCodeForExpression (LocalVarExpr name) = do                                              
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
     let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
     if var_type == BoolT || var_type == IntT || var_type == CharT
-        then return [(getILoadByIndex (getVarIndex name varList))]
-        else return [(getALoadByIndex (getVarIndex name varList))]
+        then do
+            let index = (getVarIndex name varList)
+            if index <= 3
+                then addToCurrentByteCodeSize 1
+                else addToCurrentByteCodeSize 2
+            return [(getILoadByIndex index)]
+        else do 
+            let index = (getVarIndex name varList)
+            if index <= 3
+                then addToCurrentByteCodeSize 1
+                else addToCurrentByteCodeSize 2
+            return [(getALoadByIndex (getVarIndex name varList))]
 generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr              -- TODO: eigentlich nur relevant, wenn man mehrere Klassen hat?
-generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr
-generateCodeForExpression (BinOpExpr expr1 _ expr2) = do
+generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr             -- TODO
+generateCodeForExpression (BinOpExpr expr1 bin_op expr2) = do
     codeExpr1 <- generateCodeForExpression expr1
     codeExpr2 <- generateCodeForExpression expr2
-    return (codeExpr1 ++ codeExpr2)
-generateCodeForExpression (IntLitExpr intVal) = return [(BIPush intVal)]
+    case bin_op of
+        Plus -> do 
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [IAdd])
+        Minus -> do
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [ISub])
+        Times -> do
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [IMul])
+        Divide -> do
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [IDiv])
+        --And -> return ([]) ??
+        --Or -> return ([]) ??
+        Equal -> do
+            byteCodeSize <- getCurrentByteCodeSize
+            let code = codeExpr1 ++ 
+                       codeExpr2 ++ 
+                       [(If_ICmpNeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
+                        IConst_1, 
+                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
+                        IConst_0]
+            addToCurrentByteCodeSize 8
+            return code
+        NotEqual -> do
+            byteCodeSize <- getCurrentByteCodeSize
+            let code = codeExpr1 ++ 
+                       codeExpr2 ++ 
+                       [(If_ICmpEq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
+                        IConst_1, 
+                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
+                        IConst_0]
+            addToCurrentByteCodeSize 8
+            return code
+        Less -> do
+            byteCodeSize <- getCurrentByteCodeSize
+            let code = codeExpr1 ++ 
+                       codeExpr2 ++ 
+                       [(If_ICmpGeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
+                        IConst_1, 
+                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
+                        IConst_0]
+            addToCurrentByteCodeSize 8
+            return code
+        Greater -> do
+            byteCodeSize <- getCurrentByteCodeSize
+            let code = codeExpr1 ++ 
+                       codeExpr2 ++ 
+                       [(If_ICmpLeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
+                        IConst_1, 
+                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
+                        IConst_0]
+            addToCurrentByteCodeSize 8
+            return code
+        LessEq -> do
+            byteCodeSize <- getCurrentByteCodeSize
+            let code = codeExpr1 ++ 
+                       codeExpr2 ++ 
+                       [(If_ICmpGt (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
+                        IConst_1, 
+                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
+                        IConst_0]
+            addToCurrentByteCodeSize 8
+            return code
+        GreaterEq -> do
+            byteCodeSize <- getCurrentByteCodeSize
+            let code = codeExpr1 ++ 
+                       codeExpr2 ++ 
+                       [(If_ICmpLt (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
+                        IConst_1, 
+                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
+                        IConst_0]
+            addToCurrentByteCodeSize 8
+            return code
+generateCodeForExpression (IntLitExpr intVal) = do
+    addToCurrentByteCodeSize 2 
+    return [(BIPush intVal)]
 generateCodeForExpression (BoolLitExpr bool) = case bool of
-    True -> return [(IConst_1)]
-    False -> return [(IConst_0)]
-generateCodeForExpression (CharLitExpr (character:str)) = return [(BIPush (ord character))]
-generateCodeForExpression (StringLitExpr _) = return []                             -- noch nicht unterstützt
-generateCodeForExpression (Null) = return [(AConst_Null)]
+    True -> do 
+        addToCurrentByteCodeSize 1
+        return [(IConst_1)]
+    False -> do 
+        addToCurrentByteCodeSize 1
+        return [(IConst_0)]
+generateCodeForExpression (CharLitExpr (character:str)) = do
+    addToCurrentByteCodeSize 2
+    return [(BIPush (ord character))]
+generateCodeForExpression (StringLitExpr _) = return []                                         -- noch nicht unterstützt
+generateCodeForExpression (Null) = do
+    addToCurrentByteCodeSize 1
+    return [(AConst_Null)]
 generateCodeForExpression (StmtExprExpr stmtExpr) = generateCodeForStmtExpr stmtExpr
 
 
@@ -272,6 +394,7 @@ generateCodeForExpressions (expr:exprs) = do
     codeForExpr <- generateCodeForExpression expr
     codeForExprs <- generateCodeForExpressions exprs
     return (codeForExpr ++ codeForExprs)
+
 
 ----------------------------------------------------------------------
 -- Helper functions to get list index of variable  (offset of 1 is accounted since load_0 and store_0 are not used)
