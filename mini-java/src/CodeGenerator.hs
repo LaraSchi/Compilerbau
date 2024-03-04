@@ -282,7 +282,7 @@ generateCodeForExpression (UnaryOpExpr un_op expr) = do
     let (intExpr:[]) = codeExpr
     case un_op of
         UnaryPlus -> return codeExpr
-        Not -> return [] 
+        Not -> return []                                                                        -- TODO
         UnaryMinus -> do
             let instr = convertInstrToByteCode intExpr
             if length instr == 3
