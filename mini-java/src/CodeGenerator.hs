@@ -172,19 +172,23 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
             addToLocalVarTypes var_type
             localVarList <- getLocalVars
             codeForExpr <- generateCodeForExpression expr
+            let codeWithoutPop =
+                    if isExprNewExpression expr
+                        then init codeForExpr -- delete last element (Pop instr.)
+                        else codeForExpr
             if var_type == BoolT || var_type == CharT || var_type == IntT
                 then do
                     let index = (getVarIndex name localVarList)
                     if index <= 3
                         then addToCurrentByteCodeSize 1
                         else addToCurrentByteCodeSize 2
-                    return (codeForExpr ++ [(getIStoreByIndex index)])
+                    return (codeWithoutPop ++ [(getIStoreByIndex index)])
                 else do
                     let index = (getVarIndex name localVarList)
                     if index <= 3
                         then addToCurrentByteCodeSize 1
                         else addToCurrentByteCodeSize 2
-                    return (codeForExpr ++ [(getAStoreByIndex index)])
+                    return (codeWithoutPop ++ [(getAStoreByIndex index)])
         Nothing -> do
             addToLocalVars name
             addToLocalVarTypes var_type
@@ -228,11 +232,15 @@ generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) = generateCodeForStmtExpr stm
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) = do
     codeExpr1 <- generateCodeForAssign expr1
     codeExpr2 <- generateCodeForExpression expr2
+    let codeWithoutPop =
+            if isExprNewExpression expr2
+                then init codeExpr2 -- delete last element (Pop instr.)
+                else codeExpr2
     case codeExpr1 of
         [(PutField _ _)] -> do
             addToCurrentByteCodeSize 1
-            return ([ALoad_0] ++ codeExpr2 ++ codeExpr1)
-        _ -> return (codeExpr2 ++ codeExpr1)                                                                   
+            return ([ALoad_0] ++ codeWithoutPop ++ codeExpr1)
+        _ -> return (codeWithoutPop ++ codeExpr1)                                                                  
 -- New
 generateCodeForStmtExpr (NewExpression expr) = generateCodeForNewExpr expr                                      -- TODO ??
 -- Method call
@@ -418,11 +426,13 @@ generateCodeForExpression (StmtExprExpr stmtExpr) = generateCodeForStmtExpr stmt
 
 -- Function to generate assembly code for NewExpr
 generateCodeForNewExpr :: NewExpr -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForNewExpr (NewExpr newType args) = return []
-    --"new " ++ generateCodeForNewType newType ++ ", " ++ -- Todo get index in constantpool
-    --"dup, " ++
-    --generateCodeForExpressions args ++
-    --"invokespecial " -- Todo index of a Method ref
+generateCodeForNewExpr (NewExpr newType args) = do
+    code <- generateCodeForExpressions args
+    return ([(New 0x0 0x0),
+            (Dup)] ++
+            code ++
+            [(InvokeSpecial 0x0 0x0),
+            (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
 
 -- Function to generate assembly code for NewType
 generateCodeForNewType :: NewType -> GlobalVarsMonad [ByteCodeInstrs]
@@ -436,6 +446,13 @@ generateCodeForExpressions (expr:exprs) = do
     codeForExprs <- generateCodeForExpressions exprs
     return (codeForExpr ++ codeForExprs)
 
+
+
+----------------------------------------------------------------------
+-- Helper function to check if new object is used in assignment or local var decl
+isExprNewExpression :: Expression -> Bool
+isExprNewExpression (TypedExpr (StmtExprExpr (TypedStmtExpr (NewExpression _) _)) _) = True
+isExprNewExpression _ = False
 
 ----------------------------------------------------------------------
 -- Helper functions to get list index of variable  (offset of 1 is accounted since load_0 and store_0 are not used)

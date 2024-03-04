@@ -309,7 +309,7 @@ convertInstrToString instr = case instr of
     (Ldc_W arg1 arg2) -> "ldc_w" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
     (Ldc2_W arg1 arg2) -> "ldc2_w" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
     (SIPush arg1 arg2) -> "sipush" ++ "\t\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (New arg1 arg2) -> "new" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
+    (New arg1 arg2) -> "new" ++ "\t\t#" ++ show ((arg1 `shiftL` 8) + arg2)
     (BIPush arg1) -> "bipush" ++ "\t\t" ++ show arg1
     (ALoad arg1) -> "aload" ++ "\t" ++ show arg1
     (AStore arg1) -> "astore" ++ "\t" ++ show arg1
