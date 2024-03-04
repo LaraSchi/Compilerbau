@@ -148,8 +148,8 @@ NewExpression
 MethodCall
   : Expression '.' identifier '(' ArgumentList ')' { MethodCallExpr $1 $3 $5 }
   | Expression '.' identifier '(' ')'              { MethodCallExpr $1 $3 [] }
-  | this '.' identifier '(' ArgumentList ')'       { MethodCallExpr Null $3 $5 }
-  | this '.' identifier '(' ')'                    { MethodCallExpr Null $3 [] }
+  | this '.' identifier '(' ArgumentList ')'       { MethodCallExpr ThisExpr $3 $5 }
+  | this '.' identifier '(' ')'                    { MethodCallExpr ThisExpr $3 [] }
   | identifier '(' ArgumentList ')'                { MethodCallExpr Null $1 $3 }
   | identifier '('  ')'                            { MethodCallExpr Null $1 [] }
 

@@ -63,7 +63,7 @@ checkMethod (MethodDecl v t s ps stmts) = do
     typedStmts <- checkStmt stmts
     if getTypeS typedStmts == t
     then return $ MethodDecl v t s ps typedStmts
-    else error ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) -- return $ MethodDecl v t s ps typedStmts
+    else traceShow ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) $ return $ MethodDecl v t s ps typedStmts
 
 checkBlockS :: Stmt -> TypeStateM Stmt
 checkBlockS s = do
@@ -81,7 +81,7 @@ checkStmt (Block stmts)                     = do
     then return $ TypedStmt (Block bT) VoidT
     else if allEq tys 
          then return $ TypedStmt (Block bT) (head tys)
-         else error ("es werden verschieden Typen zurück gegeben" ++ show tys) -- $ return $ TypedStmt (Block bT) (head tys)
+         else traceShow ("es werden verschieden Typen zurück gegeben" ++ show tys) $ return $ TypedStmt (Block bT) (head tys)
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -189,7 +189,7 @@ checkSameExpr e1 e2 t = do
 checkStmtExpr :: StmtExpr -> TypeStateM StmtExpr
 checkStmtExpr se@(AssignmentStmt _ _) = checkAssign se
 checkStmtExpr (NewExpression n)       = checkNew n
-checkStmtExpr (MethodCall m)          = checkMethodCall m >>= \mTyped -> return $ TypedStmtExpr (MethodCall mTyped) VoidT -- #TODO: Anzahl und Art Parameter checken
+checkStmtExpr (MethodCall m)          = checkMethodCall m >>= \(mTyped,rtype) -> return $ TypedStmtExpr (MethodCall mTyped) rtype -- #TODO: Anzahl und Art Parameter checken
 checkStmtExpr _                       = error "checkStmtExpr called on already typed Stmt"
 
 
@@ -212,15 +212,29 @@ checkNew (NewExpr cn es) = do
     return $ TypedStmtExpr (NewExpression(NewExpr cn eTyped)) (NewTypeT cn) 
     -- #TODO: NewType Datentyp evtl anders?
 
-checkMethodCall :: MethodCallExpr -> TypeStateM MethodCallExpr
+checkMethodCall :: MethodCallExpr -> TypeStateM (MethodCallExpr,Type)
 checkMethodCall (MethodCallExpr e s es) = do
     eT <- checkExpr e
+    field <- gets fieldTypeset
+    let funcType = filter ((==s).fst) field
+    if null funcType 
+    then error "function does not exist"
+    else do
+        let (params, resultType) = getFuncTypes (snd (head funcType))
+        eTyped  <- checkExpr e
+        esTyped <- mapM checkExpr es
+        case e of
+            ThisExpr ->  return (MethodCallExpr eTyped s esTyped,VoidT) 
+            _        -> return (MethodCallExpr eTyped s esTyped,resultType) 
+
+    -- TODO: Frage, was wenn Funktion doppelt vorkommt?
     -- #TODO: check if e is Object
     -- #TODO: check if Method is given in Obj
     -- #TODO: check if es are needed params (number of params and their type)
-    eTyped  <- checkExpr e
-    esTyped <- mapM checkExpr es
-    return $ MethodCallExpr eTyped s esTyped
+
+getFuncTypes :: Type -> ([Type],Type)
+getFuncTypes (FuncT p r) = (p,r)
+getFuncTypes _           = error "getFuncTypes wurde auf falschem typen aufgerufen"
 
 -- checkBlockStmt ::
 
