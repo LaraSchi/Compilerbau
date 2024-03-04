@@ -89,8 +89,8 @@ MethodDecls
 MethodDecl
   : public Type identifier '(' ParameterList ')' '{' BlockStmt '}'   { MethodDecl Public $2 $3 $5 $8 }
   | public Type identifier '(' ')' '{' BlockStmt '}'                 { MethodDecl Public $2 $3 [] $7 }
-  | public      identifier '(' ParameterList ')' '{' BlockStmt '}'   { MethodDecl Public (NewTypeT (NewType $2)) $2 $4 $7 }
-  | public      identifier '(' ')' '{' BlockStmt '}'                 { MethodDecl Public (NewTypeT (NewType $2))  $2 [] $6 }
+  | public      identifier '(' ParameterList ')' '{' BlockStmt '}'   { MethodDecl Public VoidT $2 $4 $7 }
+  | public      identifier '(' ')' '{' BlockStmt '}'                 { MethodDecl Public VoidT $2 [] $6 }
 
 Field
   : Type identifier ';'                  { [FieldDecl $1 $2 Nothing] }

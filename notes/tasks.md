@@ -6,9 +6,6 @@
 
 ## TODO (Lara):
 
-- Char zu char
-- init Funktion immer reinhauen "<init>", und dann Vars aus Init als Field
-- Void -> VoidT!!!
 
 - Semantikcheck
 
@@ -23,11 +20,22 @@
 
     - Beispiele
     - return Regel
-- advancedExamples/Addn.minijava prüfen:
+
+Fragen:
+
+- Wie soll die leere Init aussehen? 
+- Folie 195?
+
+
+- advancedExamples/Addn.minijava:
   - Constructor
   - bei n + x: Parser macht x zu this.x
-- examples/explFieldRef3.minijava prüfen
 - this.method prüfen
+
+Nice to have (Lara):
+
+
+- Char zu char
 - String parsen können
     - System.out.println mit " " statt ~. 
     - System.out.println als Methode
@@ -39,3 +47,4 @@
 - [Class]
 - access flags klassen bis auf generisch und abstract
 - Visibility upgrade (final, public, private)
+- leere Funktion mgl.?
