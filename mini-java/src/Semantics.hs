@@ -63,14 +63,14 @@ checkMethod (MethodDecl v t s ps stmts) = do
     typedStmts <- checkStmt stmts
     if getTypeS typedStmts == t
     then return $ MethodDecl v t s ps typedStmts
-    else error ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) -- $ return $ MethodDecl v t s ps typedStmts
+    else error ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) -- return $ MethodDecl v t s ps typedStmts
 
 checkBlockS :: Stmt -> TypeStateM Stmt
 checkBlockS s = do
     ty <- gets blockTypes
     sTyped <- checkStmt s
     let blockType = getTypeS sTyped
-    when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
+    traceShow ("von Stmt: " ++ show s ++ "ist der blockType: " ++ show blockType) $ when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
     return sTyped
 
 checkStmt :: Stmt -> TypeStateM Stmt
@@ -81,7 +81,7 @@ checkStmt (Block stmts)                     = do
     then return $ TypedStmt (Block bT) VoidT
     else if allEq tys 
          then return $ TypedStmt (Block bT) (head tys)
-         else error "es werden verschieden Typen zurück gegeben" -- $ return $ TypedStmt (Block bT) (head tys)
+         else error ("es werden verschieden Typen zurück gegeben" ++ show tys) -- $ return $ TypedStmt (Block bT) (head tys)
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -90,12 +90,12 @@ checkStmt (WhileStmt e stmts)               = do
 checkStmt v@(LocalVarDeclStmt t s Nothing)          = do
     locals <- gets localTypeset
     modify (\state -> state {localTypeset = (s,t):locals})
-    return $ TypedStmt (LocalVarDeclStmt t s Nothing) t
+    return $ TypedStmt (LocalVarDeclStmt t s Nothing) VoidT
 checkStmt v@(LocalVarDeclStmt t s (Just e))          = do
     locals <- gets localTypeset
     modify (\state -> state {localTypeset = (s,t):locals})
     eTyped <- checkTypeExpr t e
-    return $ TypedStmt (LocalVarDeclStmt t s (Just eTyped)) t
+    return $ TypedStmt (LocalVarDeclStmt t s (Just eTyped)) VoidT
 checkStmt (IfElseStmt e bs Nothing)         = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- checkStmt bs
@@ -112,7 +112,7 @@ checkStmt _                                 = error "checkStmt called on already
 checkTypeExpr :: Type -> Expression -> TypeStateM Expression
 checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
     then return typed
-    else error "checkTypeExpr error" -- #TODO: passende Error messages
+    else error ("typed: " ++ show typed ++  "expression: " ++ show  e) -- #TODO: passende Error messages
 
 -- TODO: alle Expr typen 
 -- TODO: evtl. zu haskell typen? 
@@ -200,7 +200,7 @@ checkAssign (AssignmentStmt e1 e2) = do
     e1T <- checkExpr e1 
     e2T <- checkExpr e2
     -- #TODO: e1 muss var sein? und als Var it jeweiligen Typ abspeichern
-    return $ TypedStmtExpr (AssignmentStmt e1T e2T) (getTypeE e2T)
+    return $ TypedStmtExpr (AssignmentStmt e1T e2T) VoidT --(getTypeE e2T)
 
 checkNew :: NewExpr -> TypeStateM StmtExpr
 checkNew (NewExpr cn es) = do
@@ -209,7 +209,7 @@ checkNew (NewExpr cn es) = do
     let correctType = cT' == cn
     esT <- mapM checkExpr es
     eTyped      <- mapM checkExpr es
-    return $ TypedStmtExpr (NewExpression(NewExpr cn eTyped)) VoidT
+    return $ TypedStmtExpr (NewExpression(NewExpr cn eTyped)) (NewTypeT cn) 
     -- #TODO: NewType Datentyp evtl anders?
 
 checkMethodCall :: MethodCallExpr -> TypeStateM MethodCallExpr
