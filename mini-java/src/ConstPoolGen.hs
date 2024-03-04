@@ -109,8 +109,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
                        _ <- generateMethodRefConstantPool "<init>" methodType className
                        return ()
                     Nothing -> do
-                        _ <- generateMethodRefConstantPool "<init>" "()V" className
-                        return () -- Todo
+                        return ()
   IfElseStmt expr stmt1 stmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt1 fieldOrMethodDecls className
@@ -153,12 +152,16 @@ findReferencesStmtExpr stmtExpr fieldOrMethodDecls className = case stmtExpr of
   AssignmentStmt expr1 expr2 -> do
     findReferencesExpr expr1 fieldOrMethodDecls className
     findReferencesExpr expr2 fieldOrMethodDecls className
-  NewExpression newExpr -> findReferencesNewExpr newExpr fieldOrMethodDecls className
+  NewExpression newExpr ->  findReferencesNewExpr newExpr fieldOrMethodDecls className
   MethodCall methodCallExpr -> do
     findRefMethodCallExpr methodCallExpr fieldOrMethodDecls className
 
 findReferencesNewExpr :: NewExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
-findReferencesNewExpr (NewExpr _ exprList) fieldOrMethodDecls className = mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls className) exprList
+findReferencesNewExpr (NewExpr thisNewType exprList) fieldOrMethodDecls className = do
+        when(newTypeToString thisNewType == newTypeToString className) $ do
+            _ <- generateMethodRefConstantPool "<init>" "()V" className
+            mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls className) exprList
+        mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls className) exprList
 
 findRefMethodCallExpr :: MethodCallExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findRefMethodCallExpr (MethodCallExpr expr name exprList) fieldOrMethodDecls className = do
