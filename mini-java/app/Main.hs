@@ -68,10 +68,10 @@ addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
     else p
         where init = MethodDecl 
                     Public 
-                    (NewTypeT n) 
+                    VoidT
                     name 
-                    params
-                    (Block assigns)
+                    [] --params
+                    (Block []) --assigns)
               fieldVars = map (\(FieldDecl t n v) -> (n, t)) fs
               params = map (\(n,t) -> Parameter t n) fieldVars
               assigns = map (\(n,_) -> StmtExprStmt (AssignmentStmt (FieldVarExpr n) (FieldVarExpr n))) fieldVars

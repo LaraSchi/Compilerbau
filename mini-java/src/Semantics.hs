@@ -10,7 +10,7 @@ import Debug.Trace --Debugging, TODO: remove
 data TypeState = TypeState { classType        :: Type,
                              localTypeset     :: [(String, Type)],
                              fieldTypeset     :: [(String, Type)],
-                             blockType        :: Type,
+                             blockTypes        :: [Type],
                              errors           :: [String] }
                              deriving Show 
 
@@ -18,20 +18,22 @@ type TypeStateM = State TypeState
 
 checkSemantics :: Program -> Either String Program
 checkSemantics p = case runTypeStateM p of
-    (p',[]) -> Right p'
+    (p',[]) ->Right p'
     (_,es) -> Left $ head es -- #TODO: errors schön zu errormessage konkatenieren 
 
 
 runTypeStateM :: Program -> (Program, [String])
-runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] VoidT []
+runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] [] []
 
 checkSProg :: Program -> TypeStateM Program
-checkSProg (Program (Class n fd md) _) = do
-        modify $ \s -> s {classType = NewTypeT n}
+checkSProg p@(Program (Class n fd md) _) = do
+        traceShow p $ modify $ \s -> s {classType = NewTypeT n}
         fillTypeSetFields fd
         fillTypesSetMethod md
         mdTyped <- mapM checkMethod md
-        return (Program (Class n fd mdTyped) True)
+        local <- gets localTypeset
+        field <- gets fieldTypeset
+        traceShow local $ traceShow field $ return (Program (Class n fd mdTyped) True)
 
 fillTypeSetFields :: [Field] -> TypeStateM ()
 fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds}) 
@@ -42,40 +44,44 @@ typesOf []                 = []
 typesOf (FieldDecl t s me:ys) = (s,t):typesOf ys
 typesOf (_:ys)               = typesOf ys
 
+-- füllt Typen der Funktionen in FieldTypeSet
 fillTypesSetMethod :: [MethodDecl] -> TypeStateM ()
 fillTypesSetMethod mds = do
-    ts <- gets localTypeset
-    let funcTypes = concatMap buildFuncType mds
-    modify (\s -> s {localTypeset = ts ++ funcTypes})
+    ts <- gets fieldTypeset
+    let funcTypes = map buildFuncType mds
+    modify (\s -> s {fieldTypeset = funcTypes ++ ts})
 
-buildFuncType :: MethodDecl -> [(String, Type)]
-buildFuncType (MethodDecl _ t n ps _) = (n, FuncT paramFunc t) : paramTypes
+buildFuncType :: MethodDecl -> (String, Type)
+buildFuncType (MethodDecl _ t n ps _) = (n, FuncT paramFunc t)
     where paramFunc  = map (\(Parameter ty _) -> ty) ps
-          paramTypes = map (\(Parameter ty st) -> (st,ty)) ps
 
 
 checkMethod :: MethodDecl -> TypeStateM MethodDecl
 checkMethod (MethodDecl v t s ps stmts) = do
+    let paramTypes = map (\(Parameter ty st) -> (st,ty)) ps
+    modify (\state -> state {localTypeset = (s,t):paramTypes})
     typedStmts <- checkStmt stmts
-    locals <- gets localTypeset
-    fields <- gets fieldTypeset
-    classT <- gets classType
-    return $ MethodDecl v t s ps typedStmts
+    if getTypeS typedStmts == t
+    then return $ MethodDecl v t s ps typedStmts
+    else error ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) -- $ return $ MethodDecl v t s ps typedStmts
 
 checkBlockS :: Stmt -> TypeStateM Stmt
-checkBlockS s@(ReturnStmt e) = do
-    ty <- gets blockType
+checkBlockS s = do
+    ty <- gets blockTypes
     sTyped <- checkStmt s
-    when (ty == VoidT) $ modify (\state -> state {blockType = getTypeS sTyped}) 
-    checkStmt s
-checkBlockS s = checkStmt s
+    let blockType = getTypeS sTyped
+    when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
+    return sTyped
 
 checkStmt :: Stmt -> TypeStateM Stmt
 checkStmt (Block stmts)                     = do
     bT <- mapM checkBlockS stmts
-    ty <- gets blockType
-    modify (\state -> state {blockType = VoidT})
-    return $ TypedStmt (Block bT) ty
+    tys <- gets blockTypes
+    if null tys
+    then return $ TypedStmt (Block bT) VoidT
+    else if allEq tys 
+         then return $ TypedStmt (Block bT) (head tys)
+         else error "es werden verschieden Typen zurück gegeben" -- $ return $ TypedStmt (Block bT) (head tys)
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -114,7 +120,7 @@ checkExpr :: Expression -> TypeStateM Expression
 checkExpr ThisExpr                  = gets classType >>= \t -> return $ TypedExpr ThisExpr t
 checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
 checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
-checkExpr v@(FieldVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
+checkExpr v@(FieldVarExpr i)      = checkFieldVar i -- #TODO: korrigieren
 checkExpr v@(LocalVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
 checkExpr (InstVarExpr e s)       = checkExpr e >>= \eTyped -> return $ TypedExpr (InstVarExpr eTyped s) StringT -- #TODO: korrigieren, was für ein Typ?
 checkExpr (UnaryOpExpr op e)        = checkUnary op e
@@ -133,11 +139,19 @@ checkIdentifier s = do
     state <- get
     let localSet = localTypeset state
     let fieldSet = fieldTypeset state
-    case lookup s fieldSet of
-        Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
-        _           -> case lookup s localSet of
+    case lookup s localSet of
                         Just localT -> return $ TypedExpr (LocalVarExpr s) localT
-                        _      -> error "Vars müssen deklariert werden" -- #TODO: schöner
+                        _      -> case lookup s fieldSet of
+                                        Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
+                                        _           -> error "Vars müssen deklariert werden" -- #TODO: schöner
+
+checkFieldVar :: String -> TypeStateM Expression
+checkFieldVar s = do
+    field <- gets fieldTypeset
+    case lookup s field of
+        Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
+        _           -> error "Vars müssen deklariert werden" -- #TODO: schöner
+
 
 -- #TODO: evtl. umschreiben
 checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
@@ -195,7 +209,7 @@ checkNew (NewExpr cn es) = do
     let correctType = cT' == cn
     esT <- mapM checkExpr es
     eTyped      <- mapM checkExpr es
-    return $ TypedStmtExpr (NewExpression(NewExpr cn eTyped)) cT
+    return $ TypedStmtExpr (NewExpression(NewExpr cn eTyped)) VoidT
     -- #TODO: NewType Datentyp evtl anders?
 
 checkMethodCall :: MethodCallExpr -> TypeStateM MethodCallExpr
@@ -226,3 +240,8 @@ getTypeS _               = error "blub"
 
 semanticsError :: String -> String -> a
 semanticsError s1 s2 = error $ "error in function " ++ s1 ++ "\ncalles on " ++ s2
+
+-- Helper 
+allEq :: Eq a => [a] -> Bool
+allEq (x:xs) = all (== x) xs
+allEq [x]    = True
