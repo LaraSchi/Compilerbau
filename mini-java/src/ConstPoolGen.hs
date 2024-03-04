@@ -98,24 +98,17 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
   WhileStmt expr stmt -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt fieldOrMethodDecls className
-  LocalVarDeclStmt thisType name maybeExpr -> return () --do -- Todo init
-  {-
-        case fieldOrMethodDecls of
-           -- is it a Methodref?
-            (ThisMethodDekl methodDecl) : _  -> do
-                when (((typeToString thisType) == (newTypeToString className)) ) $ do
-                      let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> (typeToString thisType) == methodName) (unwrapToMethodList fieldOrMethodDecls)
-                      -- Possibly add class init MethodRef
-                      if (length methodRefs == 0) -- Todo  why?
-                           then do
-                               _ <- generateMethodRefConstantPool "<init>" "()V" (NewType (typeToString thisType))
-                               return ()
-                           else do
-                               mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
-                                         let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
-                                         generateMethodRefConstantPool "<init>" methodType className) methodRefs
-                               return ()
-            [] -> return () -}
+  LocalVarDeclStmt thisType name maybeExpr -> do
+            -- Add a Konstruktor
+            when (((typeToString thisType) == (newTypeToString className)) ) $ do
+                 case maybeExpr of
+                    Just (TypedExpr (StmtExprExpr (TypedStmtExpr (NewExpression (NewExpr (NewType thisType) exprs)) _)) _) -> do
+                       let methodType = if null exprs
+                                             then "()V"
+                                             else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) exprs) ++ ")V"
+                       _ <- generateMethodRefConstantPool "<init>" methodType className
+                       return ()
+                    _ -> return () -- Todo
   IfElseStmt expr stmt1 stmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt1 fieldOrMethodDecls className
@@ -135,7 +128,7 @@ findReferencesExpr expr fieldOrMethodDecls className = case expr of
         findReferencesExpr e fieldOrMethodDecls className
   ThisExpr -> (return ())
   SuperExpr -> (return ())
-  LocalOrFieldVarExpr name -> trace ("LocalOrFieldVarExpr is found: " ++ name) $ return ()
+  LocalOrFieldVarExpr name -> trace ("LocalOrFieldVarExpr is falsely found: " ++ name) $ return ()
   LocalVarExpr name -> (return ())
   InstVarExpr e name -> do
     findReferencesExpr e fieldOrMethodDecls className
@@ -182,7 +175,6 @@ checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 checkAndGenRef name decls className = case decls of
     (ThisMethodDekl _ : _) -> do
       let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> name == methodName) (unwrapToMethodList decls)
-      trace (show methodRefs) $ return ()
       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
           let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
           generateMethodRefConstantPool methodName methodType className) methodRefs
@@ -201,7 +193,7 @@ generateFieldDeklCP field className = case field of
     (FieldDecl fieldType fieldName expr) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className
 
 generateMethodDeklCP :: MethodDecl -> ConstantpoolStateM CP_Info
-generateMethodDeklCP (MethodDecl _ this_type methodName parameters _) = do
+generateMethodDeklCP (MethodDecl _ this_type methodName parameters _) = trace (show this_type) $ do
     methodNameInfo <- createUtf8Entry methodName
     _ <- createUtf8Entry ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString this_type)
     _ <- createUtf8Entry "Code"
@@ -267,7 +259,6 @@ createUtf8Entry name = do
     return utf8Info
 
 
--- Additional supporting functions.
 
 -- Map Type to String
 typeToString :: Type -> String

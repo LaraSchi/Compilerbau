@@ -17,7 +17,7 @@ import System.Directory
 main :: IO ()
 main = do
 
-    fileContent <- readFile "code/examples/explIfElse.minijava" -- read file
+    fileContent <- readFile "code/examples/explMethodRef.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -34,7 +34,7 @@ main = do
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
-                -- putStrLn constPoolShow
+                putStrLn constPoolShow
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
@@ -68,10 +68,10 @@ addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
     else p
         where init = MethodDecl 
                     Public 
-                    (NewTypeT n) 
+                    VoidT
                     name 
-                    params
-                    (Block assigns)
+                    [] --params
+                    (Block []) --assigns)
               fieldVars = map (\(FieldDecl t n v) -> (n, t)) fs
               params = map (\(n,t) -> Parameter t n) fieldVars
               assigns = map (\(n,_) -> StmtExprStmt (AssignmentStmt (FieldVarExpr n) (FieldVarExpr n))) fieldVars
