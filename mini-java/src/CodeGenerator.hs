@@ -12,11 +12,12 @@ import Debug.Trace
 
 -- TODO init wenn empty init method im AST -> erst nach Änderung in Syntax möglich mit eigenem return Typ für Init
 -- TODO how to get max stack size in classfile?
--- TODO how does monad behave when method call happens
 -- TODO branchoffset 
+-- TODO unary Ops
 -- TODO CharLitExpr in Char
 -- TODO test and check state monad usage:
 -- TODO: unnötige Instr aus Datenstruktur schmeißen
+-- TODO: max value for int
 
 
 ----------------------------------------------------------------------
@@ -223,7 +224,7 @@ generateCodeForAssign :: Expression -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForAssign (TypedExpr expr _) = generateCodeForAssign expr
 generateCodeForAssign (FieldVarExpr name) = do
     addToCurrentByteCodeSize 3
-    return [(PutField 0x0 0x0)]                                         -- TODO verweis auf cp mit name
+    return [(PutField 0x0 0x0)]                                                                                 -- TODO verweis auf cp mit name
 generateCodeForAssign (LocalVarExpr name) = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
@@ -276,7 +277,24 @@ generateCodeForExpression (LocalVarExpr name) = do
                 else addToCurrentByteCodeSize 2
             return [(getALoadByIndex (getVarIndex name varList))]
 generateCodeForExpression (InstVarExpr expr name) = generateCodeForExpression expr              -- TODO: eigentlich nur relevant, wenn man mehrere Klassen hat?
-generateCodeForExpression (UnaryOpExpr un_op expr) = generateCodeForExpression expr             -- TODO
+generateCodeForExpression (UnaryOpExpr un_op expr) = do
+    codeExpr <- generateCodeForExpression expr
+    let (intExpr:[]) = codeExpr
+    case un_op of
+        UnaryPlus -> return codeExpr
+        Not -> return [] 
+        UnaryMinus -> do
+            let instr = convertInstrToByteCode intExpr
+            if length instr == 3
+                then do 
+                    let (codeInstr:intVal1:intVal2:[]) = instr
+                        unsignedVal = (intVal1 `shiftL` 8) + intVal2
+                    if unsignedVal > 32767  -- Check if value exceeds short range
+                        then return [(SIPush ((-unsignedVal) `shiftR` 8) (-unsignedVal .&. 0xFF))]
+                        else return [(BIPush (-unsignedVal))]
+                else do
+                    let (codeInstr:intVal:[]) = instr
+                    return [(BIPush (-intVal))]
 generateCodeForExpression (BinOpExpr expr1 bin_op expr2) = do
     codeExpr1 <- generateCodeForExpression expr1
     codeExpr2 <- generateCodeForExpression expr2
@@ -356,8 +374,13 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) = do
             addToCurrentByteCodeSize 8
             return code
 generateCodeForExpression (IntLitExpr intVal) = do
-    addToCurrentByteCodeSize 2 
-    return [(BIPush intVal)]
+    if intVal > 127
+        then do
+            addToCurrentByteCodeSize 3 
+            return [(SIPush ((intVal `shiftR` 8) .&. 0xFF) (intVal .&. 0xFF))]
+        else do
+            addToCurrentByteCodeSize 2 
+            return [(BIPush intVal)]
 generateCodeForExpression (BoolLitExpr bool) = case bool of
     True -> do 
         addToCurrentByteCodeSize 1
