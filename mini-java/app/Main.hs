@@ -17,7 +17,7 @@ import System.Directory
 main :: IO ()
 main = do
 
-    fileContent <- readFile "code/examples/explIfElse.minijava" -- read file
+    fileContent <- readFile "code/examples/explMethodRef.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -34,7 +34,7 @@ main = do
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
-                -- putStrLn constPoolShow
+                putStrLn constPoolShow
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
