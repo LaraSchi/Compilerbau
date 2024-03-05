@@ -10,7 +10,7 @@ import Control.Monad.State
 import ConstPoolGen
 import Debug.Trace
 
--- TODO max stack size berechnen und wie man das ins classfile bekommt
+-- TODO max stack size berechnen
 -- TODO branchoffset 
 -- TODO unary: Not
 -- TODO binary: &&, ||
@@ -240,15 +240,6 @@ generateCodeForIfElseStmtExpression (CharLitExpr name) len1 len2 cp_infos = retu
 generateCodeForIfElseStmtExpression (StringLitExpr name) len1 len2 cp_infos = return []
 generateCodeForIfElseStmtExpression (Null) len1 len2 cp_infos = return []
 generateCodeForIfElseStmtExpression (StmtExprExpr stmtExpr) len1 len2 cp_infos = return []
-
-
-
-
-
-
-
-
-
 
 
 

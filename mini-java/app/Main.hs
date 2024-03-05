@@ -8,6 +8,7 @@ import ConstPoolGen (startBuildProcess)
 import Data.Typeable
 import ClassFileGen(generateClassFile)
 import PrettyPrint
+import BinaryClass
 
 
 import System.Directory
@@ -41,6 +42,7 @@ main = do
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
+                encodeClassFile "test.class" sampleCF
                 putStrLn result
                 return ()
              (t',es) -> putStrLn $ prettyPrintProgram t'

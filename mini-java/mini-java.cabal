@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      BinaryClass
       ByteCodeInstr
       ClassFileGen
       ClassFormat
@@ -48,6 +49,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , mtl
+    , binary
   default-language: Haskell2010
 
 executable mini-java-exe
@@ -66,6 +68,8 @@ executable mini-java-exe
       base >=4.7 && <5
     , directory
     , mini-java
+    , binary
+    , bytestring
   default-language: Haskell2010
 
 test-suite mini-java-test
@@ -90,4 +94,5 @@ test-suite mini-java-test
     , hspec
     , hspec-discover
     , mini-java
+    , binary
   default-language: Haskell2010
