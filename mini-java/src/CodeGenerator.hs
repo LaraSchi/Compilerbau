@@ -195,40 +195,31 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
 -- If Else: nur ifcmp* werden verwendet; javac hat Sonderinstruktionen 
 --          wenn Vergleich mit 0 durchgeführt wird, aber unnötig
 generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
-    code <- generateCodeForStmt stmt cp_infos
-    code_expr <- generateCodeForIfElseStmtExpression expr 0x0 0x0 cp_infos
     case maybeBlockStmt of
-        Just stmt -> do
-            codeForBlock <- generateCodeForStmt stmt cp_infos
-            addToCurrentByteCodeSize 3
-            return (code_expr ++ code ++ [(Goto 0x0 0x0)] ++ codeForBlock)
-        Nothing -> return (code_expr ++ code)
+        Just stmt2 -> do
+            case expr of
+                (TypedExpr (BinOpExpr expr1 bin_op expr2) _) -> do
+                    code2 <- generateCodeForStmt stmt2 cp_infos
+                    code1 <- generateCodeForStmt stmt cp_infos
+                    code <- (generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code1 code2) 
+                    return (code)
+                _ -> do
+                    -- Ifeq things
+                    return []
+        Nothing -> do
+            case expr of
+                (TypedExpr (BinOpExpr expr1 bin_op expr2) _) -> do
+                    code1 <- generateCodeForStmt stmt cp_infos
+                    code <- (generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code1 [])
+                    return (code)
+                _ -> do
+                    -- Ifeq things
+                    return []
 
 
 -- Stmt Expr Stmt
 generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
 generateCodeForStmt (Print name) cp_infos = return [] -- Print Statement
-
--- Function to build byte code for if else statement
--- currently only works with if_icmp* (so int, char and boolean) 
--- -> need type of expr1 or expr2 to choose between if_icmp* and if_acmp*
-generateCodeForIfElseStmtExpression :: Expression -> Int -> Int -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForIfElseStmtExpression (BinOpExpr expr1 binop expr2) len1 len2 cp_infos = do
-    if_code <- case binop of
-            Equal -> return [(If_ICmpNeq 0x0 0x0)]
-            NotEqual -> return [(If_ICmpEq) 0x0 0x0]
-            Less -> return [(If_ICmpGeq) 0x0 0x0]
-            Greater -> return [(If_ICmpLeq) 0x0 0x0]
-            LessEq -> return [(If_ICmpGt) 0x0 0x0]
-            GreaterEq -> return [(If_ICmpLt) 0x0 0x0]
-    codeForExpr1 <- generateCodeForExpression expr1 cp_infos
-    codeForExpr2 <- generateCodeForExpression expr2 cp_infos
-    return (codeForExpr1 ++ codeForExpr2 ++ if_code)
-generateCodeForIfElseStmtExpression (TypedExpr expr thisType) len1 len2 cp_infos = generateCodeForIfElseStmtExpression expr len1 len2 cp_infos
--- generateCodeForIfElseStmtExpression (BinOpExpr expr1 binOp expr2) len1 len2 cp_infos = return []
--- generateCodeForIfElseStmtExpression (BoolLitExpr bool) len1 len2 cp_infos = return []
--- generateCodeForIfElseStmtExpression (StmtExprExpr stmtExpr) len1 len2 cp_infos = return []
-
 
 
 -- Function to generate assembly code for StmtExpr
@@ -325,9 +316,6 @@ generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos =  do
 
 
 
-
-
-
 -- Function to generate assembly code for Expression
 generateCodeForExpression :: Expression -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForExpression (ThisExpr) cp_infos = return []                                                
@@ -377,7 +365,7 @@ generateCodeForExpression (UnaryOpExpr un_op expr) cp_infos = do
     let (intExpr:[]) = codeExpr
     case un_op of
         UnaryPlus -> return codeExpr
-        Not -> return []                                                                                    -- TODO
+        Not -> return [] -- not implemented
         UnaryMinus -> do
             let instr = convertInstrToByteCode intExpr
             if length instr == 3
@@ -391,83 +379,36 @@ generateCodeForExpression (UnaryOpExpr un_op expr) cp_infos = do
                     let (codeInstr:intVal:[]) = instr
                     return [(BIPush (-intVal))]
 generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
-    codeExpr1 <- generateCodeForExpression expr1 cp_infos
-    codeExpr2 <- generateCodeForExpression expr2 cp_infos
     case bin_op of
-        Plus -> do 
-            addToCurrentByteCodeSize 1
-            return (codeExpr1 ++ codeExpr2 ++ [IAdd])
-        Minus -> do
-            addToCurrentByteCodeSize 1
-            return (codeExpr1 ++ codeExpr2 ++ [ISub])
-        Times -> do
-            addToCurrentByteCodeSize 1
-            return (codeExpr1 ++ codeExpr2 ++ [IMul])
-        Divide -> do
-            addToCurrentByteCodeSize 1
-            return (codeExpr1 ++ codeExpr2 ++ [IDiv])
-        --And -> return ([]) ??                                                                                     -- TODO
-        --Or -> return ([]) ??
-        Equal -> do
-            byteCodeSize <- getCurrentByteCodeSize
-            let code = codeExpr1 ++ 
-                       codeExpr2 ++ 
-                       [(If_ICmpNeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
-                        IConst_1, 
-                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
-                        IConst_0]
-            addToCurrentByteCodeSize 8
-            return code
-        NotEqual -> do
-            byteCodeSize <- getCurrentByteCodeSize
-            let code = codeExpr1 ++ 
-                       codeExpr2 ++ 
-                       [(If_ICmpEq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
-                        IConst_1, 
-                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
-                        IConst_0]
-            addToCurrentByteCodeSize 8
-            return code
-        Less -> do
-            byteCodeSize <- getCurrentByteCodeSize
-            let code = codeExpr1 ++ 
-                       codeExpr2 ++ 
-                       [(If_ICmpGeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
-                        IConst_1, 
-                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
-                        IConst_0]
-            addToCurrentByteCodeSize 8
-            return code
-        Greater -> do
-            byteCodeSize <- getCurrentByteCodeSize
-            let code = codeExpr1 ++ 
-                       codeExpr2 ++ 
-                       [(If_ICmpLeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
-                        IConst_1, 
-                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
-                        IConst_0]
-            addToCurrentByteCodeSize 8
-            return code
-        LessEq -> do
-            byteCodeSize <- getCurrentByteCodeSize
-            let code = codeExpr1 ++ 
-                       codeExpr2 ++ 
-                       [(If_ICmpGt (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
-                        IConst_1, 
-                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
-                        IConst_0]
-            addToCurrentByteCodeSize 8
-            return code
-        GreaterEq -> do
-            byteCodeSize <- getCurrentByteCodeSize
-            let code = codeExpr1 ++ 
-                       codeExpr2 ++ 
-                       [(If_ICmpLt (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
-                        IConst_1, 
-                        (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
-                        IConst_0]
-            addToCurrentByteCodeSize 8
-            return code
+        Equal -> do 
+            addToCurrentByteCodeSize 2
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [IConst_1] [IConst_0]
+            return (code)
+        NotEqual -> do 
+            addToCurrentByteCodeSize 2
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [IConst_1] [IConst_0]
+            return (code)
+        Less  -> do 
+            addToCurrentByteCodeSize 2
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [IConst_1] [IConst_0]
+            return (code)
+        Greater  -> do 
+            addToCurrentByteCodeSize 2
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [IConst_1] [IConst_0]
+            return (code)
+        LessEq  -> do 
+            addToCurrentByteCodeSize 2
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [IConst_1] [IConst_0]
+            return (code)
+        GreaterEq  -> do 
+            addToCurrentByteCodeSize 2
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [IConst_1] [IConst_0]
+            return (code)
+        _ -> do 
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [] []
+            return (code)
+    
+    
 generateCodeForExpression (IntLitExpr intVal) cp_infos = do
     if intVal > 127
         then do
@@ -518,6 +459,154 @@ generateCodeForExpressions (expr:exprs) cp_infos = do
     codeForExprs <- generateCodeForExpressions exprs cp_infos
     return (codeForExpr ++ codeForExprs)
 
+
+generateCodeForBinOpExpr :: Expression -> [CP_Info] -> [ByteCodeInstrs] -> [ByteCodeInstrs] -> GlobalVarsMonad [ByteCodeInstrs]
+generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos c1 c2 = do
+    codeExpr1 <- generateCodeForExpression expr1 cp_infos
+    codeExpr2 <- generateCodeForExpression expr2 cp_infos
+    let codeBlock1 = c1
+        codeBlock2 = c2
+        lenCodeBlock1 = case c1 of
+            [] -> 0
+            _ -> length (convertToByteCode c1)
+        lenCodeBlock2 = case c2 of
+            [] -> 0
+            _ -> length (convertToByteCode c2)
+    case bin_op of
+        Plus -> do 
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [IAdd])
+        Minus -> do
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [ISub])
+        Times -> do
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [IMul])
+        Divide -> do
+            addToCurrentByteCodeSize 1
+            return (codeExpr1 ++ codeExpr2 ++ [IDiv])
+        Syntax.And -> return ([])  -- not implemented
+        Syntax.Or -> return ([])  -- not implemented
+        Equal -> do
+            if lenCodeBlock2 /= 0
+                then do 
+                    addToCurrentByteCodeSize 6  -- ifcmp and goto
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpNeq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1 ++
+                                [(Goto (((byteCodeSize) `shiftR` 8) .&. 0xFF) ((byteCodeSize) .&. 0xFF))] ++ 
+                                codeBlock2)
+                    return code
+                else do
+                    addToCurrentByteCodeSize 3  -- ifcmp
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpNeq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1)
+                    return code
+        NotEqual -> do
+            if lenCodeBlock2 /= 0
+                then do 
+                    addToCurrentByteCodeSize 6  -- ifcmp and goto
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpEq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1 ++
+                                [(Goto (((byteCodeSize) `shiftR` 8) .&. 0xFF) ((byteCodeSize) .&. 0xFF))] ++ 
+                                codeBlock2)
+                    return code
+                else do
+                    addToCurrentByteCodeSize 3  -- ifcmp
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpEq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1)
+                    return code
+        Less -> do
+            if lenCodeBlock2 /= 0
+                then do 
+                    addToCurrentByteCodeSize 6  -- ifcmp and goto
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpGeq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1 ++
+                                [(Goto (((byteCodeSize) `shiftR` 8) .&. 0xFF) ((byteCodeSize) .&. 0xFF))] ++ 
+                                codeBlock2)
+                    return code
+                else do
+                    addToCurrentByteCodeSize 3  -- ifcmp
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpGeq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1)
+                    return code
+        Greater -> do
+            if lenCodeBlock2 /= 0
+                then do 
+                    addToCurrentByteCodeSize 6  -- ifcmp and goto
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpLeq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1 ++
+                                [(Goto (((byteCodeSize) `shiftR` 8) .&. 0xFF) ((byteCodeSize) .&. 0xFF))] ++ 
+                                codeBlock2)
+                    return code
+                else do
+                    addToCurrentByteCodeSize 3  -- ifcmp
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpLeq (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1)
+                    return code
+        LessEq -> do
+            if lenCodeBlock2 /= 0
+                then do 
+                    addToCurrentByteCodeSize 6  -- ifcmp and goto
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpGt (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1 ++
+                                [(Goto (((byteCodeSize) `shiftR` 8) .&. 0xFF) ((byteCodeSize) .&. 0xFF))] ++ 
+                                codeBlock2)
+                    return code
+                else do
+                    addToCurrentByteCodeSize 3  -- ifcmp
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpGt (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1)
+                    return code
+        GreaterEq -> do
+            if lenCodeBlock2 /= 0
+                then do 
+                    addToCurrentByteCodeSize 6  -- ifcmp and goto
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpLt (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1 ++
+                                [(Goto (((byteCodeSize) `shiftR` 8) .&. 0xFF) ((byteCodeSize) .&. 0xFF))] ++ 
+                                codeBlock2)
+                    return code
+                else do
+                    addToCurrentByteCodeSize 3  -- ifcmp
+                    byteCodeSize <- getCurrentByteCodeSize
+                    let code = (codeExpr1 ++ 
+                                codeExpr2 ++ 
+                                [(If_ICmpLt (((byteCodeSize - lenCodeBlock2) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeBlock2) .&. 0xFF))] ++ 
+                                codeBlock1)
+                    return code
 
 
 ----------------------------------------------------------------------
