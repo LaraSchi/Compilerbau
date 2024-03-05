@@ -64,6 +64,9 @@ getMethodDeklr = gets methodDeklr
 addToMaxStackSize :: Int -> GlobalVarsMonad ()
 addToMaxStackSize x = modify (\s -> s { maxStackSize = maxStackSize s + x })
 
+removeToMaxStackSize :: Int -> GlobalVarsMonad ()
+removeToMaxStackSize x = modify (\s -> s { maxStackSize = maxStackSize s - x })
+
 addToCurrentStackSize :: Int -> GlobalVarsMonad ()
 addToCurrentStackSize x = modify (\s -> s { currentStackSize = currentStackSize s + x })
 
@@ -87,12 +90,13 @@ addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s +
 
 ----------------------------------------------------------------------
 -- Functions to generate Byte Code
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> ([ByteCodeInstrs], Int)
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> ([ByteCodeInstrs], Int, [String])
 startBuildGenCodeProcess m cp className methods =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
-    in (result, maxStackSize finalState)
+    in (result, maxStackSize finalState, localVars finalState )
     where
-    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, 
+     -- Todo maxStackSize
+    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0,
                                 localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className, methodDeklr=methods  }
                         
 
@@ -100,6 +104,7 @@ startBuildGenCodeProcess m cp className methods =
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = do
     className <- getClassName
+    addToMaxStackSize 1
     let initCode =
             if name == className
                 then let deskr = ("java/lang/Object" ++ "." ++ "<init>" ++ ":()V")  -- cp ref to java/lang/Object."<init>":()V
@@ -322,6 +327,8 @@ generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos =  do
              let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
              let deskr = className ++ "." ++ name ++ ":" ++ methodType
              let idx = getIndexByDesc deskr cp_infos
+             addToMaxStackSize 1 -- aload
+             removeToMaxStackSize 1 -- invokevirtual
              return ([ALoad_0] ++
                 codeForExprs ++
                 [(InvokeVirtual ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF)), -- ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF)),  -- Verweis auf methodref in cp mit "classname.methodname:(paramtypes)returntype" e.g test.add:(II)I
@@ -408,6 +415,7 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
     case bin_op of
         Plus -> do 
             addToCurrentByteCodeSize 1
+            removeToMaxStackSize 1
             return (codeExpr1 ++ codeExpr2 ++ [IAdd])
         Minus -> do
             addToCurrentByteCodeSize 1
@@ -422,26 +430,31 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
         --Or -> return ([]) ??
         Equal -> do
             byteCodeSize <- getCurrentByteCodeSize
+            addToMaxStackSize 2
             let code = codeExpr1 ++ 
                        codeExpr2 ++ 
                        [(If_ICmpNeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
                         IConst_1, 
                         (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
                         IConst_0]
+            addToMaxStackSize 2
             addToCurrentByteCodeSize 8
             return code
         NotEqual -> do
             byteCodeSize <- getCurrentByteCodeSize
+            addToMaxStackSize 2
             let code = codeExpr1 ++ 
                        codeExpr2 ++ 
                        [(If_ICmpEq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
                         IConst_1, 
                         (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
                         IConst_0]
+            addToMaxStackSize 2
             addToCurrentByteCodeSize 8
             return code
         Less -> do
             byteCodeSize <- getCurrentByteCodeSize
+            addToMaxStackSize 2
             let code = codeExpr1 ++ 
                        codeExpr2 ++ 
                        [(If_ICmpGeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
@@ -452,32 +465,38 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
             return code
         Greater -> do
             byteCodeSize <- getCurrentByteCodeSize
+            addToMaxStackSize 2
             let code = codeExpr1 ++ 
                        codeExpr2 ++ 
                        [(If_ICmpLeq (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
                         IConst_1, 
                         (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
                         IConst_0]
+            addToMaxStackSize 2
             addToCurrentByteCodeSize 8
             return code
         LessEq -> do
             byteCodeSize <- getCurrentByteCodeSize
+            addToMaxStackSize 2
             let code = codeExpr1 ++ 
                        codeExpr2 ++ 
                        [(If_ICmpGt (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
                         IConst_1, 
                         (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
                         IConst_0]
+            addToMaxStackSize 2
             addToCurrentByteCodeSize 8
             return code
         GreaterEq -> do
             byteCodeSize <- getCurrentByteCodeSize
+            addToMaxStackSize 2
             let code = codeExpr1 ++ 
                        codeExpr2 ++ 
                        [(If_ICmpLt (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 7) .&. 0xFF)), 
                         IConst_1, 
                         (Goto (((byteCodeSize + 7) `shiftR` 8) .&. 0xFF) ((byteCodeSize + 8) .&. 0xFF)), 
                         IConst_0]
+            addToMaxStackSize 2
             addToCurrentByteCodeSize 8
             return code
 generateCodeForExpression (IntLitExpr intVal) cp_infos = do
@@ -491,9 +510,11 @@ generateCodeForExpression (IntLitExpr intVal) cp_infos = do
 generateCodeForExpression (BoolLitExpr bool) cp_infos = case bool of
     True -> do 
         addToCurrentByteCodeSize 1
+        addToMaxStackSize 1
         return [(IConst_1)]
     False -> do 
         addToCurrentByteCodeSize 1
+        addToMaxStackSize 1
         return [(IConst_0)]
 generateCodeForExpression (CharLitExpr (character:str)) cp_infos = do
     addToCurrentByteCodeSize 2
@@ -512,6 +533,7 @@ generateCodeForNewExpr (NewExpr newType args) cp_infos = do
     className <- getClassName
     let idx_method_ref = getIndexByDesc (className ++ ".<init>:()V") cp_infos
         idx_class_ref = getIndexByDesc className cp_infos
+    addToMaxStackSize 1
     return ([(New ((idx_class_ref `shiftR` 8) .&. 0xFF) (idx_class_ref .&. 0xFF)),  -- Verweis auf class_info mit desc classname
             (Dup)] ++
             code ++
