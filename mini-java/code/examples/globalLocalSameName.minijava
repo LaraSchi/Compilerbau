@@ -2,7 +2,9 @@ class A {
 int attr;
 
 public int add(int a, int b) {
-        return a + b;
+        int attr;
+        attr = a + b;
+        return attr;
     }
 
 public int meth(Boolean x) {

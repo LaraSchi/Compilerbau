@@ -31,6 +31,7 @@ addElement x = do
     unless (x `elem` cp) $ do
             modify (\s -> s { constPool = cp ++ [x] })
 
+{-
 modifyAtIndex :: [a] -> Int -> a -> [a]
 modifyAtIndex list index newEntry = take (index-1) list ++ [newEntry] ++ drop index list
 
@@ -40,7 +41,7 @@ modifyEntryAtIndex index newEntry = do
     currentState <- get
     let currentEntries = constPool currentState
         updatedEntries = modifyAtIndex currentEntries index newEntry
-    put $ currentState { constPool = updatedEntries }
+    put $ currentState { constPool = updatedEntries } -}
 
 -- Get the index of a specific entry. If it does not exist yet, -1 is returned .
 getIdx :: CP_Info -> ConstantpoolStateM Int
@@ -51,11 +52,6 @@ getIdx cpInfo = do
         Just idx -> return (idx + 1) -- Constantpool begins at 1.
         Nothing  -> return (-1)
 
--- Get the index for the upcoming entry
-getCurrentIdx :: ConstantpoolStateM Int
-getCurrentIdx = do
-    cp <- gets constPool
-    return (if null cp then 1 else length cp + 1)
 
 -- Generation --------------------------------------------------
 startBuildProcess :: Program -> [CP_Info]
