@@ -8,38 +8,32 @@ The goal is to translate Java classes into bytecode files with specific constrai
 Table of Contents
 
 1. [Team](#team)
+2. [Installation](#installation)
 3. [Usage](#usage)
-4. [Installation](#installation)
-5. [Building the Compiler](#building-the-compiler)
 6. [Running Tests](#running-tests)
-7. [Running the Compiler](#runTheCompiler)
+7. [Running the Compiler](#running-the-compiler)
 
 
 
 ## Team
 - Fabian Rostomily
 - Lara Schierenberg
-- Anabel Stammer 
-
-## Usage
-
-To use the MiniJava compiler, follow these steps:
-
-1. [Clone the repository.](#clone)
-2. [Build the compiler.](#build)
-3. [Run the compiler.](#run)
+- Anabel Stammer
 
 
-# Installation 
+## Installation
 
-To install the MiniJava compiler, clone the repository:
+To install the MiniJava compiler, follow these steps:
 
+1. [Clone the repository](#clone-the-repository)
+2. [Build the compiler](#build-the-compiler)
+
+### Clone the repository
 ```markdown
 git clone https://github.com/LaraSchi/Compilerbau.git
 ```
 
-
-# Building the Compiler
+### Build the compiler
 
 To build the compiler, follow these steps:
 
@@ -47,16 +41,16 @@ To build the compiler, follow these steps:
 cd mini-java-compiler
 stack build
 ```
-
-# Running Tests
+## Usage
+### Running Tests
 
 To run the tests, execute the following commands:
 ```markdown
 stack test
 ```
 
-# Running the Compiler
- With the following commands you can run our main. 
+### Running the Compiler
+With the following commands you can run our main.
 ```markdown
 stack ghci
 :main
