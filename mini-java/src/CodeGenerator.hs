@@ -196,14 +196,13 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
 --          wenn Vergleich mit 0 durchgeführt wird, aber unnötig
 generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
     code <- generateCodeForStmt stmt cp_infos
-    code2 <- case maybeBlockStmt of
+    code_expr <- generateCodeForIfElseStmtExpression expr 0x0 0x0 cp_infos
+    case maybeBlockStmt of
         Just stmt -> do
             codeForBlock <- generateCodeForStmt stmt cp_infos
             addToCurrentByteCodeSize 3
-            return ([(Goto 0x0 0x0)] ++ codeForBlock)
-        Nothing -> return []
-    code_expr <- (generateCodeForIfElseStmtExpression expr 0x0 0x0 cp_infos)
-    return (code_expr ++ code ++ code2)
+            return (code_expr ++ code ++ [(Goto 0x0 0x0)] ++ codeForBlock)
+        Nothing -> return (code_expr ++ code)
 
 
 -- Stmt Expr Stmt
@@ -225,21 +224,10 @@ generateCodeForIfElseStmtExpression (BinOpExpr expr1 binop expr2) len1 len2 cp_i
     codeForExpr1 <- generateCodeForExpression expr1 cp_infos
     codeForExpr2 <- generateCodeForExpression expr2 cp_infos
     return (codeForExpr1 ++ codeForExpr2 ++ if_code)
-generateCodeForIfElseStmtExpression (TypedExpr expr thisType) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (ThisExpr) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (SuperExpr) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (LocalOrFieldVarExpr name) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (FieldVarExpr name) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (LocalVarExpr name) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (InstVarExpr expr name) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (UnaryOpExpr unOp expr) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (BinOpExpr expr1 binOp expr2) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (IntLitExpr int) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (BoolLitExpr bool) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (CharLitExpr name) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (StringLitExpr name) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (Null) len1 len2 cp_infos = return []
-generateCodeForIfElseStmtExpression (StmtExprExpr stmtExpr) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (TypedExpr expr thisType) len1 len2 cp_infos = generateCodeForIfElseStmtExpression expr len1 len2 cp_infos
+-- generateCodeForIfElseStmtExpression (BinOpExpr expr1 binOp expr2) len1 len2 cp_infos = return []
+-- generateCodeForIfElseStmtExpression (BoolLitExpr bool) len1 len2 cp_infos = return []
+-- generateCodeForIfElseStmtExpression (StmtExprExpr stmtExpr) len1 len2 cp_infos = return []
 
 
 
