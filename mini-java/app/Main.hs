@@ -78,10 +78,14 @@ parseAndCheck folder s = do
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
             (t',[]) -> putStrLn $ prettyPrintProgram t'
-            (t',es) -> putStrLn $ prettyPrintProgram t'
+            (t',es) -> do
+                putStrLn "\x1b[31m The following semantic error(s) were detected: "
+                mapM_ putStrLn es
+                putStrLn  "\x1b[0m"
+                putStrLn $ prettyPrintProgram t'
 
 checkAllExamples :: IO()
 checkAllExamples = do
-    let folder = "code/semantikCheck/semantikshouldNotWork/"
+    let folder = "code/semantikCheck/"
     files1 <- listDirectory folder
     mapM_ (parseAndCheck folder) files1

@@ -7,7 +7,7 @@ class Expr {
     }
     public Expr(int i, boolean b) {
         Expr e = new Expr(i,b);
-        if (e.b && true) {
+        if ((e.b && true) || false) {
             e.i = 1;
         } 
     }

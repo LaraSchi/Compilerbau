@@ -41,7 +41,7 @@ prettyPrintField (FieldDecl typ name expr) =
     where
         maybeExpr :: Maybe Expression -> String
         maybeExpr Nothing = ""
-        maybeExpr (Just e) = " = " ++ prettyPrintExpression e
+        maybeExpr (Just e) = " = " ++ prettyPrintExpression 0 e
 
 -- Pretty Printer für Methodendeklarationen
 prettyPrintMethodDecl :: MethodDecl -> String
@@ -49,7 +49,7 @@ prettyPrintMethodDecl (MethodDecl vis typ name params stmt) =
     "    " ++ prettyPrintVisibility vis ++ " " ++
     prettyPrintType typ ++ " " ++ name ++ "(" ++
     commaSep (map prettyPrintParameter params) ++ ") " ++
-    prettyPrintStmt stmt ++
+    prettyPrintStmt 2 stmt ++
     "\n"
 
 -- Pretty Printer für Parameter
@@ -58,75 +58,74 @@ prettyPrintParameter (Parameter typ name) =
     prettyPrintType typ ++ " " ++ name
 
 -- Pretty Printer für Statements
-prettyPrintStmt :: Stmt -> String
-prettyPrintStmt (TypedStmt stmt@(Block _) typ) =
-     "(" ++prettyPrintStmt stmt ++  "  :: " ++ greenColor ++ prettyPrintType typ ++ resetColor ++ ")"
-prettyPrintStmt (TypedStmt stmt typ) =
-    prettyPrintStmt stmt {- ++ greenColor ++ "  (:: " ++ prettyPrintType typ ++ ")" ++ resetColor  -}
-prettyPrintStmt (Block stmts) =
-    "{\n" ++ concatMap (\s -> "    " ++ prettyPrintStmt s ++ "\n") stmts ++ "}"
-prettyPrintStmt (ReturnStmt expr) =
-    "return " ++ prettyPrintExpression expr ++ ";"
-prettyPrintStmt (WhileStmt cond stmt) =
-    "while (" ++ prettyPrintExpression cond ++ ") " ++ prettyPrintStmt stmt
-prettyPrintStmt (LocalVarDeclStmt typ name expr) =
+prettyPrintStmt :: Int -> Stmt -> String
+prettyPrintStmt c (TypedStmt stmt@(Block _) typ) =
+     "(" ++prettyPrintStmt c stmt ++  "  :: " ++ greenColor ++ prettyPrintType typ ++ resetColor ++ ")"
+prettyPrintStmt c (TypedStmt stmt typ) =
+    prettyPrintStmt c stmt {- ++ greenColor ++ "  (:: " ++ prettyPrintType typ ++ ")" ++ resetColor  -}
+prettyPrintStmt c (Block stmts) =
+    "{\n" ++ concatMap (\s -> indent c ++ prettyPrintStmt (c + 1) s ++ "\n") stmts ++ indent (c -1) ++ "}"
+prettyPrintStmt c (ReturnStmt expr) =
+    "return " ++ prettyPrintExpression c expr ++ ";"
+prettyPrintStmt c (WhileStmt cond stmt) =
+    "while (" ++ prettyPrintExpression c cond ++ ") " ++ prettyPrintStmt c stmt
+prettyPrintStmt c (LocalVarDeclStmt typ name expr) =
     prettyPrintType typ ++ " " ++ name ++ maybeExpr expr ++ ";"
     where
         maybeExpr :: Maybe Expression -> String
         maybeExpr Nothing = ""
-        maybeExpr (Just e) = " = " ++ prettyPrintExpression e
-prettyPrintStmt (IfElseStmt cond stmt1 Nothing) =
-    "if (" ++ prettyPrintExpression cond ++ ") " ++ prettyPrintStmt stmt1
-prettyPrintStmt (IfElseStmt cond stmt1 (Just stmt2)) =
-    "if (" ++ prettyPrintExpression cond ++ ") " ++
-    prettyPrintStmt stmt1 ++ " else " ++ prettyPrintStmt stmt2
-prettyPrintStmt (StmtExprStmt expr) =
-    prettyPrintStmtExpr expr ++ ";"
-prettyPrintStmt (Print str) =
+        maybeExpr (Just e) = " = " ++ prettyPrintExpression c e
+prettyPrintStmt c (IfElseStmt cond stmt1 Nothing) =
+    "if (" ++ prettyPrintExpression c cond ++ ") " ++ prettyPrintStmt c stmt1
+prettyPrintStmt c (IfElseStmt cond stmt1 (Just stmt2)) =
+    "if (" ++ prettyPrintExpression c cond ++ ") " ++
+    prettyPrintStmt (c+1) stmt1 ++ " else " ++ prettyPrintStmt (c+1) stmt2
+prettyPrintStmt c (StmtExprStmt expr) =
+    prettyPrintStmtExpr c expr ++ ";"
+prettyPrintStmt c (Print str) =
     "System.out.println(" ++ str ++ ");"
 
 -- Pretty Printer für Statement Expressions
-prettyPrintStmtExpr :: StmtExpr -> String
-prettyPrintStmtExpr (TypedStmtExpr stmtExpr typ) =
-    prettyPrintStmtExpr stmtExpr
-prettyPrintStmtExpr (AssignmentStmt expr1 expr2) =
-    prettyPrintExpression expr1 ++ " = " ++ prettyPrintExpression expr2
-prettyPrintStmtExpr (NewExpression newExpr) =
+prettyPrintStmtExpr :: Int -> StmtExpr -> String
+prettyPrintStmtExpr c (TypedStmtExpr stmtExpr typ) =
+    prettyPrintStmtExpr c stmtExpr
+prettyPrintStmtExpr c (AssignmentStmt expr1 expr2) =
+    prettyPrintExpression c expr1 ++ " = " ++ prettyPrintExpression c expr2
+prettyPrintStmtExpr c (NewExpression newExpr) =
     prettyPrintNewExpr newExpr
-prettyPrintStmtExpr (MethodCall (MethodCallExpr expr name args)) =
-    prettyPrintExpression expr ++ "." ++ name ++ "(" ++
-    commaSep (map prettyPrintExpression args) ++ ")"
+prettyPrintStmtExpr c (MethodCall (MethodCallExpr expr name args)) =
+    prettyPrintExpression c expr ++ "." ++ name ++ "(" ++ commaSep (map (prettyPrintExpression c) args) ++ ")"
 
 -- Pretty Printer für Ausdrücke
-prettyPrintExpression :: Expression -> String
-prettyPrintExpression (TypedExpr expr typ) =
-    dimColor ++ "(" ++ resetColor ++ prettyPrintExpression expr ++ dimColor ++ " :: " ++ prettyPrintType typ ++ ")" ++ resetColor
-prettyPrintExpression ThisExpr = "this"
-prettyPrintExpression SuperExpr = "super"
-prettyPrintExpression (LocalOrFieldVarExpr name) = name
-prettyPrintExpression (FieldVarExpr name) = "this." ++ name
-prettyPrintExpression (LocalVarExpr name) = name
-prettyPrintExpression (InstVarExpr expr name) =
-    prettyPrintExpression expr ++ "." ++ name
-prettyPrintExpression (UnaryOpExpr op expr) =
-    prettyPrintUnaryOperator op ++ prettyPrintExpression expr
-prettyPrintExpression (BinOpExpr expr1 op expr2) =
-    prettyPrintExpression expr1 ++ " " ++
+prettyPrintExpression :: Int -> Expression -> String
+prettyPrintExpression c (TypedExpr expr typ) =
+    dimColor ++ "(" ++ resetColor ++ prettyPrintExpression c expr ++ dimColor ++ " :: " ++ prettyPrintType typ ++ ")" ++ resetColor
+prettyPrintExpression c ThisExpr = "this"
+prettyPrintExpression c SuperExpr = "super"
+prettyPrintExpression c (LocalOrFieldVarExpr name) = name
+prettyPrintExpression c (FieldVarExpr name) = "this." ++ name
+prettyPrintExpression c (LocalVarExpr name) = name
+prettyPrintExpression c (InstVarExpr expr name) =
+    prettyPrintExpression c expr ++ "." ++ name
+prettyPrintExpression c (UnaryOpExpr op expr) =
+    prettyPrintUnaryOperator op ++ prettyPrintExpression c expr
+prettyPrintExpression c (BinOpExpr expr1 op expr2) =
+    prettyPrintExpression c expr1 ++ " " ++
     prettyPrintBinaryOperator op ++ " " ++
-    prettyPrintExpression expr2
-prettyPrintExpression (IntLitExpr n) = show n
-prettyPrintExpression (BoolLitExpr b) = if b then "true" else "false"
-prettyPrintExpression (CharLitExpr c) = "'" ++ c ++ "'"
-prettyPrintExpression (StringLitExpr s) = "\"" ++ s ++ "\""
-prettyPrintExpression Null = "null"
-prettyPrintExpression (StmtExprExpr stmtExpr) =
-    prettyPrintStmtExpr stmtExpr
+    prettyPrintExpression c expr2
+prettyPrintExpression c (IntLitExpr n) = show n
+prettyPrintExpression c (BoolLitExpr b) = if b then "true" else "false"
+prettyPrintExpression c (CharLitExpr ch) = "'" ++ ch ++ "'"
+prettyPrintExpression c (StringLitExpr s) = "\"" ++ s ++ "\""
+prettyPrintExpression c Null = "null"
+prettyPrintExpression c (StmtExprExpr stmtExpr) =
+    prettyPrintStmtExpr c stmtExpr
 
 -- Pretty Printer für Neuausdrücke
 prettyPrintNewExpr :: NewExpr -> String
 prettyPrintNewExpr (NewExpr newType args) =
     "new " ++ prettyPrintNewType newType ++
-    "(" ++ commaSep (map prettyPrintExpression args) ++ ")"
+    "(" ++ commaSep (map (prettyPrintExpression 0) args) ++ ")"
 
 -- Hilfsfunktion zum Zusammenfügen von Strings mit Kommas
 commaSep :: [String] -> String
@@ -175,3 +174,7 @@ prettyPrintUnaryOperator :: UnaryOperator -> String
 prettyPrintUnaryOperator UnaryMinus = "-"
 prettyPrintUnaryOperator Not = "!"
 prettyPrintUnaryOperator UnaryPlus = "+"
+
+
+indent :: Int -> String
+indent c = concat $ replicate c "    "

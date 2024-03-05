@@ -16,41 +16,32 @@ data TypeState = TypeState { classType        :: Type,
 
 type TypeStateM = State TypeState
 
-{- checkSemantics :: Program -> Program
-checkSemantics p = case runTypeStateM p of
-    (p',[]) ->Right p'
-    (p',es) -> head es -- #TODO: errors schön zu errormessage konkatenieren  -}
-
 
 checkSemantics :: Program -> (Program, [String])
 checkSemantics p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] []
 
+-- runs recursively through the AST to check types
 checkSProg :: Program -> TypeStateM Program
 checkSProg p@(Program (Class n fd md) _) = do
         modify $ \s -> s {classType = NewTypeT n}
-        fillTypeSetFields fd
-        fillTypesSetMethod md
+        fillTypeSetFields fd             -- caches FieldVars
+        fillTypesSetMethod md            -- caches method signatures
         mdTyped <- mapM checkMethod md
-        errors <- gets errors
-        case errors of
-            [] -> return (Program (Class n fd mdTyped) True)
-            _  -> return (Program (Class n fd mdTyped) False)
+        errors  <- gets errors
+        let checkSuccess = null errors   -- no errors -> semantic check was successful 
+        return (Program (Class n fd mdTyped) checkSuccess)
 
+-- caches name and type of FieldVar declarations in State Monad as (name, type)
 fillTypeSetFields :: [Field] -> TypeStateM ()
-fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds}) 
-    where types = typesOf fds
-
-typesOf :: [Field] -> [(String, Type)]
-typesOf []                 = []
-typesOf (FieldDecl t s me:ys) = (s,t):typesOf ys
-typesOf (_:ys)               = typesOf ys
+fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds})
+    where typesOf :: [Field] -> [(String, Type)]
+          typesOf []                    = []
+          typesOf (FieldDecl t s me:ys) = (s,t):typesOf ys
+          typesOf (_:ys)                = typesOf ys
 
 -- füllt Typen der Funktionen in FieldTypeSet
 fillTypesSetMethod :: [MethodDecl] -> TypeStateM ()
-fillTypesSetMethod mds = do
-    ts <- gets fieldTypeset
-    let funcTypes = map buildFuncType mds
-    modify (\s -> s {fieldTypeset = funcTypes ++ ts})
+fillTypesSetMethod mds = gets fieldTypeset >>= \ts -> modify (\s -> s {fieldTypeset = map buildFuncType mds ++ ts})
 
 buildFuncType :: MethodDecl -> (String, Type)
 buildFuncType (MethodDecl _ t n ps _) = (n, FuncT paramFunc t)
@@ -65,7 +56,7 @@ checkMethod (MethodDecl v t s ps stmts) = do
     if getTypeS typedStmts == t
     then return $ MethodDecl v t s ps typedStmts
     else do 
-        addError $ "Function " ++ show s ++ " has different type, than declared"
+        addError $ "Function " ++ show s ++ " returns a different type, than declared!"
         let wrongType = NewTypeT $ NewType $ "x"++ show (getTypeS typedStmts)
         return $ MethodDecl v t s ps (changeTypeS wrongType typedStmts)
 
@@ -273,4 +264,4 @@ allEq _   = True
 addError :: String -> TypeStateM ()
 addError e = do
     es <- gets errors
-    modify (\s -> s {errors = e : es})
+    modify (\s -> s {errors = ("   - " ++ e) : es})
