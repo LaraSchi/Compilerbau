@@ -95,17 +95,9 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt fieldOrMethodDecls className
   LocalVarDeclStmt thisType name maybeExpr -> do
-            -- Add a Konstruktor
-            when (((typeToString thisType) == (newTypeToString className)) ) $ do
-                 case maybeExpr of
-                    Just (TypedExpr (StmtExprExpr (TypedStmtExpr (NewExpression (NewExpr (NewType thisType) exprs)) _)) _) -> do
-                       let methodType = if null exprs
-                                             then "()V"
-                                             else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) exprs) ++ ")V"
-                       _ <- generateMethodRefConstantPool "<init>" methodType className
-                       return ()
-                    Nothing -> do
-                        return ()
+        case maybeExpr of
+             Just expr -> findReferencesExpr expr fieldOrMethodDecls className
+             Nothing -> return ()
   IfElseStmt expr stmt1 stmt2 -> do
     findReferencesExpr expr fieldOrMethodDecls className
     findReferencesStmt stmt1 fieldOrMethodDecls className
@@ -147,21 +139,24 @@ findReferencesStmtExpr stmtExpr fieldOrMethodDecls className = case stmtExpr of
   AssignmentStmt expr1 expr2 -> do
     findReferencesExpr expr1 fieldOrMethodDecls className
     findReferencesExpr expr2 fieldOrMethodDecls className
-  NewExpression newExpr ->  findReferencesNewExpr newExpr fieldOrMethodDecls className
+  NewExpression newExpr -> findReferencesNewExpr newExpr fieldOrMethodDecls className
   MethodCall methodCallExpr -> do
     findRefMethodCallExpr methodCallExpr fieldOrMethodDecls className
 
 findReferencesNewExpr :: NewExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesNewExpr (NewExpr thisNewType exprList) fieldOrMethodDecls className = do
         when(newTypeToString thisNewType == newTypeToString className) $ do
-            _ <- generateMethodRefConstantPool "<init>" "()V" className
+            let methodType = if null exprList
+                then "()V"
+                else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) exprList) ++ ")V"
+            _ <- generateMethodRefConstantPool "<init>" methodType className
             mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls className) exprList
         mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls className) exprList
 
 findRefMethodCallExpr :: MethodCallExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findRefMethodCallExpr (MethodCallExpr expr name exprList) fieldOrMethodDecls className = do
     mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls  className) exprList
-    checkAndGenRef name fieldOrMethodDecls className exprList
+    resolveAndGenerateMethodRefs name fieldOrMethodDecls className exprList
     return ()
 
 unwrapToFieldList :: [FieldOrMethod] -> [Field]
@@ -171,8 +166,8 @@ unwrapToMethodList :: [FieldOrMethod] -> [MethodDecl]
 unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 
 -- Check if it is a Reference. Is it a method of this class?
-checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> [Expression] -> ConstantpoolStateM ()
-checkAndGenRef name decls className exprList = case decls of
+resolveAndGenerateMethodRefs :: String -> [FieldOrMethod] -> NewType -> [Expression] -> ConstantpoolStateM ()
+resolveAndGenerateMethodRefs name decls className exprList = case decls of
     (ThisMethodDekl _ : _) -> do
       let methodRefs = filter (\(MethodDecl _ _ methodName prameters _) -> name == methodName && (areInputTypesCorrect exprList prameters)) (unwrapToMethodList decls)
       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
@@ -263,7 +258,6 @@ createUtf8Entry name = do
     utf8Info <- lift $ return $ Utf8_Info TagUtf8 (length name) name ""
     cp <- addElement utf8Info
     return utf8Info
-
 
 
 -- Map Type to String
