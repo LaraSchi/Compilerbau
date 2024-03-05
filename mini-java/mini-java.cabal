@@ -47,9 +47,9 @@ library
   build-depends:
       array
     , base >=4.7 && <5
+    , binary
     , bytestring
     , mtl
-    , binary
   default-language: Haskell2010
 
 executable mini-java-exe
@@ -66,10 +66,10 @@ executable mini-java-exe
     , happy
   build-depends:
       base >=4.7 && <5
-    , directory
-    , mini-java
     , binary
     , bytestring
+    , directory
+    , mini-java
   default-language: Haskell2010
 
 test-suite mini-java-test
@@ -90,9 +90,9 @@ test-suite mini-java-test
       HUnit
     , aeson
     , base >=4.7 && <5
+    , binary
     , bytestring
     , hspec
     , hspec-discover
     , mini-java
-    , binary
   default-language: Haskell2010

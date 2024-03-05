@@ -16,8 +16,8 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
     let -- Parse the Java class syntax and extract relevant information
         magicValue = Magic  
         minVer = MinorVersion 0
-        maxVer = MajorVersion 55 
-        countCP = length cpInfos
+        maxVer = MajorVersion 55
+        countCP = (length cpInfos) + 1
         arrayCP = cpInfos
         accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)
         thisClass = ThisClass {index_th = 7}  -- TODO parse the index number
@@ -91,7 +91,7 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
             generateAttributeCodeArray methodDecl cpInfosList className methods
         newMethod_Info =
             [Method_Info
-                { af_mi = AccessFlags [acc_Public]  
+                { af_mi = AccessFlags [acc_Public]
                 , index_name_mi = cpIndexFrom methodName cpInfosList  -- name_index
                 , index_descr_mi = cpIndexFrom methodType cpInfosList -- descriptor_index (type)
                 , tam_mi = length attributes_array
@@ -102,15 +102,15 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
 -- function to create attribute Infos?
 generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> Attribute_Infos
 generateAttributeCodeArray methodDecl cpInfosList className methods =
-    let (result, maxStackSize) = startBuildGenCodeProcess methodDecl cpInfosList className methods
+    let (result, maxStackSize, localVars) = startBuildGenCodeProcess methodDecl cpInfosList className methods
         code = convertToByteCode result
         newAttributeInfo :: Attribute_Infos
         newAttributeInfo =
             [AttributeCode
                 { index_name_attr = cpIndexFrom "Code" cpInfosList  -- attribute_name_index
-                , tam_len_attr = 0                  -- Placeholder          -- attribute_length
-                , len_stack_attr = maxStackSize     -- Placeholder          -- max_stack
-                , len_local_attr = 0                -- Placeholder          -- max_local
+                , tam_len_attr = fromIntegral (12 + (length code)) -- attribute_length: Plus 12 for own Header
+                , len_stack_attr = maxStackSize
+                , len_local_attr = length localVars
                 , tam_code_attr = length code
                 , array_code_attr = code
                 , tam_ex_attr = 0

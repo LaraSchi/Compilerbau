@@ -21,7 +21,7 @@ main = do
 
 
 
-    fileContent <- readFile "code/advancedExamples/test.minijava" -- read file
+    fileContent <- readFile "code/examples/explEmptyClass.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -42,8 +42,18 @@ main = do
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
-                encodeClassFile "test.class" sampleCF
+                encodeClassFile "EmptyClass.class" sampleCF
                 putStrLn result
+                -- putStrLn ("sampleCF: " ++  show sampleCF)
+                -- print()
+
+                -- code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/EmptyClassReference.class"
+                -- putStrLn ("Reference: " ++ show code)
+                --code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/EmptyClass.class"
+                --putStrLn (show code)
+
+
+
                 return ()
              (t',es) -> putStrLn $ prettyPrintProgram t'
 
