@@ -3,6 +3,7 @@ module Semantics ( checkSemantics ) where
 import Syntax
 import Control.Monad.State (gets, get, modify, State, runState)
 import Control.Monad (when)
+import Data.List
 
 import Debug.Trace --Debugging, TODO: remove
 
@@ -27,13 +28,13 @@ runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] 
 
 checkSProg :: Program -> TypeStateM Program
 checkSProg p@(Program (Class n fd md) _) = do
-        traceShow p $ modify $ \s -> s {classType = NewTypeT n}
+        modify $ \s -> s {classType = NewTypeT n}
         fillTypeSetFields fd
         fillTypesSetMethod md
         mdTyped <- mapM checkMethod md
         local <- gets localTypeset
         field <- gets fieldTypeset
-        traceShow local $ traceShow field $ return (Program (Class n fd mdTyped) True)
+        return (Program (Class n fd mdTyped) True)
 
 fillTypeSetFields :: [Field] -> TypeStateM ()
 fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds}) 
@@ -63,25 +64,26 @@ checkMethod (MethodDecl v t s ps stmts) = do
     typedStmts <- checkStmt stmts
     if getTypeS typedStmts == t
     then return $ MethodDecl v t s ps typedStmts
-    else traceShow ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) $ return $ MethodDecl v t s ps typedStmts
+    else error ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) -- $ return $ MethodDecl v t s ps typedStmts
 
 checkBlockS :: Stmt -> TypeStateM Stmt
 checkBlockS s = do
     ty <- gets blockTypes
     sTyped <- checkStmt s
     let blockType = getTypeS sTyped
-    traceShow ("von Stmt: " ++ show s ++ "ist der blockType: " ++ show blockType) $ when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
+    when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
     return sTyped
 
 checkStmt :: Stmt -> TypeStateM Stmt
 checkStmt (Block stmts)                     = do
     bT <- mapM checkBlockS stmts
     tys <- gets blockTypes
-    if null tys
+    let types = filter (/= VoidT) $ map getTypeS bT
+    if null types
     then return $ TypedStmt (Block bT) VoidT
-    else if allEq tys 
-         then return $ TypedStmt (Block bT) (head tys)
-         else traceShow ("es werden verschieden Typen zurück gegeben" ++ show tys) $ return $ TypedStmt (Block bT) (head tys)
+    else if allEq types
+         then return $ TypedStmt (Block bT) (head types)
+         else error ("es werden verschieden Typen zurück gegeben" ++ show types) -- $ return $ TypedStmt (Block bT) (head tys)
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -99,12 +101,14 @@ checkStmt v@(LocalVarDeclStmt t s (Just e))          = do
 checkStmt (IfElseStmt e bs Nothing)         = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- checkStmt bs
-    return $ TypedStmt (IfElseStmt eTyped stmtsTyped Nothing) VoidT
+    return $ TypedStmt (IfElseStmt eTyped stmtsTyped Nothing) (getTypeS stmtsTyped)
 checkStmt (IfElseStmt e bs1 (Just bs2))      = do
     eT   <- checkTypeExpr BoolT e  
     bsT1 <- checkStmt bs1
     bsT2 <- checkStmt bs2
-    return $ TypedStmt (IfElseStmt eT bsT1 (Just bsT2)) VoidT
+    if getTypeS bsT1 == getTypeS bsT2
+        then return $ TypedStmt (IfElseStmt eT bsT1 (Just bsT2)) (getTypeS bsT2)
+        else error "unterschiedliche Typen im if und else Fall"
 checkStmt (StmtExprStmt se)                 = checkStmtExpr se >>= \seT -> return $ TypedStmt (StmtExprStmt seT) VoidT
 checkStmt s                                 = return $ TypedStmt s VoidT
 checkStmt _                                 = error "checkStmt called on already typed Expression"
@@ -258,4 +262,4 @@ semanticsError s1 s2 = error $ "error in function " ++ s1 ++ "\ncalles on " ++ s
 -- Helper 
 allEq :: Eq a => [a] -> Bool
 allEq (x:xs) = all (== x) xs
-allEq [x]    = True
+allEq _   = True

@@ -17,7 +17,7 @@ import System.Directory
 main :: IO ()
 main = do
 
-    fileContent <- readFile "code/examples/test.minijava" -- read file
+    fileContent <- readFile "code/examples/explFieldRef.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -44,7 +44,7 @@ main = do
 -- Laras Beispiel durchlauf Funktion
 checkAllExamples :: IO()
 checkAllExamples = do
-    let folder = "code/semantikCheckExamples/"
+    let folder = "code/semantikCheck/"
     files1 <- listDirectory folder
     mapM_ (parseAndCheck folder) files1
 
