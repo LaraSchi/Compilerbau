@@ -24,7 +24,7 @@ dimColor = "\x1b[2m"
 -- Pretty Printer für Programme
 prettyPrintProgram :: Program -> String
 prettyPrintProgram (Program cls typed) =
-    prettyPrintClass cls ++ " (" ++ greenColor ++ show typed ++ resetColor ++ ")"
+    prettyPrintClass cls {- ++ " (" ++ greenColor ++ show typed ++ resetColor ++ ")" -}
 
 -- Pretty Printer für Klassen
 prettyPrintClass :: Class -> String
@@ -60,9 +60,9 @@ prettyPrintParameter (Parameter typ name) =
 -- Pretty Printer für Statements
 prettyPrintStmt :: Stmt -> String
 prettyPrintStmt (TypedStmt stmt@(Block _) typ) =
-     "(" ++prettyPrintStmt stmt ++ blueColor ++ "  :: " ++ prettyPrintType typ ++ resetColor ++ ")"
+     "(" ++prettyPrintStmt stmt ++  "  :: " ++ greenColor ++ prettyPrintType typ ++ resetColor ++ ")"
 prettyPrintStmt (TypedStmt stmt typ) =
-    prettyPrintStmt stmt ++ greenColor ++ "  (:: " ++ prettyPrintType typ ++ ")" ++ resetColor 
+    prettyPrintStmt stmt {- ++ greenColor ++ "  (:: " ++ prettyPrintType typ ++ ")" ++ resetColor  -}
 prettyPrintStmt (Block stmts) =
     "{\n" ++ concatMap (\s -> "    " ++ prettyPrintStmt s ++ "\n") stmts ++ "}"
 prettyPrintStmt (ReturnStmt expr) =
@@ -100,7 +100,7 @@ prettyPrintStmtExpr (MethodCall (MethodCallExpr expr name args)) =
 -- Pretty Printer für Ausdrücke
 prettyPrintExpression :: Expression -> String
 prettyPrintExpression (TypedExpr expr typ) =
-    " (" ++ prettyPrintExpression expr ++ dimColor ++ " :: " ++ prettyPrintType typ ++ resetColor ++ ")"
+    dimColor ++ "(" ++ resetColor ++ prettyPrintExpression expr ++ dimColor ++ " :: " ++ prettyPrintType typ ++ ")" ++ resetColor
 prettyPrintExpression ThisExpr = "this"
 prettyPrintExpression SuperExpr = "super"
 prettyPrintExpression (LocalOrFieldVarExpr name) = name
@@ -148,7 +148,12 @@ prettyPrintType VoidT = "void"
 
 -- Pretty Printer für neue Typen
 prettyPrintNewType :: NewType -> String
-prettyPrintNewType (NewType name) = name
+prettyPrintNewType (NewType "xIntT")    = redColor ++ "int" ++ resetColor
+prettyPrintNewType (NewType "xBoolT")   = redColor ++ "boolean" ++ resetColor
+prettyPrintNewType (NewType "xCharT")   = redColor ++ "char" ++ resetColor
+prettyPrintNewType (NewType "xVoidT")   = redColor ++ "void" ++ resetColor
+prettyPrintNewType (NewType ('x':name)) = redColor ++ name ++ resetColor
+prettyPrintNewType (NewType name)       = name
 
 -- Pretty Printer für binäre Operatoren
 prettyPrintBinaryOperator :: BinaryOperator -> String

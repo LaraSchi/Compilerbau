@@ -29,8 +29,7 @@ main = do
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics (addInit t) of
-            Left _   -> print "false"
-            Right t' -> do
+             (t',[]) -> do
                 putStrLn $ prettyPrintProgram t'
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
@@ -41,6 +40,7 @@ main = do
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 putStrLn result
                 return ()
+             (t',es) -> putStrLn $ prettyPrintProgram t'
 
 -- if there is no defined Init function, an empty one is added to the code
 addInit :: Program -> Program
@@ -76,11 +76,11 @@ parseAndCheck folder s = do
     case parse fileContent of
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
-            Left _   -> print "false"
-            Right t' -> putStrLn $ prettyPrintProgram t'
+            (t',[]) -> putStrLn $ prettyPrintProgram t'
+            (t',es) -> putStrLn $ prettyPrintProgram t'
 
 checkAllExamples :: IO()
 checkAllExamples = do
-    let folder = "code/semantikCheck/"
+    let folder = "code/semantikCheck/semantikshouldNotWork/"
     files1 <- listDirectory folder
     mapM_ (parseAndCheck folder) files1

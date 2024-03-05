@@ -3,7 +3,7 @@ class ControlClass {
         return a + b;
     }
 
-    public int add(Bool a, int b) {
+    public int add(boolean a, int b) {
             return b + 1;
         }
 
