@@ -19,7 +19,7 @@ main :: IO ()
 main = do
 
 
-    fileContent <- readFile "code/semantikCheck/examplesSlides/02Expression.minijava" -- read file
+    fileContent <- readFile "code/advancedExamples/test.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -31,6 +31,7 @@ main = do
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics (addInit t) of
              (t',[]) -> do
+                putStrLn $ show t'
                 putStrLn $ prettyPrintProgram t'
                 let sampleCP = startBuildProcess t'
                 putStrLn ""

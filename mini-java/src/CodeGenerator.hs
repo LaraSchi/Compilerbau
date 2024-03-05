@@ -137,10 +137,10 @@ generateCodeForBlockStmt (stmt:stmts) cp_infos = do
 
 -- Function to generate assembly code for Stmt
 generateCodeForStmt :: Stmt -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForStmt (TypedStmt stmt _) cp_infos = generateCodeForStmt stmt cp_infos
+generateCodeForStmt (TypedStmt stmt _) cp_infos =  generateCodeForStmt stmt cp_infos
 generateCodeForStmt (Block stmts) cp_infos = generateCodeForBlockStmt stmts cp_infos
 -- Return
-generateCodeForStmt (ReturnStmt expr) cp_infos = do 
+generateCodeForStmt (ReturnStmt expr) cp_infos = do
     codeForExpr <- (generateCodeForExpression expr cp_infos)
     retType <- getReturnType
     if retType == IntT || retType == BoolT || retType == CharT  
@@ -157,12 +157,12 @@ generateCodeForStmt (ReturnStmt expr) cp_infos = do
                 let code = codeForExpr ++ [AReturn]
                 addToCurrentByteCodeSize 1
                 return (code)
-
 -- While
-generateCodeForStmt (WhileStmt expr (Block blockStmt)) cp_infos = do                               -- TODO
-    code <- generateCodeForBlockStmt blockStmt cp_infos
+generateCodeForStmt (WhileStmt expr stmt) cp_infos = do                               -- TODO
+    code <- generateCodeForStmt stmt cp_infos
     code_expr <- generateCodeForExpression expr cp_infos
     return (code ++ code_expr)
+
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
     case maybeExpr of
@@ -194,19 +194,21 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
             return []
 -- If Else: nur ifcmp* werden verwendet; javac hat Sonderinstruktionen 
 --          wenn Vergleich mit 0 durchgeführt wird, aber unnötig
-generateCodeForStmt (IfElseStmt expr (Block blockStmt) maybeBlockStmt) cp_infos = do
-    code <- generateCodeForBlockStmt blockStmt cp_infos
+generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
+    code <- generateCodeForStmt stmt cp_infos
     code2 <- case maybeBlockStmt of
-        Just (Block block) -> do
-            codeForBlock <- generateCodeForBlockStmt block cp_infos
+        Just stmt -> do
+            codeForBlock <- generateCodeForStmt stmt cp_infos
             addToCurrentByteCodeSize 3
             return ([(Goto 0x0 0x0)] ++ codeForBlock)
         Nothing -> return []
-    code_expr <- (generateCodeForIfElseStmtExpression expr 0x0 0x0 cp_infos) 
+    code_expr <- (generateCodeForIfElseStmtExpression expr 0x0 0x0 cp_infos)
     return (code_expr ++ code ++ code2)
+
+
 -- Stmt Expr Stmt
 generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
-
+generateCodeForStmt (Print name) cp_infos = return [] -- Print Statement
 
 -- Function to build byte code for if else statement
 -- currently only works with if_icmp* (so int, char and boolean) 
@@ -223,13 +225,39 @@ generateCodeForIfElseStmtExpression (BinOpExpr expr1 binop expr2) len1 len2 cp_i
     codeForExpr1 <- generateCodeForExpression expr1 cp_infos
     codeForExpr2 <- generateCodeForExpression expr2 cp_infos
     return (codeForExpr1 ++ codeForExpr2 ++ if_code)
+generateCodeForIfElseStmtExpression (TypedExpr expr thisType) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (ThisExpr) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (SuperExpr) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (LocalOrFieldVarExpr name) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (FieldVarExpr name) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (LocalVarExpr name) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (InstVarExpr expr name) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (UnaryOpExpr unOp expr) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (BinOpExpr expr1 binOp expr2) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (IntLitExpr int) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (BoolLitExpr bool) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (CharLitExpr name) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (StringLitExpr name) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (Null) len1 len2 cp_infos = return []
+generateCodeForIfElseStmtExpression (StmtExprExpr stmtExpr) len1 len2 cp_infos = return []
+
+
+
+
+
+
+
+
+
+
+
 
 -- Function to generate assembly code for StmtExpr
 generateCodeForStmtExpr :: StmtExpr -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
 -- Assign Stmt
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) cp_infos = do
-    codeExpr1 <- generateCodeForAssign expr1 cp_infos
+    codeExpr1 <- generateCodeForExpression expr1 cp_infos
     codeExpr2 <- generateCodeForExpression expr2 cp_infos
     let codeWithoutPop =
             if isExprWithPopInstr expr2
@@ -246,7 +274,9 @@ generateCodeForStmtExpr (NewExpression expr) cp_infos = generateCodeForNewExpr e
 generateCodeForStmtExpr (MethodCall methodCallExpr) cp_infos = generateCodeForMethodCallExpr methodCallExpr cp_infos
 
 generateCodeForAssign :: Expression -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForAssign (TypedExpr expr _) cp_infos = generateCodeForAssign expr cp_infos
+generateCodeForAssign (TypedExpr expr _) cp_infos = do
+    generateCodeForAssign expr cp_infos
+    generateCodeForExpression expr cp_infos
 generateCodeForAssign (FieldVarExpr name) cp_infos = do
     addToCurrentByteCodeSize 3
     className <- getClassName
@@ -270,7 +300,10 @@ generateCodeForAssign (FieldVarExpr name) cp_infos = do
 generateCodeForAssign (LocalVarExpr name) cp_infos = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
-    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
+
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList -- Todo delete this comment
+
+
     if var_type == BoolT || var_type == IntT || var_type == CharT
         then do
             let index = (getVarIndex name varList)
@@ -344,7 +377,8 @@ generateCodeForExpression (FieldVarExpr name) cp_infos = do
 generateCodeForExpression (LocalVarExpr name) cp_infos = do                                              
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
-    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
+
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList -- Todo delete this comment
     if var_type == BoolT || var_type == IntT || var_type == CharT
         then do
             let index = (getVarIndex name varList)
@@ -524,7 +558,7 @@ getVarIndex var_name (var:vars)
     where indexRest = getVarIndex var_name vars
 
 getTypeFromIndex :: Int -> [Type] -> Type
-getTypeFromIndex index (t:ts) = 
+getTypeFromIndex index (t:ts) =
     if (index - 1) == 0
         then t
         else getTypeFromIndex (index - 1) ts
