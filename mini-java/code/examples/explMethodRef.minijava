@@ -3,6 +3,10 @@ class ControlClass {
         return a + b;
     }
 
+    public int add(Bool a, int b) {
+            return b + 1;
+        }
+
     public void check(int a) {
         this.add(1, 2);
     }

@@ -81,14 +81,14 @@ buildFieldInfo (FieldDecl fieldType fieldName maybeExpr) cpInfosList =
 -- how to parse the information?
 generateMethodsArray :: [MethodDecl] -> [CP_Info] -> String -> Method_Infos
 generateMethodsArray methods cpInfosList className =
-    let methodInfos = concatMap (\method -> buildMethodInfo method cpInfosList className) methods
+    let methodInfos = concatMap (\method -> buildMethodInfo method cpInfosList className methods) methods
     in methodInfos
 
-buildMethodInfo :: MethodDecl -> [CP_Info] -> String -> [Method_Info]
-buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt) cpInfosList className =
+buildMethodInfo :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> [Method_Info]
+buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt) cpInfosList className methods =
     let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString outType)
         attributes_array = do
-            generateAttributeCodeArray methodDecl cpInfosList className
+            generateAttributeCodeArray methodDecl cpInfosList className methods
         newMethod_Info =
             [Method_Info
                 { af_mi = AccessFlags [acc_Public]  
@@ -100,10 +100,10 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
     in newMethod_Info
 
 -- function to create attribute Infos?
-generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> String -> Attribute_Infos
-generateAttributeCodeArray methodDecl cpInfosList className =
+generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> Attribute_Infos
+generateAttributeCodeArray methodDecl cpInfosList className methods =
     let newAttributeInfo :: Attribute_Infos
-        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList className)
+        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList className methods)
 
         newAttributeInfo =
             [AttributeCode

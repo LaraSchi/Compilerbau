@@ -3,7 +3,7 @@ module CodeGenerator where
 import Syntax
 import ByteCodeInstr
 import ClassFormat
-import Data.List (findIndex)
+import Data.List
 import Data.Char (ord)
 import Data.Bits
 import Control.Monad.State
@@ -29,6 +29,7 @@ data GlobalVars = GlobalVars
     , typesOfLocalVars :: [Type]        -- list of the local variable types
     , returnType :: Type                -- method return type
     , className :: String               -- name of class
+    , methodDeklr :: [MethodDecl]       -- List of MethodDeklerations
     } deriving (Show)
 
 -- Define a type synonym for the state monad
@@ -56,6 +57,8 @@ getLocalVars = gets localVars
 getLocalVarTypes :: GlobalVarsMonad [Type]
 getLocalVarTypes = gets typesOfLocalVars
 
+getMethodDeklr :: GlobalVarsMonad [MethodDecl]
+getMethodDeklr = gets methodDeklr
 
 -- Functions to count the integers in the monad
 addToMaxStackSize :: Int -> GlobalVarsMonad ()
@@ -84,13 +87,13 @@ addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s +
 
 ----------------------------------------------------------------------
 -- Functions to generate Byte Code
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [ByteCodeInstrs]
-startBuildGenCodeProcess m cp className =
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> [ByteCodeInstrs]
+startBuildGenCodeProcess m cp className methods =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
     in result
     where
     initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, 
-                                localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className }
+                                localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className, methodDeklr=methods  }
                         
 
 -- Function to generate assembly code for a Method
@@ -284,15 +287,34 @@ generateCodeForAssign (LocalVarExpr name) cp_infos = do
 
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
-generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos = do
+generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos =  do
     -- codeForExpr <- generateCodeForExpression expr  -- not needed since expr is always ThisExpr resulting in aload_0, because we only consider one class
     codeForExprs <- generateCodeForExpressions exprList cp_infos
     className <- getClassName
-    let index = 0x0                                                           -- TODO
-    return ([ALoad_0] ++ 
-            codeForExprs ++ 
-            [(InvokeVirtual ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF)),  -- Verweis auf methodref in cp mit "classname.methodname:(paramtypes)returntype" e.g test.add:(II)I
-            Pop])  -- needs to be deleted if method call expr is part of assignment or local var decl
+    decls <- getMethodDeklr
+    let methodRefs = filter (\(MethodDecl _ _ methodName prameters _) -> name == methodName && (areInputTypesCorrect exprList prameters))  decls
+    case methodRefs of
+        [MethodDecl _ thisType methodName parameters _] -> do
+             let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
+             let deskr = className ++ "." ++ name ++ ":" ++ methodType
+             let idx = getIndexByDesc deskr cp_infos
+             return ([ALoad_0] ++
+                codeForExprs ++
+                [(InvokeVirtual ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF)), -- ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF)),  -- Verweis auf methodref in cp mit "classname.methodname:(paramtypes)returntype" e.g test.add:(II)I
+                Pop])  -- needs to be deleted if method call expr is part of assignment or local var decl
+
+
+        _:(_:_) -> trace ("The following methods clash due to the same erasure: " ++
+                           concatMap (\(MethodDecl _ thisType methodName parameters _) ->
+                               let methodType = "(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType
+                               in "Name: " ++ methodName ++ ", Method Type: " ++ methodType ++ "\n"
+                           ) methodRefs
+                       ) $ return []
+
+
+
+
+
 
 -- Function to generate assembly code for Expression
 generateCodeForExpression :: Expression -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]

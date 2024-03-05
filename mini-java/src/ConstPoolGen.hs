@@ -133,7 +133,6 @@ findReferencesExpr expr fieldOrMethodDecls className = case expr of
   LocalVarExpr name -> (return ())
   InstVarExpr e name -> do
     findReferencesExpr e fieldOrMethodDecls className
-    -- checkAndGenRef name fieldOrMethodDecls className
   UnaryOpExpr _ e -> findReferencesExpr e fieldOrMethodDecls className
   BinOpExpr e1 _ e2 -> do
     findReferencesExpr e1 fieldOrMethodDecls className
@@ -166,7 +165,7 @@ findReferencesNewExpr (NewExpr thisNewType exprList) fieldOrMethodDecls classNam
 findRefMethodCallExpr :: MethodCallExpr -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findRefMethodCallExpr (MethodCallExpr expr name exprList) fieldOrMethodDecls className = do
     mapM_ (\thisExpr -> findReferencesExpr thisExpr fieldOrMethodDecls  className) exprList
-    checkAndGenRef name fieldOrMethodDecls className
+    checkAndGenRef name fieldOrMethodDecls className exprList
     return ()
 
 unwrapToFieldList :: [FieldOrMethod] -> [Field]
@@ -176,14 +175,20 @@ unwrapToMethodList :: [FieldOrMethod] -> [MethodDecl]
 unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 
 -- Check if it is a Reference. Is it a method of this class?
-checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
-checkAndGenRef name decls className = case decls of
+checkAndGenRef :: String -> [FieldOrMethod] -> NewType -> [Expression] -> ConstantpoolStateM ()
+checkAndGenRef name decls className exprList = case decls of
     (ThisMethodDekl _ : _) -> do
-      let methodRefs = filter (\(MethodDecl _ _ methodName _ _) -> name == methodName) (unwrapToMethodList decls)
+      let methodRefs = filter (\(MethodDecl _ _ methodName prameters _) -> name == methodName && (areInputTypesCorrect exprList prameters)) (unwrapToMethodList decls)
       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
           let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
           generateMethodRefConstantPool methodName methodType className) methodRefs
     _ -> return ()
+
+-- Check if the expression list fits the input parameters. Incase multiple Methods have the same name.
+areInputTypesCorrect :: [Expression] -> [Parameter] -> Bool
+areInputTypesCorrect exprs params = length exprs == length params && all fits (zip exprs params)
+  where
+    fits (TypedExpr _ exprType, Parameter paramType _) = exprType == paramType
 
 ----------------------------------------------------------------------------
 -- Helper functions to create specific constant pool entries
