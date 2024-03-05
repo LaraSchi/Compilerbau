@@ -19,7 +19,7 @@ main :: IO ()
 main = do
 
 
-    fileContent <- readFile "code/semantikCheck/examplesSlides/02Expression.minijava" -- read file
+    fileContent <- readFile "code/examples/explFieldRef.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""

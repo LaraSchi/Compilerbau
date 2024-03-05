@@ -87,10 +87,10 @@ addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s +
 
 ----------------------------------------------------------------------
 -- Functions to generate Byte Code
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> [ByteCodeInstrs]
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> ([ByteCodeInstrs], Int)
 startBuildGenCodeProcess m cp className methods =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
-    in result
+    in (result, maxStackSize finalState)
     where
     initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0, 
                                 localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className, methodDeklr=methods  }
