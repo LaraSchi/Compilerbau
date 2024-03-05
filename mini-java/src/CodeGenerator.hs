@@ -13,6 +13,7 @@ import Debug.Trace
 -- TODO max stack size berechnen und wie man das ins classfile bekommt
 -- TODO branchoffset 
 -- TODO unary: Not
+-- TODO binary: &&, ||
 -- TODO CharLitExpr in Char
 -- TODO: unnötige Instr aus Datenstruktur schmeißen
 
