@@ -11,7 +11,6 @@ import Debug.Trace --Debugging, TODO: remove
 data TypeState = TypeState { classType        :: Type,
                              localTypeset     :: [(String, Type)],
                              fieldTypeset     :: [(String, Type)],
-                             blockTypes        :: [Type],
                              errors           :: [String] }
                              deriving Show 
 
@@ -24,7 +23,7 @@ checkSemantics p = case runTypeStateM p of
 
 
 runTypeStateM :: Program -> (Program, [String])
-runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] [] []
+runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] []
 
 checkSProg :: Program -> TypeStateM Program
 checkSProg p@(Program (Class n fd md) _) = do
@@ -66,18 +65,9 @@ checkMethod (MethodDecl v t s ps stmts) = do
     then return $ MethodDecl v t s ps typedStmts
     else error ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) -- $ return $ MethodDecl v t s ps typedStmts
 
-checkBlockS :: Stmt -> TypeStateM Stmt
-checkBlockS s = do
-    ty <- gets blockTypes
-    sTyped <- checkStmt s
-    let blockType = getTypeS sTyped
-    when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
-    return sTyped
-
 checkStmt :: Stmt -> TypeStateM Stmt
 checkStmt (Block stmts)                     = do
-    bT <- mapM checkBlockS stmts
-    tys <- gets blockTypes
+    bT <- mapM checkStmt stmts
     let types = filter (/= VoidT) $ map getTypeS bT
     if null types
     then return $ TypedStmt (Block bT) VoidT
@@ -116,7 +106,7 @@ checkStmt _                                 = error "checkStmt called on already
 checkTypeExpr :: Type -> Expression -> TypeStateM Expression
 checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
     then return typed
-    else error ("typed: " ++ show typed ++  "expression: " ++ show  e) -- #TODO: passende Error messages
+    else error ("type: " ++ show t ++  "expression: " ++ show (getTypeE typed)) -- #TODO: passende Error messages
 
 -- TODO: alle Expr typen 
 -- TODO: evtl. zu haskell typen? 
@@ -124,9 +114,9 @@ checkExpr :: Expression -> TypeStateM Expression
 checkExpr ThisExpr                  = gets classType >>= \t -> return $ TypedExpr ThisExpr t
 checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
 checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
-checkExpr v@(FieldVarExpr i)      = checkFieldVar i -- #TODO: korrigieren
-checkExpr v@(LocalVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
-checkExpr (InstVarExpr e s)       = checkExpr e >>= \eTyped -> return $ TypedExpr (InstVarExpr eTyped s) StringT -- #TODO: korrigieren, was für ein Typ?
+checkExpr v@(FieldVarExpr i)        = checkFieldVar i -- #TODO: korrigieren
+checkExpr v@(LocalVarExpr i)        = checkIdentifier i -- #TODO: korrigieren
+checkExpr (InstVarExpr e s)         = checkExpr e >>= \eTyped -> return $ TypedExpr (InstVarExpr eTyped s) StringT -- #TODO: korrigieren, was für ein Typ?
 checkExpr (UnaryOpExpr op e)        = checkUnary op e
 checkExpr (BinOpExpr e1 op e2)      = checkBinary e1 op e2
 checkExpr e@(IntLitExpr _)          = return $ TypedExpr e IntT

@@ -7,6 +7,7 @@ import ClassFormat
 import ConstPoolGen (startBuildProcess)
 import Data.Typeable
 import ClassFileGen(generateClassFile)
+import PrettyPrint
 
 
 import System.Directory
@@ -17,7 +18,7 @@ import System.Directory
 main :: IO ()
 main = do
 
-    fileContent <- readFile "code/examples/explFieldRef.minijava" -- read file
+    fileContent <- readFile "code/semantikCheck/examplesSlides/02Expression.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -30,7 +31,7 @@ main = do
         Right t -> case checkSemantics (addInit t) of
             Left _   -> print "false"
             Right t' -> do
-                print t'
+                putStrLn $ prettyPrintProgram t'
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
@@ -40,13 +41,29 @@ main = do
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 putStrLn result
                 return ()
+
+-- if there is no defined Init function, an empty one is added to the code
+addInit :: Program -> Program
+addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
+    then Program (Class n fs (init:md)) t
+    else p
+        where init = MethodDecl Public VoidT name [] (Block [])
+
+-- checks whether there is already a defined init function
+initMissing :: String -> [MethodDecl] -> Bool
+initMissing name = not . any (\(MethodDecl _ _ func _ _) -> name == func)
+{-
+TODO: 
+    - Prüfen, ob Grammatik vollständig und ggf. erweitern.
+        -> fehlt: 
+                - forloops
+                - Binary und Unary nich vollständig? (z.B: ^))
+                - eingebaute Funktionen, wie system.out.println? -}
+
+
     -------------------------------------
--- Laras Beispiel durchlauf Funktion
-checkAllExamples :: IO()
-checkAllExamples = do
-    let folder = "code/semantikCheck/"
-    files1 <- listDirectory folder
-    mapM_ (parseAndCheck folder) files1
+-- Laras Beispiel durchlauf Funktion TODO: rausschmeißen
+
 
 parseAndCheck :: String -> String -> IO ()
 parseAndCheck folder s = do
@@ -60,29 +77,10 @@ parseAndCheck folder s = do
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics t of
             Left _   -> print "false"
-            Right t' -> print t'
+            Right t' -> putStrLn $ prettyPrintProgram t'
 
-addInit :: Program -> Program
-addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
-    then Program (Class n fs (init:md)) t
-    else p
-        where init = MethodDecl 
-                    Public 
-                    VoidT
-                    name 
-                    [] --params
-                    (Block []) --assigns)
-              fieldVars = map (\(FieldDecl t n v) -> (n, t)) fs
-              params = map (\(n,t) -> Parameter t n) fieldVars
-              assigns = map (\(n,_) -> StmtExprStmt (AssignmentStmt (FieldVarExpr n) (FieldVarExpr n))) fieldVars
-
--- TODO: init Funktion Variablen als Field
-initMissing :: String -> [MethodDecl] -> Bool
-initMissing name = not . any (\(MethodDecl _ _ func _ _) -> name == func)
-{-
-TODO: 
-    - Prüfen, ob Grammatik vollständig und ggf. erweitern.
-        -> fehlt: 
-                - forloops
-                - Binary und Unary nich vollständig? (z.B: ^))
-                - eingebaute Funktionen, wie system.out.println? -}
+checkAllExamples :: IO()
+checkAllExamples = do
+    let folder = "code/semantikCheck/"
+    files1 <- listDirectory folder
+    mapM_ (parseAndCheck folder) files1
