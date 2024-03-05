@@ -224,7 +224,14 @@ generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
 
 -- Stmt Expr Stmt
 generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
-generateCodeForStmt (Print name) cp_infos = return [] -- Print Statement
+generateCodeForStmt (Print string) cp_infos = do
+    let fieldRefIdx = getIndexByDesc "java/lang/System.out:Ljava/io/PrintStream;" cp_infos
+        printArgIdx = getIndexByDesc string cp_infos
+        methodRefIdx = getIndexByDesc "java/io/PrintStream.println:(Ljava/lang/String;)V" cp_infos
+    addToCurrentByteCodeSize 8
+    return ([(GetStatic ((fieldRefIdx `shiftR` 8) .&. 0xFF) (fieldRefIdx .&. 0xFF))
+            , (Ldc printArgIdx)
+            , (InvokeVirtual ((methodRefIdx `shiftR` 8) .&. 0xFF) (methodRefIdx .&. 0xFF))])
 
 
 -- Function to generate assembly code for StmtExpr

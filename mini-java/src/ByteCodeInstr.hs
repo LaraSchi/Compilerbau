@@ -315,7 +315,7 @@ convertInstrToString instr = case instr of
     (AStore arg1) -> "astore" ++ "\t" ++ show arg1
     (ILoad arg1) -> "iload" ++ "\t" ++ show arg1
     (IStore arg1) -> "istore" ++ "\t" ++ show arg1
-    (Ldc arg1) -> "ldc" ++ "\t#" ++ show arg1
+    (Ldc arg1) -> "ldc" ++ "\t\t#" ++ show arg1
     Nop -> "nop"
     AConst_Null -> "aconst_null"
     IConst_m1 -> "iconst_m1"
