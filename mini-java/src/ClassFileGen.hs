@@ -102,15 +102,15 @@ buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt
 -- function to create attribute Infos?
 generateAttributeCodeArray :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> Attribute_Infos
 generateAttributeCodeArray methodDecl cpInfosList className methods =
-    let newAttributeInfo :: Attribute_Infos
-        code = convertToByteCode (startBuildGenCodeProcess methodDecl cpInfosList className methods)
-
+    let (result, maxStackSize) = startBuildGenCodeProcess methodDecl cpInfosList className methods
+        code = convertToByteCode result
+        newAttributeInfo :: Attribute_Infos
         newAttributeInfo =
             [AttributeCode
                 { index_name_attr = cpIndexFrom "Code" cpInfosList  -- attribute_name_index
-                , tam_len_attr = 0          -- Placeholder          -- attribute_length
-                , len_stack_attr = 0        -- Placeholder          -- max_stack
-                , len_local_attr = 0        -- Placeholder          -- max_local
+                , tam_len_attr = 0                  -- Placeholder          -- attribute_length
+                , len_stack_attr = maxStackSize     -- Placeholder          -- max_stack
+                , len_local_attr = 0                -- Placeholder          -- max_local
                 , tam_code_attr = length code
                 , array_code_attr = code
                 , tam_ex_attr = 0

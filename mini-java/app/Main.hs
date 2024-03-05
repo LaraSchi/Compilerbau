@@ -19,6 +19,7 @@ main :: IO ()
 main = do
 
 
+
     fileContent <- readFile "code/advancedExamples/test.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
