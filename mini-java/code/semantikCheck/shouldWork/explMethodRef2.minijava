@@ -1,0 +1,15 @@
+class A {
+int attr;
+
+public int add(int a, int b) {
+        return a + b;
+    }
+
+public int meth(Boolean x) {
+    A a;
+    a = new A ();
+    int i;
+    i = a.add(1, 2);
+    return i;
+ }
+}

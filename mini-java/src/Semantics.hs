@@ -3,6 +3,7 @@ module Semantics ( checkSemantics ) where
 import Syntax
 import Control.Monad.State (gets, get, modify, State, runState)
 import Control.Monad (when)
+import Data.List
 
 import Debug.Trace --Debugging, TODO: remove
 
@@ -10,30 +11,30 @@ import Debug.Trace --Debugging, TODO: remove
 data TypeState = TypeState { classType        :: Type,
                              localTypeset     :: [(String, Type)],
                              fieldTypeset     :: [(String, Type)],
-                             blockTypes        :: [Type],
                              errors           :: [String] }
                              deriving Show 
 
 type TypeStateM = State TypeState
 
-checkSemantics :: Program -> Either String Program
+{- checkSemantics :: Program -> Program
 checkSemantics p = case runTypeStateM p of
     (p',[]) ->Right p'
-    (_,es) -> Left $ head es -- #TODO: errors schön zu errormessage konkatenieren 
+    (p',es) -> head es -- #TODO: errors schön zu errormessage konkatenieren  -}
 
 
-runTypeStateM :: Program -> (Program, [String])
-runTypeStateM p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] [] []
+checkSemantics :: Program -> (Program, [String])
+checkSemantics p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] []
 
 checkSProg :: Program -> TypeStateM Program
 checkSProg p@(Program (Class n fd md) _) = do
-        traceShow p $ modify $ \s -> s {classType = NewTypeT n}
+        modify $ \s -> s {classType = NewTypeT n}
         fillTypeSetFields fd
         fillTypesSetMethod md
         mdTyped <- mapM checkMethod md
-        local <- gets localTypeset
-        field <- gets fieldTypeset
-        traceShow local $ traceShow field $ return (Program (Class n fd mdTyped) True)
+        errors <- gets errors
+        case errors of
+            [] -> return (Program (Class n fd mdTyped) True)
+            _  -> return (Program (Class n fd mdTyped) False)
 
 fillTypeSetFields :: [Field] -> TypeStateM ()
 fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds}) 
@@ -63,25 +64,20 @@ checkMethod (MethodDecl v t s ps stmts) = do
     typedStmts <- checkStmt stmts
     if getTypeS typedStmts == t
     then return $ MethodDecl v t s ps typedStmts
-    else traceShow ("Function has different type, than declared" ++ show (getTypeS typedStmts) ++ show t) $ return $ MethodDecl v t s ps typedStmts
-
-checkBlockS :: Stmt -> TypeStateM Stmt
-checkBlockS s = do
-    ty <- gets blockTypes
-    sTyped <- checkStmt s
-    let blockType = getTypeS sTyped
-    traceShow ("von Stmt: " ++ show s ++ "ist der blockType: " ++ show blockType) $ when (blockType /= VoidT) $ modify (\state -> state {blockTypes = blockType : ty}) 
-    return sTyped
+    else do 
+        addError $ "Function " ++ show s ++ " has different type, than declared"
+        let wrongType = NewTypeT $ NewType $ "x"++ show (getTypeS typedStmts)
+        return $ MethodDecl v t s ps (changeTypeS wrongType typedStmts)
 
 checkStmt :: Stmt -> TypeStateM Stmt
 checkStmt (Block stmts)                     = do
-    bT <- mapM checkBlockS stmts
-    tys <- gets blockTypes
-    if null tys
+    bT <- mapM checkStmt stmts
+    let types = filter (/= VoidT) $ map getTypeS bT
+    if null types
     then return $ TypedStmt (Block bT) VoidT
-    else if allEq tys 
-         then return $ TypedStmt (Block bT) (head tys)
-         else traceShow ("es werden verschieden Typen zurück gegeben" ++ show tys) $ return $ TypedStmt (Block bT) (head tys)
+    else if allEq types
+         then return $ TypedStmt (Block bT) (head types)
+         else error ("es werden verschieden Typen zurück gegeben" ++ show types) -- $ return $ TypedStmt (Block bT) (head tys)
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -99,20 +95,22 @@ checkStmt v@(LocalVarDeclStmt t s (Just e))          = do
 checkStmt (IfElseStmt e bs Nothing)         = do
     eTyped     <- checkTypeExpr BoolT e 
     stmtsTyped <- checkStmt bs
-    return $ TypedStmt (IfElseStmt eTyped stmtsTyped Nothing) VoidT
+    return $ TypedStmt (IfElseStmt eTyped stmtsTyped Nothing) (getTypeS stmtsTyped)
 checkStmt (IfElseStmt e bs1 (Just bs2))      = do
     eT   <- checkTypeExpr BoolT e  
     bsT1 <- checkStmt bs1
     bsT2 <- checkStmt bs2
-    return $ TypedStmt (IfElseStmt eT bsT1 (Just bsT2)) VoidT
-checkStmt (StmtExprStmt se)                 = checkStmtExpr se >>= \seT -> return $ TypedStmt (StmtExprStmt seT) VoidT
+    if getTypeS bsT1 == getTypeS bsT2
+        then return $ TypedStmt (IfElseStmt eT bsT1 (Just bsT2)) (getTypeS bsT2)
+        else error "unterschiedliche Typen im if und else Fall"
+checkStmt (StmtExprStmt se)                 = checkStmtExpr se >>= \seT -> return $ TypedStmt (StmtExprStmt seT) VoidT-- (getTypeSE seT)
 checkStmt s                                 = return $ TypedStmt s VoidT
 checkStmt _                                 = error "checkStmt called on already typed Expression"
 
 checkTypeExpr :: Type -> Expression -> TypeStateM Expression
 checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
     then return typed
-    else error ("typed: " ++ show typed ++  "expression: " ++ show  e) -- #TODO: passende Error messages
+    else error ("type: " ++ show t ++  "expression: " ++ show (getTypeE typed) ++ show typed) -- #TODO: passende Error messages
 
 -- TODO: alle Expr typen 
 -- TODO: evtl. zu haskell typen? 
@@ -120,9 +118,9 @@ checkExpr :: Expression -> TypeStateM Expression
 checkExpr ThisExpr                  = gets classType >>= \t -> return $ TypedExpr ThisExpr t
 checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
 checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
-checkExpr v@(FieldVarExpr i)      = checkFieldVar i -- #TODO: korrigieren
-checkExpr v@(LocalVarExpr i)      = checkIdentifier i -- #TODO: korrigieren
-checkExpr (InstVarExpr e s)       = checkExpr e >>= \eTyped -> return $ TypedExpr (InstVarExpr eTyped s) StringT -- #TODO: korrigieren, was für ein Typ?
+checkExpr v@(FieldVarExpr i)        = checkFieldVar i -- #TODO: korrigieren
+checkExpr v@(LocalVarExpr i)        = checkIdentifier i -- #TODO: korrigieren
+checkExpr (InstVarExpr e s)         = checkExpr e >>= \eTyped -> checkInstVarExpr s >>= \sT -> return $ TypedExpr (InstVarExpr eTyped s) sT -- #TODO: korrigieren, was für ein Typ?
 checkExpr (UnaryOpExpr op e)        = checkUnary op e
 checkExpr (BinOpExpr e1 op e2)      = checkBinary e1 op e2
 checkExpr e@(IntLitExpr _)          = return $ TypedExpr e IntT
@@ -132,6 +130,16 @@ checkExpr e@(StringLitExpr _)       = return $ TypedExpr e StringT
 checkExpr Null                      = return $ TypedExpr Null VoidT
 checkExpr (StmtExprExpr se)         = checkStmtExpr se >>= \seTyped -> return $ TypedExpr (StmtExprExpr seTyped) (getTypeSE seTyped)
 checkExpr _                         = error "checkExpr called on already typed Expression"
+
+
+checkInstVarExpr :: String -> TypeStateM Type
+checkInstVarExpr s = do
+    fields <- gets fieldTypeset
+    case filter ((==s).fst) fields of
+        [(_,t)]  -> return t 
+        _        -> error "upsi"
+
+
 
 -- #TODO: lookup noch spezifizieren, ob wirklich in jeweiliger FUnktion
 checkIdentifier :: String -> TypeStateM Expression
@@ -223,9 +231,7 @@ checkMethodCall (MethodCallExpr e s es) = do
         let (params, resultType) = getFuncTypes (snd (head funcType))
         eTyped  <- checkExpr e
         esTyped <- mapM checkExpr es
-        case e of
-            ThisExpr ->  return (MethodCallExpr eTyped s esTyped,VoidT) 
-            _        -> return (MethodCallExpr eTyped s esTyped,resultType) 
+        return (MethodCallExpr eTyped s esTyped,resultType)
 
     -- TODO: Frage, was wenn Funktion doppelt vorkommt?
     -- #TODO: check if e is Object
@@ -240,15 +246,19 @@ getFuncTypes _           = error "getFuncTypes wurde auf falschem typen aufgeruf
 
 getTypeE :: Expression -> Type
 getTypeE (TypedExpr _ t) = t
-getTypeE _               = error "blub"
+getTypeE t               = error $ "getTypeE error with:" ++show t
 
 getTypeSE :: StmtExpr -> Type
 getTypeSE (TypedStmtExpr _ t) = t
-getTypeSE _                    = error "blub"
+getTypeSE t               = error $ "getTypeSE error with:" ++show t
 
 getTypeS :: Stmt -> Type
 getTypeS (TypedStmt _ t) = t
-getTypeS _               = error "blub"
+getTypeS t               = error $ "getTypeS error with:" ++show t
+
+changeTypeS :: Type -> Stmt -> Stmt
+changeTypeS t' (TypedStmt s t) = TypedStmt s t'
+changeTypeS _  s               = error $ "changeTypeS error with:" ++show s
 
 -- Debug Helper 
 
@@ -258,4 +268,9 @@ semanticsError s1 s2 = error $ "error in function " ++ s1 ++ "\ncalles on " ++ s
 -- Helper 
 allEq :: Eq a => [a] -> Bool
 allEq (x:xs) = all (== x) xs
-allEq [x]    = True
+allEq _   = True
+
+addError :: String -> TypeStateM ()
+addError e = do
+    es <- gets errors
+    modify (\s -> s {errors = e : es})

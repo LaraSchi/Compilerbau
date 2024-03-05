@@ -1,0 +1,7 @@
+class A {
+    int i;
+
+    public void setI(int n){
+        this.i = n;
+    }
+}

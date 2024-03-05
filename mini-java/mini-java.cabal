@@ -33,6 +33,7 @@ library
       Lexer
       Lib
       Parser
+      PrettyPrint
       Semantics
       Syntax
   other-modules:
