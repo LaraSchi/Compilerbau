@@ -214,8 +214,25 @@ generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
                     code <- (generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code1 code2) 
                     return (code)
                 _ -> do
-                    -- Ifeq things
-                    return []
+                    code_expr <- generateCodeForExpression expr cp_infos
+                    let codeWithoutPop =
+                            if isExprWithPopInstr expr
+                                then init code_expr -- delete last element (Pop instr.)
+                                else code_expr
+                    if isExprWithPopInstr expr
+                        then addToCurrentByteCodeSize (-1)
+                        else addToCurrentByteCodeSize 0
+                    addToCurrentByteCodeSize 3  -- ifeq
+                    code_stmt2 <- generateCodeForStmt stmt2 cp_infos
+                    code_stmt1 <- generateCodeForStmt stmt cp_infos
+                    addToCurrentByteCodeSize 3  -- goto
+                    let code_stmt_len = (length (convertToByteCode code_stmt2))
+                    byteCodeSize <- getCurrentByteCodeSize
+                    return (codeWithoutPop ++
+                            [If_Eq (((byteCodeSize - code_stmt_len) `shiftR` 8) .&. 0xFF) ((byteCodeSize - code_stmt_len) .&. 0xFF)] ++
+                            code_stmt1 ++
+                            [Goto ((byteCodeSize `shiftR` 8) .&. 0xFF) (byteCodeSize .&. 0xFF)] ++
+                            code_stmt2)
         Nothing -> do
             case expr of
                 (TypedExpr (BinOpExpr expr1 bin_op expr2) _) -> do
@@ -223,8 +240,20 @@ generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
                     code <- (generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code1 [])
                     return (code)
                 _ -> do
-                    -- Ifeq things
-                    return []
+                    code_expr <- generateCodeForExpression expr cp_infos
+                    let codeWithoutPop =
+                            if isExprWithPopInstr expr
+                                then init code_expr -- delete last element (Pop instr.)
+                                else code_expr
+                    if isExprWithPopInstr expr
+                        then addToCurrentByteCodeSize (-1)
+                        else addToCurrentByteCodeSize 0
+                    addToCurrentByteCodeSize 3  -- ifeq
+                    code_stmt <- generateCodeForStmt stmt cp_infos
+                    byteCodeSize <- getCurrentByteCodeSize
+                    return (codeWithoutPop ++
+                            [If_Eq ((byteCodeSize `shiftR` 8) .&. 0xFF) (byteCodeSize .&. 0xFF)] ++
+                            code_stmt)
 
 
 -- Stmt Expr Stmt
