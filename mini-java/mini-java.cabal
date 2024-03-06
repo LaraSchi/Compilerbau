@@ -78,6 +78,7 @@ test-suite mini-java-test
   other-modules:
       CPSpec
       ParserSpec
+      SemanticsSpec
       TestHelper
       Paths_mini_java
   autogen-modules:
