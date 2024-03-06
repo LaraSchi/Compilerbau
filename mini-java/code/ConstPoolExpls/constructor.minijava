@@ -1,7 +1,7 @@
-class constructor {
+class constructorClass {
     int i;
 
-    public test(int x){
+    public constructorClass(int x){
         this.i = x;
     }
     public void t(){
