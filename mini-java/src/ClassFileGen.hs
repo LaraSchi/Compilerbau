@@ -1,3 +1,8 @@
+{-# OPTIONS_GHC -Wincomplete-patterns #-}
+{-# OPTIONS_GHC -Widentities #-}
+{-# OPTIONS_GHC -Wname-shadowing #-}
+{-# OPTIONS_GHC -Wunused-matches #-}
+
 module ClassFileGen where
 
 import CodeGenerator

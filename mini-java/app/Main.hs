@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wunused-top-binds #-}
+
 module Main (main) where
 
 import Parser (parse)
@@ -5,7 +7,6 @@ import Syntax
 import Semantics(checkSemantics)
 import ClassFormat
 import ConstPoolGen
-import Data.Typeable
 import ClassFileGen(generateClassFile)
 import PrettyPrint
 import BinaryClass
@@ -13,14 +14,11 @@ import System.Directory
 
 
 -- For colour printing
-import System.Console.ANSI
-
-
+-- import System.Console.ANSI
 
 
 main :: IO ()
 main = do
-
     -- CP Examples
     --fileContent <- readFile "code/ConstPoolExpls/explReferences.minijava"
     fileContent <- readFile "code/ConstPoolExpls/constructor.minijava"
@@ -40,7 +38,7 @@ main = do
         Left _  -> putStrLn "Term could not be parsed."
         Right t -> case checkSemantics (addInit t) of
              (t',[]) -> do
-                putStrLn $ show t'
+                print t'
                 putStrLn $ prettyPrintProgram t'
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
@@ -59,7 +57,7 @@ main = do
                 --putStrLn (show code)
 
                 return ()
-             (t',es) -> putStrLn $ prettyPrintProgram t'
+             (t',_) -> putStrLn $ prettyPrintProgram t'
 
 
 -- For the class file
@@ -73,36 +71,18 @@ extractClassName :: Class -> String
 extractClassName (Class className _ _) = newTypeToString className
 
 
-
-
--- if there is no defined Init function, an empty one is added to the code
+-- If there is no defined Init function, an empty one is added to the code
 addInit :: Program -> Program
 addInit p@(Program (Class n@(NewType name) fs md) t) = if initMissing name md
-    then Program (Class n fs (init:md)) t
+    then Program (Class n fs (newInit:md)) t
     else p
-        where init = MethodDecl Public VoidT name [] (Block [])
+        where newInit = MethodDecl Public VoidT name [] (Block [])
 
 -- checks whether there is already a defined init function
 initMissing :: String -> [MethodDecl] -> Bool
 initMissing name = not . any (\(MethodDecl _ _ func _ _) -> name == func)
-{-
-TODO: 
-    - Prüfen, ob Grammatik vollständig und ggf. erweitern.
-        -> fehlt: 
-                - forloops
-                - Binary und Unary nich vollständig? (z.B: ^))
-                - eingebaute Funktionen, wie system.out.println? -}
 
-
-    -------------------------------------
--- Laras Beispiel durchlauf Funktion TODO: rausschmeißen
-{- parseAllExamples :: IO()
-parseAllExamples = do
-    let folder = "code/sC/"
-    files1 <- listDirectory folder
-    mapM_ (parseAll folder) files1 -}
-
-
+-- only for Parser & Semantik check
 parseAndCheck :: String -> String -> IO ()
 parseAndCheck folder s = do
     fileContent <- readFile $ folder ++ s -- read file
