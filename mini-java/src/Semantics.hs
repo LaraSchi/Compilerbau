@@ -2,10 +2,7 @@ module Semantics ( checkSemantics ) where
 
 import Syntax
 import Control.Monad.State (gets, get, modify, State, runState)
-import Control.Monad (when)
 import Data.List
-
-import Debug.Trace --Debugging, TODO: remove
 
 --  state needed for type checking
 data TypeState = TypeState { classType        :: Type,              -- Type of current class
@@ -39,7 +36,6 @@ fillTypeSetFields fds = modify (\s -> s {fieldTypeset = typesOf fds})
     where typesOf :: [Field] -> [(String, Type)]
           typesOf []                    = []
           typesOf (FieldDecl t s me:ys) = (s,t):typesOf ys
-          typesOf (_:ys)                = typesOf ys
 
 -- Populates the field type set with method signatures.
 fillTypesSetMethod :: [MethodDecl] -> TypeStateM ()
@@ -87,7 +83,6 @@ checkStmt (IfElseStmt e bs Nothing)         = checkIfStmt e bs
 checkStmt (IfElseStmt e bs1 (Just bs2))     = checkIfELseStmt e bs1 bs2
 checkStmt (StmtExprStmt se)                 = checkStmtExpr se >>= \seT -> return $ TypedStmt (StmtExprStmt seT) VoidT-- (getTypeSE seT)
 checkStmt s                                 = return $ TypedStmt s VoidT
-checkStmt _                                 = error "checkStmt called on already typed Expression"
 
 -- Handles the type checking for local variable declarations within the method.
 -- Updates the localTypeset in the state to include the newly declared variables and their types.
@@ -242,7 +237,7 @@ checkSameExpr e1 e2 t = do
 checkStmtExpr :: StmtExpr -> TypeStateM StmtExpr
 checkStmtExpr (AssignmentStmt e1 e2) = checkAssign e1 e2
 checkStmtExpr (NewExpression n)      = checkNew n
-checkStmtExpr (MethodCall m)         = checkMethodCall m >>= \(mT,rty) -> return $ TypedStmtExpr (MethodCall mT) rty-- #TODO: Anzahl und Art Parameter checken
+checkStmtExpr (MethodCall m)         = checkMethodCall m >>= \(mT,rty) -> return $ TypedStmtExpr (MethodCall mT) rty
 checkStmtExpr _                      = error "checkStmtExpr called on already typed Stmt"
 
 -- Performs type checking on assignment statements.
@@ -282,7 +277,7 @@ checkMethodCall (MethodCallExpr e s es) = do
 -- Extracts the parameter types from a function type
 getParams :: [(String, Type)] -> [Type]
 getParams ((_,FuncT ts _):_) = ts
-getParams _                  = error "TODO"
+getParams _                  = error "getParams wurde auf falschem typen aufgerufen"
 
 -- Extracts the parameter types and return type from a function type.
 getFuncTypes :: Type -> ([Type],Type)
@@ -292,27 +287,27 @@ getFuncTypes _           = error "getFuncTypes wurde auf falschem typen aufgeruf
 -- Retrieves the type of an expression.
 getTypeE :: Expression -> Type
 getTypeE (TypedExpr _ t) = t
-getTypeE t               = error $ "getTypeE error with:" ++show t
+getTypeE t               = error $ "getTypeE error with:" ++ show t
 
 -- Retrieves the type of a statement expression.
 getTypeSE :: StmtExpr -> Type
 getTypeSE (TypedStmtExpr _ t) = t
-getTypeSE t                   = error $ "getTypeSE error with:" ++show t
+getTypeSE t                   = error $ "getTypeSE error with:" ++ show t
 
 -- Retrieves the type of a statement.
 getTypeS :: Stmt -> Type
 getTypeS (TypedStmt _ t) = t
-getTypeS t               = error $ "getTypeS error with:" ++show t
+getTypeS t               = error $ "getTypeS error with:" ++ show t
 
 -- helper function used to change the type of a statement.
 -- Primarily used when type errors are detected to update the type of the statement accordingly.
 changeTypeS :: Type -> Stmt -> Stmt
 changeTypeS t' (TypedStmt s t) = TypedStmt s t'
-changeTypeS _  s               = error $ "changeTypeS error with:" ++show s
+changeTypeS _  s               = error $ "changeTypeS error with:" ++ show s
 
 changeTypeE :: Type -> Expression -> Expression
 changeTypeE t' (TypedExpr e t) = TypedExpr e t'
-changeTypeE _  e               = error $ "changeTypeE error with:" ++show e
+changeTypeE _  e               = error $ "changeTypeE error with:" ++ show e
 
 -- Checks if all elements in a list are equal.
 allEq :: Eq a => [a] -> Bool
