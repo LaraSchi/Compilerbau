@@ -68,10 +68,10 @@ data FieldOrMethod = ThisFieldDekl Field | ThisMethodDekl MethodDecl
 
 generateClassConstantPool :: Class -> ConstantpoolStateM ()
 generateClassConstantPool (Class className fields methods) = do
-    -- Store the class
-    _ <- createClassEntry className
     -- Store init
     generateMethodRefConstantPool "<init>" "()V" (NewType "java/lang/Object")
+    -- Store the class
+    _ <- createClassEntry className
     -- Store declarations (Methods and Fields)
     mapM_ (\field -> generateFieldDeklCP field className) fields
     mapM_ (\method -> generateMethodDeklCP method) methods
@@ -112,6 +112,7 @@ findReferencesStmt stmt fieldOrMethodDecls className = case stmt of
 
 findReferencesExpr :: Expression -> [FieldOrMethod] -> NewType -> ConstantpoolStateM ()
 findReferencesExpr expr fieldOrMethodDecls className = case expr of
+  TypedExpr (InstVarExpr (TypedExpr _ (NewTypeT className)) name) thisType -> generateFieldRefConstantPool name (typeToString thisType) className
   TypedExpr (FieldVarExpr fieldName) fieldType -> generateFieldRefConstantPool fieldName (typeToString fieldType) className
   TypedExpr e _ -> do
         findReferencesExpr e fieldOrMethodDecls className
@@ -121,6 +122,7 @@ findReferencesExpr expr fieldOrMethodDecls className = case expr of
   LocalVarExpr name -> (return ())
   InstVarExpr e name -> do
     findReferencesExpr e fieldOrMethodDecls className
+    --checkAndGenRef name fieldOrMethodDecls className
   UnaryOpExpr _ e -> findReferencesExpr e fieldOrMethodDecls className
   BinOpExpr e1 _ e2 -> do
     findReferencesExpr e1 fieldOrMethodDecls className
@@ -168,6 +170,16 @@ unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 -- Check if it is a Reference. Is it a method of this class?
 resolveAndGenerateMethodRefs :: String -> [FieldOrMethod] -> NewType -> [Expression] -> ConstantpoolStateM ()
 resolveAndGenerateMethodRefs name decls className exprList = case decls of
+        --(ThisFieldDekl _ : _) -> do
+        --  let fieldRefs = filter (\field ->
+        --                         case field of
+        --                           (FieldDecl _ fieldName maybeExpr) -> name == fieldName
+        --                           _                       -> False
+        --                       ) (unwrapToFieldList decls)
+        --  trace (show fieldRefs) $ (return ())
+
+        --  mapM_ (\(FieldDecl fieldType fieldName maybeExpr) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
+
     (ThisMethodDekl _ : _) -> do
       let methodRefs = filter (\(MethodDecl _ _ methodName prameters _) -> name == methodName && (areInputTypesCorrect exprList prameters)) (unwrapToMethodList decls)
       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do

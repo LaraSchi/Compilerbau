@@ -4,7 +4,7 @@ import Parser (parse)
 import Syntax
 import Semantics(checkSemantics)
 import ClassFormat
-import ConstPoolGen (startBuildProcess)
+import ConstPoolGen
 import Data.Typeable
 import ClassFileGen(generateClassFile)
 import PrettyPrint
@@ -21,7 +21,7 @@ main = do
 
 
 
-    fileContent <- readFile "code/examples/explEmptyClass.minijava" -- read file
+    fileContent <- readFile "code/examples/explMethodRef2.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -42,20 +42,36 @@ main = do
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
-                encodeClassFile "EmptyClass.class" sampleCF
-                putStrLn result
-                -- putStrLn ("sampleCF: " ++  show sampleCF)
-                -- print()
+                let classFileName = getClassNameFromProgram t'
 
-                -- code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/EmptyClassReference.class"
-                -- putStrLn ("Reference: " ++ show code)
+                encodeClassFile (classFileName ++ ".class") sampleCF
+                putStrLn result
+                putStrLn ("The following ClassFile was generated: " ++ classFileName ++ ".class")
+                putStrLn ("sampleCF: " ++  show sampleCF)
+                print()
+
+                code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/FieldRef2Reference.class"
+                putStrLn ("Reference: " ++ show code)
                 --code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/EmptyClass.class"
                 --putStrLn (show code)
 
 
-
                 return ()
              (t',es) -> putStrLn $ prettyPrintProgram t'
+
+
+-- For the class file
+getClassNameFromProgram :: Program -> String
+getClassNameFromProgram (Program classes _) =
+    case classes of
+        singleClass -> extractClassName singleClass
+        _             -> "Class"
+
+extractClassName :: Class -> String
+extractClassName (Class className _ _) = newTypeToString className
+
+
+
 
 -- if there is no defined Init function, an empty one is added to the code
 addInit :: Program -> Program
