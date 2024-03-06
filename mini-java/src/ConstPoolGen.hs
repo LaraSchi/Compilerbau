@@ -279,7 +279,7 @@ typeToString t = case t of
   BoolT -> "Z"
   CharT -> "C"
   StringT -> "java/lang/String;"  -- Object class
-  NewTypeT nt -> newTypeToString nt
+  NewTypeT nt -> ("L" ++ newTypeToString  nt)
   FuncT args ret -> "(" ++ concatMap typeToString args ++ ")" ++ typeToString ret
   VoidT -> "V"
 

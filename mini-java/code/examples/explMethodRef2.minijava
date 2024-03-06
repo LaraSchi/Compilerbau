@@ -5,7 +5,7 @@ public int add(int a, int b) {
         return a + b;
     }
 
-public int meth(Boolean x) {
+public int meth(boolean x) {
     A a;
     a = new A ();
     int i;

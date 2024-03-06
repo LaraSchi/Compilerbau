@@ -7,7 +7,7 @@ public int add(int a, int b) {
         return attr;
     }
 
-public int meth(Boolean x) {
+public int meth(boolean x) {
     A a;
     return 1;
  }

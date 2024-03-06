@@ -88,12 +88,13 @@ generateMethodsArray methods cpInfosList className =
 buildMethodInfo :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> [Method_Info]
 buildMethodInfo methodDecl@(MethodDecl _ outType methodName parameters blockStmt) cpInfosList className methods =
     let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString outType)
+        actualMethodName = if (methodName == className) then "<init>" else methodName -- Konstruktormethod is called as Class
         attributes_array = do
             generateAttributeCodeArray methodDecl cpInfosList className methods
         newMethod_Info =
             [Method_Info
                 { af_mi = AccessFlags [acc_Public]
-                , index_name_mi = cpIndexFrom methodName cpInfosList  -- name_index
+                , index_name_mi = cpIndexFrom actualMethodName cpInfosList  -- name_index
                 , index_descr_mi = cpIndexFrom methodType cpInfosList -- descriptor_index (type)
                 , tam_mi = length attributes_array
                 , array_attr_mi = attributes_array
