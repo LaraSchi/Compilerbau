@@ -82,7 +82,7 @@ generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos 
     className <- getClassName
     let initCode =
             if name == className
-                then let deskr = ("java/lang/Object" ++ "." ++ "<init>" ++ ":()V")  -- cp ref to java/lang/Object."<init>":()V
+                then let deskr = ("java/lang/Object" ++ "." ++ "<init>" ++ ":()V")  -- CP ref to java/lang/Object."<init>":()V
                          idx = getIndexByDesc deskr cp_infos 
                      in [(ALoad_0), (InvokeSpecial ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF))]
                 else []
@@ -93,7 +93,7 @@ generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos 
             stmtInstructions <- generateCodeForStmt stmt cp_infos
             let code = initCode ++ stmtInstructions ++ [Return]
             addToCurrentByteCodeSize 1
-            return (code)                                                       -- TODO: wenn aber return dran steht, dann gibt es zweimal return!!! -> geht eh nicht durch den Parser
+            return (code)
         else do
             setReturnType retType
             code <- generateCodeForStmt stmt cp_infos
@@ -169,7 +169,6 @@ generateCodeForStmt (WhileStmt expr stmt) cp_infos = do
                     [Goto (((byteCodeSize - code_len_with_ifeq_goto) `shiftR` 8) .&. 0xFF) ((byteCodeSize - code_len_with_ifeq_goto) .&. 0xFF)])
 
 
-
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
     case maybeExpr of
@@ -202,8 +201,7 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
             addToLocalVars name
             addToLocalVarTypes var_type
             return []
--- If Else: nur ifcmp* werden verwendet; javac hat Sonderinstruktionen 
---          wenn Vergleich mit 0 durchgeführt wird, aber unnötig
+-- If Else
 generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
     case maybeBlockStmt of
         Just stmt2 -> do
@@ -255,7 +253,6 @@ generateCodeForStmt (IfElseStmt expr stmt maybeBlockStmt) cp_infos = do
                             [If_Eq ((byteCodeSize `shiftR` 8) .&. 0xFF) (byteCodeSize .&. 0xFF)] ++
                             code_stmt)
 
-
 -- Stmt Expr Stmt
 generateCodeForStmt (StmtExprStmt stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
 generateCodeForStmt (Print string) cp_infos = do
@@ -292,10 +289,11 @@ generateCodeForStmtExpr (NewExpression expr) cp_infos = generateCodeForNewExpr e
 -- Method call
 generateCodeForStmtExpr (MethodCall methodCallExpr) cp_infos = generateCodeForMethodCallExpr methodCallExpr cp_infos
 
+
+
 generateCodeForAssign :: Expression -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForAssign (TypedExpr expr _) cp_infos = do
     generateCodeForAssign expr cp_infos
-    -- generateCodeForExpression expr cp_infos
 generateCodeForAssign (FieldVarExpr name) cp_infos = do
     addToCurrentByteCodeSize 3
     className <- getClassName
@@ -315,7 +313,7 @@ generateCodeForAssign (FieldVarExpr name) cp_infos = do
                     else if idx3 /= (-1)
                         then idx3
                         else idx4
-    return [(PutField ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF))]          -- Verweis auf cp mit "classname.fieldname:Type" (int -> I, boolean -> Z, char -> C, classname -> classname)
+    return [(PutField ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF))]   -- reference to CP with "classname.fieldname:Type" (int -> I, boolean -> Z, char -> C, classname -> classname)
 generateCodeForAssign (LocalVarExpr name) cp_infos = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
@@ -340,7 +338,6 @@ generateCodeForAssign (LocalVarExpr name) cp_infos = do
 
 generateCodeForMethodCallExpr :: MethodCallExpr -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos =  do
-    -- codeForExpr <- generateCodeForExpression expr  -- not needed since expr is always ThisExpr resulting in aload_0, because we only consider one class
     codeForExprs <- generateCodeForExpressions exprList cp_infos
     className <- getClassName
     decls <- getMethodDeklr
@@ -353,9 +350,8 @@ generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos =  do
              addToCurrentByteCodeSize 5
              return ([ALoad_0] ++
                 codeForExprs ++
-                [(InvokeVirtual ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF)), -- ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF)),  -- Verweis auf methodref in cp mit "classname.methodname:(paramtypes)returntype" e.g test.add:(II)I
+                [(InvokeVirtual ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF)),         -- reference to methodref in CP with "classname.methodname:(paramtypes)returntype" e.g test.add:(II)I
                 Pop])  -- needs to be deleted if method call expr is part of assignment or local var decl
-
 
         _:(_:_) -> trace ("The following methods clash due to the same erasure: " ++
                            concatMap (\(MethodDecl _ thisType methodName parameters _) ->
@@ -390,7 +386,7 @@ generateCodeForExpression (FieldVarExpr name) cp_infos = do
                     else if idx3 /= (-1)
                         then idx3
                         else idx4
-    return [ALoad_0, (GetField ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF))] -- Verweis auf cp mit "classname.fieldname:Type" (int -> I, boolean -> Z, char -> C, classname -> classname)
+    return [ALoad_0, (GetField ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF))] -- reference to CP with "classname.fieldname:Type" (int -> I, boolean -> Z, char -> C, classname -> classname)
 generateCodeForExpression (LocalVarExpr name) cp_infos = do                                              
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
@@ -409,7 +405,7 @@ generateCodeForExpression (LocalVarExpr name) cp_infos = do
                 then addToCurrentByteCodeSize 1
                 else addToCurrentByteCodeSize 2
             return [(getALoadByIndex (getVarIndex name varList))]
-generateCodeForExpression (InstVarExpr expr name) cp_infos = generateCodeForExpression expr cp_infos        -- TODO: eigentlich nur relevant, wenn man mehrere Klassen hat?
+generateCodeForExpression (InstVarExpr expr name) cp_infos = generateCodeForExpression expr cp_infos
 generateCodeForExpression (UnaryOpExpr un_op expr) cp_infos = do
     codeExpr <- generateCodeForExpression expr cp_infos
     let (intExpr:[]) = codeExpr
@@ -495,10 +491,10 @@ generateCodeForNewExpr (NewExpr newType args) cp_infos = do
         idx_method_ref = getIndexByDesc (className ++ ".<init>:" ++ methodType) cp_infos
         idx_class_ref = getIndexByDesc className cp_infos
     addToCurrentByteCodeSize 8
-    return ([(New ((idx_class_ref `shiftR` 8) .&. 0xFF) (idx_class_ref .&. 0xFF)),  -- Verweis auf class_info mit desc classname
+    return ([(New ((idx_class_ref `shiftR` 8) .&. 0xFF) (idx_class_ref .&. 0xFF)),  -- reference to class_info with desc classname
             (Dup)] ++
             code ++
-            [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- Verweis auf methodref "classname.<init>:()V"
+            [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- reference to methodref "classname.<init>:()V"
             (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
 
 
@@ -674,7 +670,7 @@ isExprWithPopInstr _ = False
 ----------------------------------------------------------------------
 -- Helper functions to get list index of variable  (offset of 1 is accounted since load_0 and store_0 are not used)
 getVarIndex :: String -> [String] -> Int
-getVarIndex _ [] = -1                                                                   -- theoretisch müsste der error Fall noch abgefangen werden
+getVarIndex _ [] = -1
 getVarIndex var_name (var:vars)
     | var_name == var  = 1
     | otherwise = if indexRest == -1 then -1 else 1 + indexRest

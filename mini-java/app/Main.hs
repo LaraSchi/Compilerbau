@@ -27,6 +27,9 @@ main = do
     --fileContent <- readFile "code/ConstPoolExpls/globalLocalSameName.minijava"
     --fileContent <- readFile "code/ConstPoolExpls/helloWorldClass.minijava"
 
+    -- CF Examples
+    
+
 
     --fileContent <- readFile "code/examples/explWhile.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
