@@ -10,21 +10,12 @@ import Control.Monad.State
 import ConstPoolGen
 import Debug.Trace
 
--- TODO max stack size berechnen
--- TODO branchoffset 
--- TODO unary: Not
--- TODO binary: &&, ||
--- TODO CharLitExpr in Char
--- TODO: unnötige Instr aus Datenstruktur schmeißen
-
 
 ----------------------------------------------------------------------
 -- State Monad
 -- Define the state type
 data GlobalVars = GlobalVars
-    { maxStackSize :: Int               -- max stack size
-    , currentStackSize :: Int           -- current stack size
-    , currentByteCodeSize :: Int        -- current byte code array size
+    { currentByteCodeSize :: Int        -- current byte code array size
     , localVars :: [String]             -- list of defined local variables to choose index for iload, istore, ...
     , typesOfLocalVars :: [Type]        -- list of the local variable types
     , returnType :: Type                -- method return type
@@ -36,12 +27,6 @@ data GlobalVars = GlobalVars
 type GlobalVarsMonad = State GlobalVars
 
 -- Getter functions
-getMaxSize :: GlobalVarsMonad Int
-getMaxSize = gets maxStackSize
-
-getCurrentStackSize :: GlobalVarsMonad Int
-getCurrentStackSize = gets currentStackSize
-
 getCurrentByteCodeSize :: GlobalVarsMonad Int
 getCurrentByteCodeSize = gets currentByteCodeSize
 
@@ -61,15 +46,6 @@ getMethodDeklr :: GlobalVarsMonad [MethodDecl]
 getMethodDeklr = gets methodDeklr
 
 -- Functions to count the integers in the monad
-addToMaxStackSize :: Int -> GlobalVarsMonad ()
-addToMaxStackSize x = modify (\s -> s { maxStackSize = maxStackSize s + x })
-
-removeToMaxStackSize :: Int -> GlobalVarsMonad ()
-removeToMaxStackSize x = modify (\s -> s { maxStackSize = maxStackSize s - x })
-
-addToCurrentStackSize :: Int -> GlobalVarsMonad ()
-addToCurrentStackSize x = modify (\s -> s { currentStackSize = currentStackSize s + x })
-
 addToCurrentByteCodeSize :: Int -> GlobalVarsMonad ()
 addToCurrentByteCodeSize x = modify (\s -> s { currentByteCodeSize = currentByteCodeSize s + x })
 
@@ -90,21 +66,20 @@ addToLocalVarTypes x = modify (\s -> s { typesOfLocalVars = typesOfLocalVars s +
 
 ----------------------------------------------------------------------
 -- Functions to generate Byte Code
-startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> ([ByteCodeInstrs], Int, [String])
+startBuildGenCodeProcess :: MethodDecl -> [CP_Info] -> String -> [MethodDecl] -> ([ByteCodeInstrs], [String])
 startBuildGenCodeProcess m cp className methods =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
-    in (result, maxStackSize finalState, localVars finalState )
+    in (result, localVars finalState )
     where
      -- Todo maxStackSize
-    initialState = GlobalVars { maxStackSize = 0, currentStackSize = 0, currentByteCodeSize = 0,
-                                localVars = [], typesOfLocalVars = [], returnType = VoidT, className = className, methodDeklr=methods  }
+    initialState = GlobalVars { currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], 
+                                returnType = VoidT, className = className, methodDeklr=methods  }
                         
 
 -- Function to generate assembly code for a Method
 generateCodeForMethod :: MethodDecl -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForMethod (MethodDecl visibility retType name params stmt) cp_infos = do
     className <- getClassName
-    addToMaxStackSize 1
     let initCode =
             if name == className
                 then let deskr = ("java/lang/Object" ++ "." ++ "<init>" ++ ":()V")  -- cp ref to java/lang/Object."<init>":()V
@@ -313,8 +288,7 @@ generateCodeForMethodCallExpr (MethodCallExpr expr name exprList) cp_infos =  do
              let methodType = ("(" ++ intercalate "" (concatMap getInputType parameters) ++ ")" ++ typeToString thisType)
              let deskr = className ++ "." ++ name ++ ":" ++ methodType
              let idx = getIndexByDesc deskr cp_infos
-             addToMaxStackSize 1 -- aload
-             removeToMaxStackSize 1 -- invokevirtual
+             addToCurrentByteCodeSize 5
              return ([ALoad_0] ++
                 codeForExprs ++
                 [(InvokeVirtual ((idx `shiftR` 8) .&. 0xFF) (idx .&. 0xFF)), -- ((index `shiftR` 8) .&. 0xFF) (index .&. 0xFF)),  -- Verweis auf methodref in cp mit "classname.methodname:(paramtypes)returntype" e.g test.add:(II)I
@@ -434,11 +408,9 @@ generateCodeForExpression (IntLitExpr intVal) cp_infos = do
 generateCodeForExpression (BoolLitExpr bool) cp_infos = case bool of
     True -> do 
         addToCurrentByteCodeSize 1
-        addToMaxStackSize 1
         return [(IConst_1)]
     False -> do 
         addToCurrentByteCodeSize 1
-        addToMaxStackSize 1
         return [(IConst_0)]
 generateCodeForExpression (CharLitExpr (character:str)) cp_infos = do
     addToCurrentByteCodeSize 2
@@ -457,7 +429,6 @@ generateCodeForNewExpr (NewExpr newType args) cp_infos = do
     className <- getClassName
     let idx_method_ref = getIndexByDesc (className ++ ".<init>:()V") cp_infos
         idx_class_ref = getIndexByDesc className cp_infos
-    addToMaxStackSize 1
     return ([(New ((idx_class_ref `shiftR` 8) .&. 0xFF) (idx_class_ref .&. 0xFF)),  -- Verweis auf class_info mit desc classname
             (Dup)] ++
             code ++
