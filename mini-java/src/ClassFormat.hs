@@ -1,4 +1,4 @@
--- Entnommen aus der Vorlesung
+-- Entnommen aus der Vorlesung und angepasst
 module ClassFormat where
 import Syntax
 import qualified Data.ByteString.Lazy as BS

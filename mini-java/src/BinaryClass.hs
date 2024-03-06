@@ -1,3 +1,4 @@
+-- Entnommen aus der Vorlesung
 module BinaryClass where
 import ClassFormat
 
