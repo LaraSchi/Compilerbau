@@ -3,7 +3,7 @@
         "no"        : "1"
     ,   "name"      : "IfElse"
     ,   "input"     : "class ControlClass {public int check(int a) {if (a > 0) {return 1;} else {return 0;}}}"
-    ,   "expected"  : "Program (Class (NewType \"ControlClass\") [] [MethodDecl Public IntT \"check\" [Parameter IntT \"a\"] [IfElseStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Greater (IntLitExpr 0)) (Block [ReturnStmt (IntLitExpr 1)]) (Just (Block [ReturnStmt (IntLitExpr 0)]))])]) False"
+    ,   "expected"  : "Program (Class (NewType \"ControlClass\") [] [MethodDecl Public IntT \"check\" [Parameter IntT \"a\"] (Block [IfElseStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Greater (IntLitExpr 0)) (Block [ReturnStmt (IntLitExpr 1)]) (Just (Block [ReturnStmt (IntLitExpr 0)]))])]) False"
     },{
         "no"        : "2"
     ,   "name"      : "Class"

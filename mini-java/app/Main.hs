@@ -14,13 +14,17 @@ import BinaryClass
 import System.Directory
 
 
-
+parseProg :: IO()
+parseProg = do
+    fileContent <- readFile "code/examples/explMethodRef2.minijava"
+    putStrLn "File Content:"
+    putStrLn fileContent
+    case parse fileContent of
+        Left _  -> putStrLn "Term could not be parsed."
+        Right t -> print $ show t
 
 main :: IO ()
 main = do
-
-
-
     fileContent <- readFile "code/examples/explMethodRef2.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
@@ -94,7 +98,23 @@ TODO:
 
     -------------------------------------
 -- Laras Beispiel durchlauf Funktion TODO: rausschmeißen
+parseAllExamples :: IO()
+parseAllExamples = do
+    let folder = "code/semantikCheck/"
+    files1 <- listDirectory folder
+    mapM_ (parseAll folder) files1
 
+parseAll :: String -> String -> IO ()
+parseAll folder s = do
+    fileContent <- readFile $ folder ++ s -- read file
+    putStrLn ""
+    putStrLn $ "parsing checked file content: " ++ s
+    putStrLn ""
+    putStrLn "File Content:"
+    putStrLn fileContent
+    case parse fileContent of
+        Left _  -> putStrLn "Term could not be parsed."
+        Right t -> print $ show t
 
 parseAndCheck :: String -> String -> IO ()
 parseAndCheck folder s = do

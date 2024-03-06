@@ -12,8 +12,8 @@ testEntry :: TestEntry -> SpecWith ()
 testEntry entry = it ("Test nr. " ++ no entry ++ ": testing " ++ name entry) $ do
     let result = checkSemantics $ read $ replaceAposQuotes $ input entry
     case result of
-        (t,[])  -> "false" `shouldBe` expected entry
-        (t,es) -> "true" `shouldBe` expected entry
+        (t,[])  -> "true" `shouldBe` expected entry
+        (t,es) -> "false" `shouldBe` expected entry
 
 -- runs testEntry function on list of testEntrys
 spec :: Spec

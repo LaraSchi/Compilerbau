@@ -1,28 +1,93 @@
 [
     {
-        "no"        : "1"
-    ,   "name"      : "IfElse"
-    ,   "input"     : "Program (Class (NewType \"ControlClass\") [] [MethodDecl Public IntT \"check\" [Parameter IntT \"a\"] [IfElseStmt (BinOpExpr (IdentifierExpr \"a\") Greater (IntLitExpr 0)) [ReturnStmt (IntLitExpr 1)] (Just [ReturnStmt (IntLitExpr 0)])]]) False"
-    ,   "expected"  : "true"
+        "no": "1",
+        "name": "",
+        "input": "Program (Class (NewType \"A\") [FieldDecl IntT \"attr\" Nothing] [MethodDecl Public (NewTypeT (NewType \"A\")) \"meth\" [Parameter BoolT \"x\"] (Block [WhileStmt (BoolLitExpr True) (Block [ReturnStmt (IntLitExpr 1)])])]) False",
+        "expected": "false"
     },{
-        "no"        : "2"
-    ,   "name"      : "Class"
-    ,   "input"     : "Program (Class (NewType 'SimpleClass') [FieldDecl IntT 'number',FieldDecl BoolT 'flag'] []) False"
-    ,   "expected"  : "true"
+        "no": "2",
+        "name": "",
+        "input": "Program (Class (NewType \"SimpleClass\") [FieldDecl IntT \"number\" Nothing,FieldDecl BoolT \"flag\" Nothing] []) False",
+        "expected": "true"
     },{
-        "no"        : "3"
-    ,   "name"      : "Method"
-    ,   "input"     : "Program (Class (NewType 'MathClass') [] [MethodDecl Public IntT 'add' [Parameter IntT 'a',Parameter IntT 'b'] [ReturnStmt (BinOpExpr (IdentifierExpr 'a') Plus (IdentifierExpr 'b'))]]) False"
-    ,   "expected"  : "true"
+        "no": "3",
+        "name": "",
+        "input": "Program (Class (NewType \"EmptyClass\") [] []) False",
+        "expected": "true"
     },{
-        "no"        : "4"
-    ,   "name"      : "While"
-    ,   "input"     : "Program (Class (NewType \"LoopClass\") [] [MethodDecl Public IntT \"countToTen\" [] [LocalVarDeclStmt IntT \"i\",StmtExprStmt (AssignmentStmt (IdentifierExpr \"i\") (IntLitExpr 0)),WhileStmt (BinOpExpr (IdentifierExpr \"i\") Less (IntLitExpr 10)) [StmtExprStmt (AssignmentStmt (IdentifierExpr \"i\") (BinOpExpr (IdentifierExpr \"i\") Plus (IntLitExpr 1)))],ReturnStmt (IdentifierExpr \"i\")]]) False"
-    ,   "expected"  : "true"
+        "no": "4",
+        "name": "",
+        "input": "Program (Class (NewType \"A\") [FieldDecl IntT \"i\" Nothing] [MethodDecl Public VoidT \"setI\" [Parameter IntT \"n\"] (Block [StmtExprStmt (AssignmentStmt (FieldVarExpr \"i\") (LocalOrFieldVarExpr \"n\"))])]) False",
+        "expected": "true"
     },{
-        "no"        : "5"
-    ,   "name"      : "Var And Calc"
-    ,   "input"     : "Program (Class (NewType \"CalculationClass\") [] [MethodDecl Public IntT \"calculate\" [] [LocalVarDeclStmt IntT \"a\",StmtExprStmt (AssignmentStmt (IdentifierExpr \"a\") (IntLitExpr 10)),LocalVarDeclStmt IntT \"b\",StmtExprStmt (AssignmentStmt (IdentifierExpr \"b\") (BinOpExpr (IdentifierExpr \"a\") Plus (IntLitExpr 5))),ReturnStmt (IdentifierExpr \"b\")]]) False"
-    ,   "expected"  : "true"
+        "no": "5",
+        "name": "",
+        "input": "Program (Class (NewType \"A\") [FieldDecl IntT \"attr\" Nothing,FieldDecl IntT \"j\" Nothing] [MethodDecl Public (NewTypeT (NewType \"A\")) \"meth\" [Parameter (NewTypeT (NewType \"Boolean\")) \"x\"] (Block [LocalVarDeclStmt (NewTypeT (NewType \"A\")) \"a\" Nothing,StmtExprStmt (AssignmentStmt (LocalOrFieldVarExpr \"a\") (StmtExprExpr (NewExpression (NewExpr (NewType \"A\") [])))),StmtExprStmt (AssignmentStmt (InstVarExpr (LocalOrFieldVarExpr \"a\") \"attr\") (IntLitExpr 5)),ReturnStmt (LocalOrFieldVarExpr \"a\")])]) False",
+        "expected": "true"
+    },{
+        "no": "6",
+        "name": "",
+        "input": "Program (Class (NewType \"Addn\") [FieldDecl IntT \"n\" Nothing] [MethodDecl Public IntT \"add\" [Parameter IntT \"x\"] (Block [ReturnStmt (BinOpExpr (FieldVarExpr \"n\") Plus (LocalOrFieldVarExpr \"x\"))])]) False",
+        "expected": "true"
+    },{
+        "no": "7",
+        "name": "",
+        "input": "Program (Class (NewType \"ControlClass\") [] [MethodDecl Public IntT \"check\" [Parameter IntT \"a\"] (Block [IfElseStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Greater (IntLitExpr 0)) (Block [ReturnStmt (IntLitExpr 1)]) (Just (Block [ReturnStmt (IntLitExpr 0)]))])]) False",
+        "expected": "true"
+    },{
+        "no": "8",
+        "name": "",
+        "input": "Program (Class (NewType \"test\") [FieldDecl IntT \"i\" Nothing] [MethodDecl Public VoidT \"test\" [Parameter IntT \"i\"] (Block [StmtExprStmt (AssignmentStmt (FieldVarExpr \"i\") (LocalOrFieldVarExpr \"i\"))]),MethodDecl Public VoidT \"t\" [] (Block [LocalVarDeclStmt (NewTypeT (NewType \"test\")) \"test_var\" (Just (StmtExprExpr (NewExpression (NewExpr (NewType \"test\") [IntLitExpr 1]))))])]) False",
+        "expected": "true"
+    },{
+        "no": "9",
+        "name": "",
+        "input": "Program (Class (NewType \"MathClass\") [] [MethodDecl Public IntT \"add\" [Parameter IntT \"a\",Parameter IntT \"b\"] (Block [ReturnStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Plus (LocalOrFieldVarExpr \"b\"))])]) False",
+        "expected": "true"
+    },{
+        "no": "10",
+        "name": "",
+        "input": "Program (Class (NewType \"ControlClass\") [] [MethodDecl Public IntT \"add\" [Parameter IntT \"a\",Parameter IntT \"b\"] (Block [ReturnStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Plus (LocalOrFieldVarExpr \"b\"))]),MethodDecl Public VoidT \"check\" [Parameter IntT \"a\"] (Block [StmtExprStmt (MethodCall (MethodCallExpr ThisExpr \"add\" [IntLitExpr 1,IntLitExpr 2]))])]) False",
+        "expected": "true"
+    },{
+        "no": "11",
+        "name": "",
+        "input": "Program (Class (NewType \"A\") [FieldDecl IntT \"attr\" Nothing] [MethodDecl Public IntT \"add\" [Parameter IntT \"a\",Parameter IntT \"b\"] (Block [ReturnStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Plus (LocalOrFieldVarExpr \"b\"))]),MethodDecl Public IntT \"meth\" [Parameter (NewTypeT (NewType \"Boolean\")) \"x\"] (Block [LocalVarDeclStmt (NewTypeT (NewType \"A\")) \"a\" Nothing,StmtExprStmt (AssignmentStmt (LocalOrFieldVarExpr \"a\") (StmtExprExpr (NewExpression (NewExpr (NewType \"A\") [])))),LocalVarDeclStmt IntT \"i\" Nothing,StmtExprStmt (AssignmentStmt (LocalOrFieldVarExpr \"i\") (StmtExprExpr (MethodCall (MethodCallExpr (LocalOrFieldVarExpr \"a\") \"add\" [IntLitExpr 1,IntLitExpr 2])))),ReturnStmt (LocalOrFieldVarExpr \"i\")])]) False",
+        "expected": "true"
+    },{
+        "no": "12",
+        "name": "",
+        "input": "Program (Class (NewType \"CalculationClass\") [] [MethodDecl Public IntT \"calculate\" [] (Block [LocalVarDeclStmt IntT \"a\" (Just (IntLitExpr 10)),LocalVarDeclStmt IntT \"b\" (Just (BinOpExpr (LocalOrFieldVarExpr \"a\") Plus (IntLitExpr 5))),ReturnStmt (LocalOrFieldVarExpr \"b\")])]) False",
+        "expected": "true"
+    },{
+        "no": "13",
+        "name": "",
+        "input": "Program (Class (NewType \"LoopClass\") [] [MethodDecl Public IntT \"countToTen\" [] (Block [LocalVarDeclStmt IntT \"j\" Nothing,LocalVarDeclStmt IntT \"i\" (Just (IntLitExpr 0)),WhileStmt (BinOpExpr (LocalOrFieldVarExpr \"i\") Less (IntLitExpr 10)) (Block [StmtExprStmt (AssignmentStmt (LocalOrFieldVarExpr \"i\") (BinOpExpr (LocalOrFieldVarExpr \"i\") Plus (IntLitExpr 1)))]),ReturnStmt (LocalOrFieldVarExpr \"i\")])]) False",
+        "expected": "true"
+    },{
+        "no": "14",
+        "name": "",
+        "input": "Program (Class (NewType \"test\") [] [MethodDecl Public VoidT \"sayHello\" [] (Block [Print \"~HelloWorld~\"])]) False",
+        "expected": "true"
+    },{
+        "no": "15",
+        "name": "",
+        "input": "Program (Class (NewType \"ControlClass\") [] [MethodDecl Public IntT \"check\" [] (Block [LocalVarDeclStmt IntT \"a\" (Just (IntLitExpr 0))])]) False",
+        "expected": "false"
+    },{
+        "no": "16",
+        "name": "",
+        "input": "Program (Class (NewType \"test\") [] [MethodDecl Public IntT \"add\" [Parameter IntT \"a\",Parameter IntT \"b\"] (Block [ReturnStmt (BinOpExpr (LocalOrFieldVarExpr \"a\") Plus (LocalOrFieldVarExpr \"b\"))]),MethodDecl Public VoidT \"check\" [Parameter IntT \"a\"] (Block [LocalVarDeclStmt IntT \"x\" (Just (StmtExprExpr (MethodCall (MethodCallExpr ThisExpr \"add\" [IntLitExpr 1,IntLitExpr 2]))))])]) False",
+        "expected": "true"
+    },{
+        "no": "18",
+        "name": "18Literals",
+        "input": "Program (Class (NewType \"A\") [FieldDecl IntT \"attr\" Nothing,FieldDecl CharT \"bool\" Nothing] [MethodDecl Public VoidT \"A\" [Parameter IntT \"n\",Parameter CharT \"c\"] (Block [StmtExprStmt (AssignmentStmt (FieldVarExpr \"attr\") (LocalOrFieldVarExpr \"n\")),StmtExprStmt (AssignmentStmt (FieldVarExpr \"bool\") (LocalOrFieldVarExpr \"c\"))]),MethodDecl Public (NewTypeT (NewType \"A\")) \"meth\" [Parameter BoolT \"x\"] (Block [IfElseStmt (BinOpExpr (LocalOrFieldVarExpr \"x\") Equal (BoolLitExpr True)) (Block [ReturnStmt (StmtExprExpr (NewExpression (NewExpr (NewType \"A\") [IntLitExpr 1,CharLitExpr \"t\"])))]) (Just (Block [ReturnStmt (StmtExprExpr (NewExpression (NewExpr (NewType \"A\") [IntLitExpr 0,CharLitExpr \"t\"])))]))])]) False",
+        "expected": "true"
+    },{
+        "no": "19",
+        "name": "19Expression",
+        "input": "Program (Class (NewType \"Expr\") [FieldDecl IntT \"i\" Nothing,FieldDecl BoolT \"b\" Nothing] [MethodDecl Public VoidT \"Expr\" [Parameter IntT \"i\",Parameter BoolT \"b\"] (Block [StmtExprStmt (AssignmentStmt (FieldVarExpr \"i\") (BinOpExpr (LocalOrFieldVarExpr \"i\") Plus (LocalOrFieldVarExpr \"i\"))),StmtExprStmt (AssignmentStmt (FieldVarExpr \"b\") (UnaryOpExpr Not (LocalOrFieldVarExpr \"b\")))]),MethodDecl Public VoidT \"Expr\" [Parameter IntT \"i\",Parameter BoolT \"b\"] (Block [LocalVarDeclStmt (NewTypeT (NewType \"Expr\")) \"e\" (Just (StmtExprExpr (NewExpression (NewExpr (NewType \"Expr\") [LocalOrFieldVarExpr \"i\",LocalOrFieldVarExpr \"b\"])))),IfElseStmt (BinOpExpr (BinOpExpr (InstVarExpr (LocalOrFieldVarExpr \"e\") \"b\") And (BoolLitExpr True)) Or (BoolLitExpr False)) (Block [StmtExprStmt (AssignmentStmt (InstVarExpr (LocalOrFieldVarExpr \"e\") \"i\") (IntLitExpr 1))]) Nothing])]) False",
+        "expected": "true"
     }
 ]
