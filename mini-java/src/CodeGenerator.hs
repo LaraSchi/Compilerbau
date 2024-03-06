@@ -141,15 +141,34 @@ generateCodeForStmt (ReturnStmt expr) cp_infos = do
 generateCodeForStmt (WhileStmt expr stmt) cp_infos = do
     case expr of
         (TypedExpr (BinOpExpr expr1 bin_op expr2) _) -> do
-            code1 <- generateCodeForStmt stmt cp_infos
+            code_stmt <- generateCodeForStmt stmt cp_infos
             addToCurrentByteCodeSize 3  -- add goto that gets added
-            code <- (generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code1 [])
+            code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code_stmt []
             byteCodeSize <- getCurrentByteCodeSize
             let lenCodeWithGoto = (length (convertToByteCode code)) + 3  -- + 3 for the goto
             return (code ++ [Goto (((byteCodeSize - lenCodeWithGoto) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeWithGoto) .&. 0xFF)])
         _ -> do
-            -- Ifeq things
-            return []
+            code_expr <- generateCodeForExpression expr cp_infos
+            let codeWithoutPop =
+                    if isExprWithPopInstr expr
+                        then init code_expr -- delete last element (Pop instr.)
+                        else code_expr
+            if isExprWithPopInstr expr
+                then addToCurrentByteCodeSize (-1)
+                else addToCurrentByteCodeSize 0
+            addToCurrentByteCodeSize 3  -- ifeq
+            code_stmt <- generateCodeForStmt stmt cp_infos
+            addToCurrentByteCodeSize 3  -- goto
+            let code_expr_len = (length (convertToByteCode codeWithoutPop))
+                code_stmt_len = (length (convertToByteCode code_stmt))
+                code_len_with_ifeq_goto = (code_expr_len + (code_stmt_len + (3 + 3)))
+            byteCodeSize <- getCurrentByteCodeSize
+            return (codeWithoutPop ++
+                    [If_Eq ((byteCodeSize `shiftR` 8) .&. 0xFF) (byteCodeSize .&. 0xFF)] ++
+                    code_stmt ++
+                    [Goto (((byteCodeSize - code_len_with_ifeq_goto) `shiftR` 8) .&. 0xFF) ((byteCodeSize - code_len_with_ifeq_goto) .&. 0xFF)])
+
+
 
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
@@ -225,7 +244,7 @@ generateCodeForStmtExpr :: StmtExpr -> [CP_Info] -> GlobalVarsMonad [ByteCodeIns
 generateCodeForStmtExpr (TypedStmtExpr stmtExpr _) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
 -- Assign Stmt
 generateCodeForStmtExpr (AssignmentStmt expr1 expr2) cp_infos = do
-    codeExpr1 <- generateCodeForExpression expr1 cp_infos
+    codeExpr1 <- generateCodeForAssign expr1 cp_infos
     codeExpr2 <- generateCodeForExpression expr2 cp_infos
     let codeWithoutPop =
             if isExprWithPopInstr expr2
@@ -247,7 +266,7 @@ generateCodeForStmtExpr (MethodCall methodCallExpr) cp_infos = generateCodeForMe
 generateCodeForAssign :: Expression -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForAssign (TypedExpr expr _) cp_infos = do
     generateCodeForAssign expr cp_infos
-    generateCodeForExpression expr cp_infos
+    -- generateCodeForExpression expr cp_infos
 generateCodeForAssign (FieldVarExpr name) cp_infos = do
     addToCurrentByteCodeSize 3
     className <- getClassName
