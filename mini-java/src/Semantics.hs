@@ -165,7 +165,7 @@ checkInstVarExpr s = do
     fields <- gets fieldTypeset
     case filter ((==s).fst) fields of
         [(_,t)]  -> return t 
-        _        -> error "Var existiert nicht"
+        _        -> errorCall "varUnknown" s >> return (wrongType "error")
 
 -- Performs type checking on unary operations.
 -- Checks if the operand has the appropriate type for the given operator.

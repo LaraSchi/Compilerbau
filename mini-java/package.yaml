@@ -25,7 +25,7 @@ dependencies:
 - bytestring
 - ansi-terminal >= 1.0 && < 2
 ghc-options:
-- -Wall
+- -w
 - -Wcompat
 - -Widentities
 - -Wincomplete-record-updates
@@ -37,6 +37,8 @@ ghc-options:
 - -Wunused-top-binds
 
 library:
+  ghc-options:
+    - -w
   source-dirs: src
   dependencies:
     - array
@@ -51,6 +53,7 @@ executables:
     - alex
     - happy
     ghc-options:
+    - -w
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N

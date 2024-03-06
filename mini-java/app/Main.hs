@@ -83,7 +83,7 @@ initMissing :: String -> [MethodDecl] -> Bool
 initMissing name = not . any (\(MethodDecl _ _ func _ _) -> name == func)
 
 -- only for Parser & Semantik check
-parseAndCheck :: String -> String -> IO ()
+{- parseAndCheck :: String -> String -> IO ()
 parseAndCheck folder s = do
     fileContent <- readFile $ folder ++ s -- read file
     putStrLn ""
@@ -105,4 +105,4 @@ checkAllExamples :: IO()
 checkAllExamples = do
     let folder = "code/sC/"
     files1 <- listDirectory folder
-    mapM_ (parseAndCheck folder) files1
+    mapM_ (parseAndCheck folder) files1 -}
