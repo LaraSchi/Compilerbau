@@ -21,12 +21,15 @@ main :: IO ()
 main = do
     -- CP Examples
     --fileContent <- readFile "code/ConstPoolExpls/explReferences.minijava"
-    fileContent <- readFile "code/ConstPoolExpls/constructor.minijava"
+    --fileContent <- readFile "code/ConstPoolExpls/constructor.minijava"
     --fileContent <- readFile "code/ConstPoolExpls/globalLocalSameName.minijava"
     --fileContent <- readFile "code/ConstPoolExpls/helloWorldClass.minijava"
 
     -- CF Examples
-    
+    fileContent <- readFile "code/ClassFileGenExpls/methodsExpl.minijava"
+    --fileContent <- readFile "code/ClassFileGenExpls/printExpl.minijava"
+    --fileContent <- readFile "code/ClassFileGenExpls/branchExpl.minijava"
+    --fileContent <- readFile "code/ClassFileGenExpls/negBranchExpl.minijava"
 
 
     --fileContent <- readFile "code/examples/explWhile.minijava" -- read file

@@ -284,87 +284,87 @@ convertToByteCode (i:is) = convertInstrToByteCode i ++ convertToByteCode is
 
 convertInstrToString :: ByteCodeInstrs -> Int -> String
 convertInstrToString instr idx = case instr of
-    (InvokeDynamic arg1 arg2 arg3 arg4) -> show idx ++ "| invokedynamic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2 ++ "\t#" ++ show arg3 ++ "\t#" ++ show arg4
-    (Goto_W arg1 arg2 arg3 arg4) -> show idx ++ "| goto_w" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2 ++ "\t" ++ show arg3 ++ "\t" ++ show arg4
-    (If_Eq arg1 arg2) -> show idx ++ "| if_eq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ICmpEq arg1 arg2) -> show idx ++ "| if_icmpeq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ICmpNeq arg1 arg2) -> show idx ++ "| if_icmpne" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ICmpLeq arg1 arg2) -> show idx ++ "| if_icmple" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ICmpLt arg1 arg2) -> show idx ++ "| if_icmplt" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ICmpGeq arg1 arg2) -> show idx ++ "| if_icmpge" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ICmpGt arg1 arg2) -> show idx ++ "| if_icmpgt" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ACmpEq arg1 arg2) -> show idx ++ "| if_acmpeq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (If_ACmpNeq arg1 arg2) -> show idx ++ "| if_acmpne" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (IfNull arg1 arg2) -> show idx ++ "| ifnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
-    (IfNonNull arg1 arg2) -> show idx ++ "| ifnonnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
-    (InvokeVirtual arg1 arg2) -> show idx ++ "| invokevirtual" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (InvokeStatic arg1 arg2) -> show idx ++ "| invokestatic" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (InvokeSpecial arg1 arg2) -> show idx ++ "| invokespecial" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (Goto arg1 arg2) -> show idx ++ "| goto" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (GetField arg1 arg2) -> show idx ++ "| getfield" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (PutField arg1 arg2) -> show idx ++ "| putfield" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (GetStatic arg1 arg2) -> show idx ++ "| getstatic" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (PutStatic arg1 arg2) -> show idx ++ "| putstatic" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (InstanceOf arg1 arg2) -> show idx ++ "| instanceof" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
-    (Ldc_W arg1 arg2) -> show idx ++ "| ldc_w" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (Ldc2_W arg1 arg2) -> show idx ++ "| ldc2_w" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (SIPush arg1 arg2) -> show idx ++ "| sipush" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
-    (New arg1 arg2) -> show idx ++ "| new" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
-    (BIPush arg1) -> show idx ++ "| bipush" ++ "\t" ++ show arg1
-    (ALoad arg1) -> show idx ++ "| aload" ++ "\t" ++ show arg1
-    (AStore arg1) -> show idx ++ "| astore" ++ "\t" ++ show arg1
-    (ILoad arg1) -> show idx ++ "| iload" ++ "\t" ++ show arg1
-    (IStore arg1) -> show idx ++ "| istore" ++ "\t" ++ show arg1
-    (Ldc arg1) -> show idx ++ "| ldc" ++ "\t#" ++ show arg1
-    Nop -> show idx ++ "| nop"
-    AConst_Null -> show idx ++ "| aconst_null"
-    IConst_m1 -> show idx ++ "| iconst_m1"
-    IConst_0 -> show idx ++ "| iconst_0"
-    IConst_1 -> show idx ++ "| iconst_1"
-    IConst_2 -> show idx ++ "| iconst_2"
-    IConst_3 -> show idx ++ "| iconst_3"
-    IConst_4 -> show idx ++ "| iconst_4"
-    IConst_5 -> show idx ++ "| iconst_5"
-    LConst_0 -> show idx ++ "| lconst_0"
-    LConst_1 -> show idx ++ "| lconst_1"
-    ALoad_0 -> show idx ++ "| aload_0"
-    ALoad_1 -> show idx ++ "| aload_1"
-    ALoad_2 -> show idx ++ "| aload_2"
-    ALoad_3 -> show idx ++ "| aload_3"
-    AStore_0 -> show idx ++ "| astore_0"
-    AStore_1 -> show idx ++ "| astore_1"
-    AStore_2 -> show idx ++ "| astore_2"
-    AStore_3 -> show idx ++ "| astore_3"
-    ILoad_0 -> show idx ++ "| iload_0"
-    ILoad_1 -> show idx ++ "| iload_1"
-    ILoad_2 -> show idx ++ "| iload_2"
-    ILoad_3 -> show idx ++ "| iload_3"
-    IStore_0 -> show idx ++ "| istore_0"
-    IStore_1 -> show idx ++ "| istore_1"
-    IStore_2 -> show idx ++ "| istore_2"
-    IStore_3 -> show idx ++ "| istore_3"
-    IAdd -> show idx ++ "| iadd"
-    ISub -> show idx ++ "| isub"
-    IMul -> show idx ++ "| imul"
-    IDiv -> show idx ++ "| idiv"
-    IRem -> show idx ++ "| irem"
-    INeg -> show idx ++ "| ineg"
-    IShl -> show idx ++ "| ishl"
-    IShr -> show idx ++ "| ishr"
-    IUShr -> show idx ++ "| iushr"
-    IAnd -> show idx ++ "| iand"
-    IOr -> show idx ++ "| ior"
-    IXor -> show idx ++ "| ixor"
-    I2C -> show idx ++ "| i2c"
-    Return -> show idx ++ "| return"
-    IReturn -> show idx ++ "| ireturn"
-    AReturn -> show idx ++ "| areturn"
-    Dup -> show idx ++ "| dup"
-    Dup_X1 -> show idx ++ "| dup_x1"
-    Dup_X2 -> show idx ++ "| dup_x2"
-    Dup2 -> show idx ++ "| dup2"
-    Dup2_X1 -> show idx ++ "| dup2_x1"
-    Dup2_X2 -> show idx ++ "| dup2_x2"
-    Pop -> show idx ++ "| pop"
-    Pop2 -> show idx ++ "| pop2"
-    Swap -> show idx ++ "| swap"
+    (InvokeDynamic arg1 arg2 arg3 arg4) -> show idx ++ "\t| invokedynamic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2 ++ "\t#" ++ show arg3 ++ "\t#" ++ show arg4
+    (Goto_W arg1 arg2 arg3 arg4)        -> show idx ++ "\t| goto_w" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2 ++ "\t" ++ show arg3 ++ "\t" ++ show arg4
+    (If_Eq arg1 arg2)                   -> show idx ++ "\t| if_eq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ICmpEq arg1 arg2)               -> show idx ++ "\t| if_icmpeq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ICmpNeq arg1 arg2)              -> show idx ++ "\t| if_icmpne" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ICmpLeq arg1 arg2)              -> show idx ++ "\t| if_icmple" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ICmpLt arg1 arg2)               -> show idx ++ "\t| if_icmplt" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ICmpGeq arg1 arg2)              -> show idx ++ "\t| if_icmpge" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ICmpGt arg1 arg2)               -> show idx ++ "\t| if_icmpgt" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ACmpEq arg1 arg2)               -> show idx ++ "\t| if_acmpeq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (If_ACmpNeq arg1 arg2)              -> show idx ++ "\t| if_acmpne" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (IfNull arg1 arg2)                  -> show idx ++ "\t| ifnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
+    (IfNonNull arg1 arg2)               -> show idx ++ "\t| ifnonnull" ++ "\t" ++ show arg1 ++ "\t#" ++ show arg2
+    (InvokeVirtual arg1 arg2)           -> show idx ++ "\t| invokevirtual" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (InvokeStatic arg1 arg2)            -> show idx ++ "\t| invokestatic" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (InvokeSpecial arg1 arg2)           -> show idx ++ "\t| invokespecial" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (Goto arg1 arg2)                    -> show idx ++ "\t| goto" ++ "\t\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (GetField arg1 arg2)                -> show idx ++ "\t| getfield" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (PutField arg1 arg2)                -> show idx ++ "\t| putfield" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (GetStatic arg1 arg2)               -> show idx ++ "\t| getstatic" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (PutStatic arg1 arg2)               -> show idx ++ "\t| putstatic" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (InstanceOf arg1 arg2)              -> show idx ++ "\t| instanceof" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2
+    (Ldc_W arg1 arg2)                   -> show idx ++ "\t| ldc_w" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (Ldc2_W arg1 arg2)                  -> show idx ++ "\t| ldc2_w" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (SIPush arg1 arg2)                  -> show idx ++ "\t| sipush" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
+    (New arg1 arg2)                     -> show idx ++ "\t| new" ++ "\t#" ++ show ((arg1 `shiftL` 8) + arg2)
+    (BIPush arg1)                       -> show idx ++ "\t| bipush" ++ "\t" ++ show arg1
+    (ALoad arg1)                        -> show idx ++ "\t| aload" ++ "\t" ++ show arg1
+    (AStore arg1)                       -> show idx ++ "\t| astore" ++ "\t" ++ show arg1
+    (ILoad arg1)                        -> show idx ++ "\t| iload" ++ "\t\t" ++ show arg1
+    (IStore arg1)                       -> show idx ++ "\t| istore" ++ "\t" ++ show arg1
+    (Ldc arg1)                          -> show idx ++ "\t| ldc" ++ "\t\t#" ++ show arg1
+    Nop                                 -> show idx ++ "\t| nop"
+    AConst_Null                         -> show idx ++ "\t| aconst_null"
+    IConst_m1                           -> show idx ++ "\t| iconst_m1"
+    IConst_0                            -> show idx ++ "\t| iconst_0"
+    IConst_1                            -> show idx ++ "\t| iconst_1"
+    IConst_2                            -> show idx ++ "\t| iconst_2"
+    IConst_3                            -> show idx ++ "\t| iconst_3"
+    IConst_4                            -> show idx ++ "\t| iconst_4"
+    IConst_5                            -> show idx ++ "\t| iconst_5"
+    LConst_0                            -> show idx ++ "\t| lconst_0"
+    LConst_1                            -> show idx ++ "\t| lconst_1"
+    ALoad_0                             -> show idx ++ "\t| aload_0"
+    ALoad_1                             -> show idx ++ "\t| aload_1"
+    ALoad_2                             -> show idx ++ "\t| aload_2"
+    ALoad_3                             -> show idx ++ "\t| aload_3"
+    AStore_0                            -> show idx ++ "\t| astore_0"
+    AStore_1                            -> show idx ++ "\t| astore_1"
+    AStore_2                            -> show idx ++ "\t| astore_2"
+    AStore_3                            -> show idx ++ "\t| astore_3"
+    ILoad_0                             -> show idx ++ "\t| iload_0"
+    ILoad_1                             -> show idx ++ "\t| iload_1"
+    ILoad_2                             -> show idx ++ "\t| iload_2"
+    ILoad_3                             -> show idx ++ "\t| iload_3"
+    IStore_0                            -> show idx ++ "\t| istore_0"
+    IStore_1                            -> show idx ++ "\t| istore_1"
+    IStore_2                            -> show idx ++ "\t| istore_2"
+    IStore_3                            -> show idx ++ "\t| istore_3"
+    IAdd                                -> show idx ++ "\t| iadd"
+    ISub                                -> show idx ++ "\t| isub"
+    IMul                                -> show idx ++ "\t| imul"
+    IDiv                                -> show idx ++ "\t| idiv"
+    IRem                                -> show idx ++ "\t| irem"
+    INeg                                -> show idx ++ "\t| ineg"
+    IShl                                -> show idx ++ "\t| ishl"
+    IShr                                -> show idx ++ "\t| ishr"
+    IUShr                               -> show idx ++ "\t| iushr"
+    IAnd                                -> show idx ++ "\t| iand"
+    IOr                                 -> show idx ++ "\t| ior"
+    IXor                                -> show idx ++ "\t| ixor"
+    I2C                                 -> show idx ++ "\t| i2c"
+    Return                              -> show idx ++ "\t| return"
+    IReturn                             -> show idx ++ "\t| ireturn"
+    AReturn                             -> show idx ++ "\t| areturn"
+    Dup                                 -> show idx ++ "\t| dup"
+    Dup_X1                              -> show idx ++ "\t| dup_x1"
+    Dup_X2                              -> show idx ++ "\t| dup_x2"
+    Dup2                                -> show idx ++ "\t| dup2"
+    Dup2_X1                             -> show idx ++ "\t| dup2_x1"
+    Dup2_X2                             -> show idx ++ "\t| dup2_x2"
+    Pop                                 -> show idx ++ "\t| pop"
+    Pop2                                -> show idx ++ "\t| pop2"
+    Swap                                -> show idx ++ "\t| swap"

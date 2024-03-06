@@ -1,0 +1,15 @@
+class methodExpl {
+    int a;
+    int b;
+    int sum;
+
+    public methodExpl(int a, int b) {
+        this.a = a;
+        this.b = b;
+        sum = add(a, b);
+    }
+
+    public int add(int int1, int int2) {
+        return int1 + int2;
+    }
+}

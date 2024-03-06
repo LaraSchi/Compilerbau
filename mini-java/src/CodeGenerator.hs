@@ -414,16 +414,18 @@ generateCodeForExpression (UnaryOpExpr un_op expr) cp_infos = do
         Not -> return [] -- not implemented
         UnaryMinus -> do
             let instr = convertInstrToByteCode intExpr
-            if length instr == 3
-                then do 
-                    let (codeInstr:intVal1:intVal2:[]) = instr
-                        unsignedVal = (intVal1 `shiftL` 8) + intVal2
-                    if unsignedVal > 32767  -- Check if value exceeds short range
-                        then return [(SIPush ((-unsignedVal) `shiftR` 8) (-unsignedVal .&. 0xFF))]
-                        else return [(BIPush (-unsignedVal))]
-                else do
-                    let (codeInstr:intVal:[]) = instr
-                    return [(BIPush (-intVal))]
+            if intExpr == IConst_1
+                then return [IConst_m1]
+                else if length instr == 3
+                    then do 
+                        let (codeInstr:intVal1:intVal2:[]) = instr
+                            unsignedVal = (intVal1 `shiftL` 8) + intVal2
+                        if unsignedVal > 32767  -- Check if value exceeds short range
+                            then return [(SIPush ((-unsignedVal) `shiftR` 8) (-unsignedVal .&. 0xFF))]
+                            else return [(BIPush (-unsignedVal))]
+                    else do
+                        let (codeInstr:intVal:[]) = instr
+                        return [(BIPush (-intVal))]
 generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
     case bin_op of
         Equal -> do 
@@ -456,13 +458,33 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
     
     
 generateCodeForExpression (IntLitExpr intVal) cp_infos = do
-    if intVal > 127
-        then do
-            addToCurrentByteCodeSize 3 
-            return [(SIPush ((intVal `shiftR` 8) .&. 0xFF) (intVal .&. 0xFF))]
-        else do
-            addToCurrentByteCodeSize 2 
-            return [(BIPush intVal)]
+    case intVal of
+        0 -> do
+            addToCurrentByteCodeSize 1
+            return [IConst_0]
+        1 -> do
+            addToCurrentByteCodeSize 1
+            return [IConst_1]
+        2 -> do
+            addToCurrentByteCodeSize 1
+            return [IConst_2]
+        3 -> do
+            addToCurrentByteCodeSize 1
+            return [IConst_3]
+        4 -> do
+            addToCurrentByteCodeSize 1
+            return [IConst_4]
+        5 -> do
+            addToCurrentByteCodeSize 1
+            return [IConst_5]
+        _ -> do
+            if intVal > 127
+                then do
+                    addToCurrentByteCodeSize 3 
+                    return [(SIPush ((intVal `shiftR` 8) .&. 0xFF) (intVal .&. 0xFF))]
+                else do
+                    addToCurrentByteCodeSize 2 
+                    return [(BIPush intVal)]
 generateCodeForExpression (BoolLitExpr bool) cp_infos = case bool of
     True -> do 
         addToCurrentByteCodeSize 1

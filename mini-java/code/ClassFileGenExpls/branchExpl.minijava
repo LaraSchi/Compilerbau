@@ -1,0 +1,18 @@
+class branchExpl {
+    
+    public void check(int a, int b) {
+        boolean x = a == b;
+
+        if (a < b) {
+            a = a + b;
+        } else {
+            a = a - b;
+        }
+
+        int y = 10;
+
+        while (y < 99) {
+            y = y + 10;
+        }
+    }
+}

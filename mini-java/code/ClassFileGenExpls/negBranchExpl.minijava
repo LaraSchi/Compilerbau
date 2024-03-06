@@ -1,0 +1,12 @@
+class negBranchExpl {
+    public void enclosedBranches(int i) {
+        boolean x;
+        if (i < 99) {
+            x = i > 22;
+        } else {
+            while (i > 99) {
+                i = i - 10;
+            }
+        }
+    }
+}
