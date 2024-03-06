@@ -19,7 +19,9 @@ import System.Directory
 main :: IO ()
 main = do
 
-    fileContent <- readFile "code/examples/helloWorld.minijava" -- read file
+
+
+    fileContent <- readFile "code/examples/explMethodRef2.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -34,22 +36,15 @@ main = do
                 putStrLn $ show t'
                 putStrLn $ prettyPrintProgram t'
                 let sampleCP = startBuildProcess t'
-                putStrLn (show sampleCP)
-                --let sampleCP = [Utf8_Info {tag_cp = TagUtf8, tam_cp = 16, cad_cp = "java/lang/Object", desc = ""},Class_Info {tag_cp = TagClass, index_cp = 1, desc = "java/lang/Object"},Utf8_Info {tag_cp = TagUtf8, tam_cp = 6, cad_cp = "<init>", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 3, cad_cp = "()V", desc = ""},NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 3, index_descr_cp = 4, desc = "<init>:()V"},MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 2, index_nameandtype_cp = 5, desc = "java/lang/Object.<init>:()V"},Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = "Code", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = "A", desc = ""},Class_Info {tag_cp = TagClass, index_cp = 8, desc = "A"},MethodRef_Info {tag_cp = TagMethodRef, index_name_cp = 2, index_nameandtype_cp = 5, desc = ""},FieldRef_Info {tag_cp = TagFieldRef, index_name_cp = 2, index_nameandtype_cp = 11, desc = ""},NameAndType_Info {tag_cp = TagNameAndType, index_name_cp = 12, index_descr_cp = 13, desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = "attr", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = "I", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 1, cad_cp = "j", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = "Code", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 4, cad_cp = "meth", desc = ""},Utf8_Info {tag_cp = TagUtf8, tam_cp = 24, cad_cp = "(Ljava/lang/Boolean;)LA;", desc = ""}]
                 putStrLn ""
                 let constPoolShow = showCP_Infos sampleCP 1
-
-
                 putStrLn constPoolShow
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 let classFileName = getClassNameFromProgram t'
                 putStrLn result
-
-
                 encodeClassFile (classFileName ++ ".class") sampleCF
-
                 putStrLn ("The following ClassFile was generated: " ++ classFileName ++ ".class")
                 --putStrLn ("sampleCF: " ++  show sampleCF)
                 --print()
