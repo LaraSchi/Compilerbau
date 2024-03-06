@@ -96,11 +96,11 @@ TODO:
 
     -------------------------------------
 -- Laras Beispiel durchlauf Funktion TODO: rausschmeißen
-parseAllExamples :: IO()
+{- parseAllExamples :: IO()
 parseAllExamples = do
     let folder = "code/sC/"
     files1 <- listDirectory folder
-    mapM_ (parseAll folder) files1
+    mapM_ (parseAll folder) files1 -}
 
 
 parseAndCheck :: String -> String -> IO ()
