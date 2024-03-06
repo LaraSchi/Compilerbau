@@ -1,0 +1,8 @@
+class A {
+int attr;
+public A meth(boolean x) {
+    while (true) {
+        return 1;
+    }
+}
+}

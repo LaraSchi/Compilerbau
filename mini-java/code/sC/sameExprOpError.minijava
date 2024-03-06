@@ -1,0 +1,6 @@
+class Expr {
+    bool i;
+    public plus(int i) {
+        return this.i + i;
+    }
+}

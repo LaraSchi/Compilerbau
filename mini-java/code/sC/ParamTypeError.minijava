@@ -1,0 +1,9 @@
+class Expr {
+    bool i;
+    public int plus(int i, int a) {
+        return a + i;
+    }
+    public int pluss(int i, int a) {
+        return plus(this.i);
+    }
+}

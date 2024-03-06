@@ -1,0 +1,6 @@
+class A {
+int attr;
+public int meth(boolean x) {
+    return true;
+}
+}
