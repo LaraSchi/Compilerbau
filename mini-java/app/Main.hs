@@ -50,8 +50,8 @@ main = do
                 putStrLn ("sampleCF: " ++  show sampleCF)
                 print()
 
-                code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/FieldRef2Reference.class"
-                putStrLn ("Reference: " ++ show code)
+                --code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/FieldRef2Reference.class"
+                --putStrLn ("Reference: " ++ show code)
                 --code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/EmptyClass.class"
                 --putStrLn (show code)
 
