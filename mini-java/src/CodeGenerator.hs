@@ -163,6 +163,9 @@ generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos =
                     if isExprWithPopInstr expr
                         then init codeForExpr -- delete last element (Pop instr.)
                         else codeForExpr
+            if isExprWithPopInstr expr
+                then addToCurrentByteCodeSize (-1)
+                else addToCurrentByteCodeSize 0
             if var_type == BoolT || var_type == CharT || var_type == IntT
                 then do
                     let index = (getVarIndex name localVarList)
@@ -228,6 +231,9 @@ generateCodeForStmtExpr (AssignmentStmt expr1 expr2) cp_infos = do
             if isExprWithPopInstr expr2
                 then init codeExpr2 -- delete last element (Pop instr.)
                 else codeExpr2
+    if isExprWithPopInstr expr2
+        then addToCurrentByteCodeSize (-1)
+        else addToCurrentByteCodeSize 0
     case codeExpr1 of
         [(PutField _ _)] -> do
             addToCurrentByteCodeSize 1
@@ -440,11 +446,12 @@ generateCodeForNewExpr (NewExpr newType args) cp_infos = do
             else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) args) ++ ")V"
         idx_method_ref = getIndexByDesc (className ++ ".<init>:" ++ methodType) cp_infos
         idx_class_ref = getIndexByDesc className cp_infos
+    addToCurrentByteCodeSize 8
     return ([(New ((idx_class_ref `shiftR` 8) .&. 0xFF) (idx_class_ref .&. 0xFF)),  -- Verweis auf class_info mit desc classname
-                (Dup)] ++
-                code ++
-                [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- Verweis auf methodref "classname.<init>:()V"
-                (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
+            (Dup)] ++
+            code ++
+            [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- Verweis auf methodref "classname.<init>:()V"
+            (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
 
 
 -- Function to generate assembly code for NewType
