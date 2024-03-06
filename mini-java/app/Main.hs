@@ -44,8 +44,8 @@ main = do
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 let classFileName = getClassNameFromProgram t'
                 putStrLn result
-                encodeClassFile (classFileName ++ ".class") sampleCF
-                putStrLn ("The following ClassFile was generated: " ++ classFileName ++ ".class")
+                encodeClassFile ("GeneratedClassFiles/" ++ classFileName ++ ".class") sampleCF
+                putStrLn ("The following ClassFile was generated: " ++ "GeneratedClassFiles/" ++ classFileName ++ ".class")
                 --putStrLn ("sampleCF: " ++  show sampleCF)
                 --print()
                 --code <- decodeClassFile "/Users/anabelstammer/Documents/GitHub/Compilerbau/mini-java/EmptyClass.class"
