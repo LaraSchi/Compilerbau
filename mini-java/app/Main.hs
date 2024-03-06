@@ -9,9 +9,11 @@ import Data.Typeable
 import ClassFileGen(generateClassFile)
 import PrettyPrint
 import BinaryClass
-
-
 import System.Directory
+
+
+-- For colour printing
+import System.Console.ANSI
 
 
 
@@ -19,9 +21,14 @@ import System.Directory
 main :: IO ()
 main = do
 
+    -- CP Examples
+    --fileContent <- readFile "code/ConstPoolExpls/explReferences.minijava"
+    --fileContent <- readFile "code/ConstPoolExpls/constructor.minijava"
+    --fileContent <- readFile "code/ConstPoolExpls/globalLocalSameName.minijava"
+    fileContent <- readFile "code/ConstPoolExpls/helloWorldClass.minijava"
 
 
-    fileContent <- readFile "code/examples/explMethodRef2.minijava" -- read file
+    --fileContent <- readFile "code/examples/explWhile.minijava" -- read file
     --fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
@@ -37,13 +44,13 @@ main = do
                 putStrLn $ prettyPrintProgram t'
                 let sampleCP = startBuildProcess t'
                 putStrLn ""
-                let constPoolShow = showCP_Infos sampleCP 1
+                let constPoolShow = showCP_InfosWithColor sampleCP
                 putStrLn constPoolShow
                 putStrLn "Generating Class File"
                 let sampleCF = generateClassFile t' sampleCP -- Todo
                 let result = prettyPrintClassFile sampleCF -- Todo uncomment
                 let classFileName = getClassNameFromProgram t'
-                putStrLn result
+                --putStrLn result
                 encodeClassFile ("GeneratedClassFiles/" ++ classFileName ++ ".class") sampleCF
                 putStrLn ("The following ClassFile was generated: " ++ "GeneratedClassFiles/" ++ classFileName ++ ".class")
                 --putStrLn ("sampleCF: " ++  show sampleCF)

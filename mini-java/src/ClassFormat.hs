@@ -5,6 +5,11 @@ import qualified Data.ByteString.Lazy as BS
 import Data.Bits
 import ByteCodeInstr
 
+-- For colour printing
+import System.Console.ANSI
+import Control.Monad (zipWithM_)
+import Debug.Trace (trace)
+
 -- class file format
 data ClassFile = ClassFile { magic            :: Magic
                            , minver           :: MinorVersion
@@ -285,6 +290,29 @@ type Attributes_Count    = Int
 type Index_Constant_Pool = Int
 
 
+
+-- Function to set the text color based on the index and CP_Info type
+setColor :: Int -> CP_Info -> String
+setColor index (FieldRef_Info _ _ _ "java/lang/System.out:Ljava/io/PrintStream;") | index > 9 = setSGRCode [SetColor Foreground Vivid Yellow]
+setColor index (MethodRef_Info _ _ _ "java/io/PrintStream.println:(Ljava/lang/String;)V") | index > 9 = setSGRCode [SetColor Foreground Vivid Yellow]
+setColor index (FieldRef_Info _ _ _ d) | index > 9 = trace (show d) $ setSGRCode [SetColor Foreground Vivid Blue]
+setColor index (MethodRef_Info _ _ _ _) | index > 9 = setSGRCode [SetColor Foreground Vivid Magenta]
+setColor index _ | index <= 9 = setSGRCode [SetColor Foreground Vivid Green]
+setColor _ _ = setSGRCode [Reset]
+
+-- Function to reset the text color
+resetColor :: String
+resetColor = setSGRCode [Reset]
+
+-- Function to show CP_Info with color
+showCP_InfoWithColor :: Int -> CP_Info -> String
+showCP_InfoWithColor index info =
+  let colorCode = setColor index info
+      resetCode = resetColor
+  in colorCode ++ (show index) ++ "|" ++ (show info) ++ "\n" ++ resetCode
+
+showCP_InfosWithColor :: [CP_Info] -> String
+showCP_InfosWithColor cpInfos = concat $ zipWith showCP_InfoWithColor [1 ..] cpInfos
 
 
 -- Function to display CP_Info items with indices

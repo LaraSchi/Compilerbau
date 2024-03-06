@@ -23,6 +23,7 @@ dependencies:
 - base >= 4.7 && < 5
 - binary
 - bytestring
+- ansi-terminal >= 1.0 && < 2
 ghc-options:
 - -Wall
 - -Wcompat

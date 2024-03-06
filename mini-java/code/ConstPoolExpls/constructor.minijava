@@ -1,0 +1,10 @@
+class constructor {
+    int i;
+
+    public test(int x){
+        this.i = x;
+    }
+    public void t(){
+        test test_var = new test(1);
+    }
+}

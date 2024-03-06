@@ -1,0 +1,21 @@
+class explReferences {
+    int n;
+    boolean b;
+    char c;
+
+    public int add(int x) {
+        b = true;           // FieldReferences
+        this.c = 'c';
+        return n + x;
+    }
+
+   public int add() { // Method-Overload
+        return 1;
+    }
+
+   public int methodReference() { // MethodReference
+         int x = this.add();
+         return add(1);
+   }
+
+}
