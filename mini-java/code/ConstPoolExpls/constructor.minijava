@@ -5,6 +5,6 @@ class constructorClass {
         this.i = x;
     }
     public void t(){
-        test test_var = new test(1);
+        constructorClass test_var = new constructorClass(1);
     }
 }
