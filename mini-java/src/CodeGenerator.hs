@@ -21,7 +21,7 @@ data GlobalVars = GlobalVars
     , typesOfLocalVars :: [Type]        -- list of the local variable types
     , returnType :: Type                -- method return type
     , className :: String               -- name of class
-    , methodDeklr :: [MethodDecl]       -- List of MethodDeklerations
+    , methodDeklr :: [MethodDecl]       -- list of method declerations
     } deriving (Show)
 
 -- Define a type synonym for the state monad

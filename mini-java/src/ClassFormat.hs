@@ -362,7 +362,7 @@ showCodeAttrInfo (AttributeCode nameIndex attrLen maxStack maxLocal codeLen code
     "  max_stack: " ++ show maxStack ++ "\n" ++
     "  max_local: " ++ show maxLocal ++ "\n" ++
     "  code_length: " ++ show codeLen ++ "\n" ++
-    "  code: \n" ++ showCode code ++ "\n" ++
+    "  code: \n" ++ (showCode code 0) ++ "\n" ++
     "  exceptions_length: " ++ show exceptionsLen ++ "\n" ++
     "  exceptions: " ++ show exceptions ++ "\n" ++
     "  attributes_count: " ++ show attributesCount ++ "\n" ++
@@ -376,27 +376,27 @@ showBytes (x:xs) = "\t" ++ show x ++ "\n" ++ showBytes xs
 
 
 -- Function to format ListaInt  TODO: better parsing: List only contains bytes -> when opcode with two arguments the next two list elements are the args
-showCode :: ListaInt -> String
-showCode [] = ""
-showCode (opc:arg1:arg2:arg3:arg4:xs) =
+showCode :: ListaInt -> Int -> String
+showCode [] idx = ""
+showCode (opc:arg1:arg2:arg3:arg4:xs) idx =
     if (convertByteCodeToInstr (opc:arg1:arg2:arg3:[arg4])) /= NoInstr
-        then "\t" ++ convertInstrToString (convertByteCodeToInstr (opc:arg1:arg2:arg3:[arg4])) ++ "\n " ++ showCode xs
+        then "\t" ++ (convertInstrToString (convertByteCodeToInstr (opc:arg1:arg2:arg3:[arg4])) idx) ++ "\n " ++ (showCode xs (idx + 5))
         else if (convertByteCodeToInstr (opc:arg1:[arg2])) /= NoInstr
-            then "\t" ++ convertInstrToString (convertByteCodeToInstr (opc:arg1:[arg2])) ++ "\n " ++ showCode (arg3:arg4:xs)
+            then "\t" ++ (convertInstrToString (convertByteCodeToInstr (opc:arg1:[arg2])) idx) ++ "\n " ++ (showCode (arg3:arg4:xs) (idx + 3))
             else if (convertByteCodeToInstr (opc:[arg1])) /= NoInstr
-                then "\t" ++ convertInstrToString (convertByteCodeToInstr (opc:[arg1])) ++ "\n " ++ showCode (arg2:arg3:arg4:xs)
-                else "\t" ++ convertInstrToString (convertByteCodeToInstr [opc]) ++ "\n " ++ showCode (arg1:arg2:arg3:arg4:xs)
-showCode (opc:arg1:arg2:xs) =
+                then "\t" ++ (convertInstrToString (convertByteCodeToInstr (opc:[arg1])) idx) ++ "\n " ++ (showCode (arg2:arg3:arg4:xs) (idx + 2))
+                else "\t" ++ (convertInstrToString (convertByteCodeToInstr [opc]) idx)++ "\n " ++ (showCode (arg1:arg2:arg3:arg4:xs) (idx + 1))
+showCode (opc:arg1:arg2:xs) idx =
     if (convertByteCodeToInstr (opc:arg1:[arg2])) /= NoInstr
-        then "\t" ++ convertInstrToString (convertByteCodeToInstr (opc:arg1:[arg2])) ++ "\n " ++ showCode xs
+        then "\t" ++ (convertInstrToString (convertByteCodeToInstr (opc:arg1:[arg2])) idx) ++ "\n " ++ (showCode xs (idx + 3))
         else if (convertByteCodeToInstr (opc:[arg1])) /= NoInstr
-            then "\t" ++ convertInstrToString (convertByteCodeToInstr (opc:[arg1])) ++ "\n " ++ showCode (arg2:xs)
-            else "\t" ++ convertInstrToString (convertByteCodeToInstr [opc]) ++ "\n " ++ showCode (arg1:arg2:xs)
-showCode (opc:arg1:xs) = 
+            then "\t" ++ (convertInstrToString (convertByteCodeToInstr (opc:[arg1])) idx) ++ "\n " ++ (showCode (arg2:xs) (idx + 2))
+            else "\t" ++ (convertInstrToString (convertByteCodeToInstr [opc]) idx) ++ "\n " ++ (showCode (arg1:arg2:xs) (idx + 1))
+showCode (opc:arg1:xs) idx = 
     if (convertByteCodeToInstr (opc:[arg1])) /= NoInstr
-        then "\t" ++ convertInstrToString (convertByteCodeToInstr (opc:[arg1])) ++ "\n " ++ showCode xs
-        else "\t" ++ convertInstrToString (convertByteCodeToInstr [opc]) ++ "\n " ++ showCode (arg1:xs)
-showCode (opc:xs) = "\t" ++ convertInstrToString (convertByteCodeToInstr [opc]) ++ "\n " ++ showCode xs
+        then "\t" ++ (convertInstrToString (convertByteCodeToInstr (opc:[arg1])) idx) ++ "\n " ++ (showCode xs (idx + 2))
+        else "\t" ++ (convertInstrToString (convertByteCodeToInstr [opc]) idx) ++ "\n " ++ (showCode (arg1:xs) (idx + 1))
+showCode (opc:xs) idx = "\t" ++ (convertInstrToString (convertByteCodeToInstr [opc]) idx) ++ "\n " ++ (showCode xs (idx + 1))
 
 
 
