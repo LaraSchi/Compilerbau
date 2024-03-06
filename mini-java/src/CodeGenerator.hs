@@ -138,10 +138,18 @@ generateCodeForStmt (ReturnStmt expr) cp_infos = do
                 addToCurrentByteCodeSize 1
                 return (code)
 -- While
-generateCodeForStmt (WhileStmt expr stmt) cp_infos = do                               -- TODO
-    code <- generateCodeForStmt stmt cp_infos
-    code_expr <- generateCodeForExpression expr cp_infos
-    return (code ++ code_expr)
+generateCodeForStmt (WhileStmt expr stmt) cp_infos = do
+    case expr of
+        (TypedExpr (BinOpExpr expr1 bin_op expr2) _) -> do
+            code1 <- generateCodeForStmt stmt cp_infos
+            addToCurrentByteCodeSize 3  -- add goto that gets added
+            code <- (generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos code1 [])
+            byteCodeSize <- getCurrentByteCodeSize
+            let lenCodeWithGoto = (length (convertToByteCode code)) + 3  -- + 3 for the goto
+            return (code ++ [Goto (((byteCodeSize - lenCodeWithGoto) `shiftR` 8) .&. 0xFF) ((byteCodeSize - lenCodeWithGoto) .&. 0xFF)])
+        _ -> do
+            -- Ifeq things
+            return []
 
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
