@@ -10,6 +10,5 @@ class Addn {
     }
     public int add2(int x) {
         return n + x;
-
     }
 }
