@@ -7,7 +7,7 @@ import TestHelper
 import ConstPoolGen
 import ClassFormat
 import Parser (parse)
--- import Semantics(checkSemantics)
+import Semantics(checkSemantics)
 
 
 -- tests one TestEntry
@@ -15,10 +15,10 @@ testEntry :: TestEntry -> SpecWith ()
 testEntry entry = it ("Test nr. " ++ no entry ++ ": testing " ++ name entry) $ do
     case parse (input entry) of
         Left _  -> putStrLn "Term could not be parsed."
-        Right t' -> {- case checkSemantics t of
-            Left _   -> putStrLn "Semantics check failed."  -- Use putStrLn consistently
-            Right t' -> -} let cpList = startBuildProcess t'
+        Right t -> case checkSemantics t of
+            (t',[]) -> let cpList = startBuildProcess t'
                         in showCP_Infos cpList 1 `shouldBe` replaceAposQuotes (expected entry)
+            (p, es) -> putStrLn "Semantics check failed."  -- Use putStrLn consistently
 
     --case result of
      --   Left err -> expectationFailure err
