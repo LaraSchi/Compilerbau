@@ -21,8 +21,8 @@ generateClassFile (Program (Class className fields methods) typed_bool) cpInfos 
         countCP = (length cpInfos) + 1
         arrayCP = cpInfos
         accessFlag = AccessFlags [acc_Super_Synchronized]  -- 32 see example (6.1)
-        thisClass = ThisClass {index_th = 7}  -- TODO parse the index number
-        superClass = SuperClass {index_sp = 2}
+        thisClass = ThisClass {index_th = (getIndexByDesc (newTypeToString className) cpInfos)}
+        superClass = SuperClass {index_sp = (getIndexByDesc "java/lang/Object" cpInfos)}
         numInterfaces = 0  
         arrayInterfaces = [] 
         numFields = length fields
