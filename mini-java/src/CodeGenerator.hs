@@ -9,6 +9,7 @@ import Data.Bits
 import Control.Monad.State
 import ConstPoolGen
 import Debug.Trace
+import Control.Monad
 
 
 ----------------------------------------------------------------------
@@ -71,7 +72,6 @@ startBuildGenCodeProcess m cp className methods =
     let (result, finalState) = runState (generateCodeForMethod m cp) initialState
     in (result, localVars finalState )
     where
-     -- Todo maxStackSize
     initialState = GlobalVars { currentByteCodeSize = 0, localVars = [], typesOfLocalVars = [], 
                                 returnType = VoidT, className = className, methodDeklr=methods  }
                         
@@ -266,7 +266,7 @@ generateCodeForAssign (LocalVarExpr name) cp_infos = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
 
-    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList -- Todo delete this comment
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
 
 
     if var_type == BoolT || var_type == IntT || var_type == CharT
@@ -341,7 +341,7 @@ generateCodeForExpression (LocalVarExpr name) cp_infos = do
     varList <- getLocalVars
     varTypeList <- getLocalVarTypes
 
-    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList -- Todo delete this comment
+    let var_type = getTypeFromIndex (getVarIndex name varList) varTypeList
     if var_type == BoolT || var_type == IntT || var_type == CharT
         then do
             let index = (getVarIndex name varList)
@@ -435,13 +435,17 @@ generateCodeForNewExpr :: NewExpr -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstr
 generateCodeForNewExpr (NewExpr newType args) cp_infos = do
     code <- generateCodeForExpressions args cp_infos
     className <- getClassName
-    let idx_method_ref = getIndexByDesc (className ++ ".<init>:()V") cp_infos
+    let methodType = if null args
+            then "()V"
+            else "(" ++ intercalate "" (map (\(TypedExpr _ t) -> typeToString t) args) ++ ")V"
+        idx_method_ref = getIndexByDesc (className ++ ".<init>:" ++ methodType) cp_infos
         idx_class_ref = getIndexByDesc className cp_infos
     return ([(New ((idx_class_ref `shiftR` 8) .&. 0xFF) (idx_class_ref .&. 0xFF)),  -- Verweis auf class_info mit desc classname
-            (Dup)] ++
-            code ++
-            [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- Verweis auf methodref "classname.<init>:()V"
-            (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
+                (Dup)] ++
+                code ++
+                [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- Verweis auf methodref "classname.<init>:()V"
+                (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
+
 
 -- Function to generate assembly code for NewType
 generateCodeForNewType :: NewType -> GlobalVarsMonad [ByteCodeInstrs]
