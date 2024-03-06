@@ -10,7 +10,7 @@ data ByteCodeInstrs =
     | ILoad Int
     | IStore Int
     | Ldc Int 
-    | If Int Int
+    | If_Eq Int Int
     | If_ICmpEq Int Int
     | If_ICmpNeq Int Int
     | If_ICmpLeq Int Int
@@ -97,7 +97,7 @@ convertInstrToByteCode :: ByteCodeInstrs -> [Int]
 convertInstrToByteCode instr = case instr of
     (InvokeDynamic arg1 arg2 arg3 arg4) -> [0xBA, arg1, arg2, 0x0, 0x0]
     (Goto_W  arg1 arg2 arg3 arg4) -> [0xC8, arg1, arg2, arg3, arg4]
-    (If arg1 arg2) -> [0x99, arg1, arg2]
+    (If_Eq arg1 arg2) -> [0x99, arg1, arg2]
     (If_ICmpEq arg1 arg2) -> [0x9F, arg1, arg2]
     (If_ICmpNeq arg1 arg2) -> [0xA0, arg1, arg2]
     (If_ICmpLeq arg1 arg2) -> [0xA4, arg1, arg2]
@@ -187,7 +187,7 @@ convertByteCodeToInstr (opc:arg1:arg2:arg3:[arg4]) = case opc of
     0xC8 -> (Goto_W arg1 arg2 arg3 arg4)
     _ -> NoInstr
 convertByteCodeToInstr (opc:arg1:[arg2]) = case opc of
-    0x99 -> (If arg1 arg2)
+    0x99 -> (If_Eq arg1 arg2)
     0x9F -> (If_ICmpEq arg1 arg2)
     0xA0 -> (If_ICmpNeq arg1 arg2)
     0xA4 -> (If_ICmpLeq arg1 arg2)
@@ -286,7 +286,7 @@ convertInstrToString :: ByteCodeInstrs -> String
 convertInstrToString instr = case instr of
     (InvokeDynamic arg1 arg2 arg3 arg4) -> "invokedynamic" ++ "\t#" ++ show arg1 ++ "\t#" ++ show arg2 ++ "\t#" ++ show arg3 ++ "\t#" ++ show arg4
     (Goto_W arg1 arg2 arg3 arg4) -> "goto_w" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2 ++ "\t" ++ show arg3 ++ "\t" ++ show arg4
-    (If arg1 arg2) -> "if" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
+    (If_Eq arg1 arg2) -> "if_eq" ++ "\t" ++ show arg1 ++ "\t" ++ show arg2
     (If_ICmpEq arg1 arg2) -> "if_icmpeq" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
     (If_ICmpNeq arg1 arg2) -> "if_icmpne" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
     (If_ICmpLeq arg1 arg2) -> "if_icmple" ++ "\t" ++ show ((arg1 `shiftL` 8) + arg2)
