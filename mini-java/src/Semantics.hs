@@ -118,7 +118,7 @@ checkWhileStmt e stmts = do
 checkTypeExpr :: Type -> Expression -> TypeStateM Expression
 checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
     then return typed
-    else error $ "The expression" ++ show typed ++ "does not have the expected type " ++ show t ++  "!"
+    else errorCall "ExpectedTyEr" (show t) >> return typed
 
 -- Performs type checking on an expression.
 -- Checks various kinds of expressions including variables, literals, unary and binary operations.
@@ -324,14 +324,15 @@ wrongType s = case stripPrefix "NewTypeT (NewType \"" s of
 
 -- Error Handling: Calls addError with predefined error messages based on the error type.
 errorCall :: String -> String -> TypeStateM ()
-errorCall "varUnknown"  x = addError $ "The variable " ++ show x ++ " is not known. Please declare before use!"
-errorCall "funcUnknown" x = addError $ "The function " ++ show x ++ " is not known. Please declare before use!"
-errorCall "funcTyErr"   x = addError $ "The function " ++ show x ++ " returns a different type than declared."
-errorCall "paramTyErr"  x = addError $ "The function " ++ show x ++ " requires other parameters."
-errorCall "blockTyErr"  x = addError "BlockStatement contains type error"
-errorCall "ifElseTyErr" x = addError "The types of the if and else cases do not match!"
-errorCall "OpTyErr"     x = addError "The Binary operator does not receive the correct types!"
-errorCall error         _ = addError error
+errorCall "varUnknown"    x = addError $ "The variable " ++ show x ++ " is not known. Please declare before use!"
+errorCall "funcUnknown"   x = addError $ "The function " ++ show x ++ " is not known. Please declare before use!"
+errorCall "funcTyErr"     x = addError $ "The function " ++ show x ++ " returns a different type than declared."
+errorCall "paramTyErr"    x = addError $ "The function " ++ show x ++ " requires other parameters."
+errorCall "ExpectedTyEr"  x = addError $ "The expression does not have the expected type " ++ show x ++  "!"
+errorCall "blockTyErr"    x = addError "BlockStatement contains type error"
+errorCall "ifElseTyErr"   x = addError "The types of the if and else cases do not match!"
+errorCall "OpTyErr"       x = addError "The Binary operator does not receive the correct types!"
+errorCall error           _ = addError error
 
 -- Adds an error message to the list of errors in the state, when type errors are detected during semantic analysis.
 addError :: String -> TypeStateM ()
