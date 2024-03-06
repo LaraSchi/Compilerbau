@@ -16,7 +16,7 @@ data TypeState = TypeState { classType        :: Type,
 
 type TypeStateM = State TypeState
 
-
+-- 
 checkSemantics :: Program -> (Program, [String])
 checkSemantics p = fmap errors . runState (checkSProg p) $ TypeState VoidT [] [] []
 
@@ -57,18 +57,23 @@ checkMethod (MethodDecl v t s ps stmts) = do
     then return $ MethodDecl v t s ps typedStmts
     else do 
         addError $ "Function " ++ show s ++ " returns a different type, than declared!"
-        let wrongType = NewTypeT $ NewType $ "x"++ show (getTypeS typedStmts)
+        let wrongType = NewTypeT $ NewType $ "x"++ show (getTypeS typedStmts) -- TODO: Hilfsfunktion
         return $ MethodDecl v t s ps (changeTypeS wrongType typedStmts)
 
-checkStmt :: Stmt -> TypeStateM Stmt
-checkStmt (Block stmts)                     = do
+checkBlock :: [Stmt] -> TypeStateM Stmt
+checkBlock stmts = do
     bT <- mapM checkStmt stmts
     let types = filter (/= VoidT) $ map getTypeS bT
-    if null types
-    then return $ TypedStmt (Block bT) VoidT
-    else if allEq types
-         then return $ TypedStmt (Block bT) (head types)
-         else error ("es werden verschieden Typen zurück gegeben" ++ show types) -- $ return $ TypedStmt (Block bT) (head tys)
+    case (null types, allEq types) of
+        (True, _  ) -> return $ TypedStmt (Block bT) VoidT
+        (_  , True) -> return $ TypedStmt (Block bT) (head types)
+        _           -> do
+            errorCall "blockTyErr"  ""
+            return $ TypedStmt (Block bT) (NewTypeT $ NewType "xVoidT")
+
+
+checkStmt :: Stmt -> TypeStateM Stmt
+checkStmt (Block stmts)                     = checkBlock stmts
 checkStmt (ReturnStmt e)                    = checkExpr e >>= \eT -> return $ TypedStmt (ReturnStmt eT) (getTypeE eT)
 checkStmt (WhileStmt e stmts)               = do
     eTyped     <- checkTypeExpr BoolT e 
@@ -104,45 +109,45 @@ checkTypeExpr t e = checkExpr e >>= \typed -> if t == getTypeE typed
     else error ("type: " ++ show t ++  "expression: " ++ show (getTypeE typed) ++ show typed) -- #TODO: passende Error messages
 
 -- TODO: alle Expr typen 
--- TODO: evtl. zu haskell typen? 
 checkExpr :: Expression -> TypeStateM Expression
 checkExpr ThisExpr                  = gets classType >>= \t -> return $ TypedExpr ThisExpr t
-checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT -- #TODO: ändern zu ?
+checkExpr SuperExpr                 = return $ TypedExpr SuperExpr VoidT
 checkExpr (LocalOrFieldVarExpr i)   = checkIdentifier i
-checkExpr v@(FieldVarExpr i)        = checkFieldVar i -- #TODO: korrigieren
-checkExpr v@(LocalVarExpr i)        = checkIdentifier i -- #TODO: korrigieren
-checkExpr (InstVarExpr e s)         = checkExpr e >>= \eTyped -> checkInstVarExpr s >>= \sT -> return $ TypedExpr (InstVarExpr eTyped s) sT -- #TODO: korrigieren, was für ein Typ?
+checkExpr v@(FieldVarExpr i)        = checkFieldVar i
+checkExpr v@(LocalVarExpr i)        = checkIdentifier i
+checkExpr (InstVarExpr e s)         = checkExpr e >>= \eTyped -> checkInstVarExpr s >>= \sT -> return $ TypedExpr (InstVarExpr eTyped s) sT
 checkExpr (UnaryOpExpr op e)        = checkUnary op e
 checkExpr (BinOpExpr e1 op e2)      = checkBinary e1 op e2
 checkExpr e@(IntLitExpr _)          = return $ TypedExpr e IntT
 checkExpr e@(BoolLitExpr _)         = return $ TypedExpr e BoolT
-checkExpr e@(CharLitExpr _)  =      return $ TypedExpr e CharT -- #TODO: evtl nochmal iwo prüfen, das char
+checkExpr e@(CharLitExpr _)         = return $ TypedExpr e CharT
 checkExpr e@(StringLitExpr _)       = return $ TypedExpr e StringT
 checkExpr Null                      = return $ TypedExpr Null VoidT
 checkExpr (StmtExprExpr se)         = checkStmtExpr se >>= \seTyped -> return $ TypedExpr (StmtExprExpr seTyped) (getTypeSE seTyped)
 checkExpr _                         = error "checkExpr called on already typed Expression"
 
-
+-- Blablabla
 checkInstVarExpr :: String -> TypeStateM Type
 checkInstVarExpr s = do
     fields <- gets fieldTypeset
     case filter ((==s).fst) fields of
         [(_,t)]  -> return t 
-        _        -> error "upsi"
+        _        -> error "Var existiert nicht"
 
+-- Blablabla
+checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
+checkUnary Not e  = checkTypeExpr BoolT e >>= \eT -> return $ TypedExpr (UnaryOpExpr Not eT) BoolT
+checkUnary op  e  = checkTypeExpr IntT  e >>= \eT -> return $ TypedExpr (UnaryOpExpr op eT ) IntT
 
-
--- #TODO: lookup noch spezifizieren, ob wirklich in jeweiliger FUnktion
 checkIdentifier :: String -> TypeStateM Expression
 checkIdentifier s = do
     state <- get
     let localSet = localTypeset state
     let fieldSet = fieldTypeset state
-    case lookup s localSet of
-                        Just localT -> return $ TypedExpr (LocalVarExpr s) localT
-                        _      -> case lookup s fieldSet of
-                                        Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
-                                        _           -> error "Vars müssen deklariert werden" -- #TODO: schöner
+    case (lookup s localSet, lookup s fieldSet) of
+        (Just localT, _)   -> return $ TypedExpr (LocalVarExpr s) localT
+        (_, Just fieldT)   -> return $ TypedExpr (FieldVarExpr s) fieldT
+        (Nothing, Nothing) -> error "Vars müssen deklariert werden"
 
 checkFieldVar :: String -> TypeStateM Expression
 checkFieldVar s = do
@@ -150,13 +155,6 @@ checkFieldVar s = do
     case lookup s field of
         Just fieldT -> return $ TypedExpr (FieldVarExpr s) fieldT
         _           -> error "Vars müssen deklariert werden" -- #TODO: schöner
-
-
--- #TODO: evtl. umschreiben
-checkUnary :: UnaryOperator -> Expression -> TypeStateM Expression
-checkUnary Not e  = checkTypeExpr BoolT e >>= \eT -> return $ TypedExpr (UnaryOpExpr Not eT) BoolT
-checkUnary op  e  = checkTypeExpr IntT  e >>= \eT -> return $ TypedExpr (UnaryOpExpr op eT ) IntT
-
 
 checkBinary :: Expression -> BinaryOperator -> Expression -> TypeStateM Expression
 checkBinary e1 op e2  = case op of
@@ -198,7 +196,6 @@ checkAssign :: StmtExpr -> TypeStateM StmtExpr
 checkAssign (AssignmentStmt e1 e2) = do
     e1T <- checkExpr e1 
     e2T <- checkExpr e2
-    -- #TODO: e1 muss var sein? und als Var it jeweiligen Typ abspeichern
     return $ TypedStmtExpr (AssignmentStmt e1T e2T) VoidT --(getTypeE e2T)
 
 checkNew :: NewExpr -> TypeStateM StmtExpr
@@ -209,7 +206,6 @@ checkNew (NewExpr cn es) = do
     esT <- mapM checkExpr es
     eTyped      <- mapM checkExpr es
     return $ TypedStmtExpr (NewExpression(NewExpr cn eTyped)) (NewTypeT cn) 
-    -- #TODO: NewType Datentyp evtl anders?
 
 checkMethodCall :: MethodCallExpr -> TypeStateM (MethodCallExpr,Type)
 checkMethodCall (MethodCallExpr e s es) = do
@@ -224,16 +220,16 @@ checkMethodCall (MethodCallExpr e s es) = do
         esTyped <- mapM checkExpr es
         return (MethodCallExpr eTyped s esTyped,resultType)
 
-    -- TODO: Frage, was wenn Funktion doppelt vorkommt?
+    -- TODO: Frage, was wenn Funktion doppelt vorkommt?upsi
     -- #TODO: check if e is Object
     -- #TODO: check if Method is given in Obj
     -- #TODO: check if es are needed params (number of params and their type)
 
+-- Helper 
+
 getFuncTypes :: Type -> ([Type],Type)
 getFuncTypes (FuncT p r) = (p,r)
 getFuncTypes _           = error "getFuncTypes wurde auf falschem typen aufgerufen"
-
--- checkBlockStmt ::
 
 getTypeE :: Expression -> Type
 getTypeE (TypedExpr _ t) = t
@@ -241,7 +237,7 @@ getTypeE t               = error $ "getTypeE error with:" ++show t
 
 getTypeSE :: StmtExpr -> Type
 getTypeSE (TypedStmtExpr _ t) = t
-getTypeSE t               = error $ "getTypeSE error with:" ++show t
+getTypeSE t                   = error $ "getTypeSE error with:" ++show t
 
 getTypeS :: Stmt -> Type
 getTypeS (TypedStmt _ t) = t
@@ -251,17 +247,28 @@ changeTypeS :: Type -> Stmt -> Stmt
 changeTypeS t' (TypedStmt s t) = TypedStmt s t'
 changeTypeS _  s               = error $ "changeTypeS error with:" ++show s
 
--- Debug Helper 
-
-semanticsError :: String -> String -> a
-semanticsError s1 s2 = error $ "error in function " ++ s1 ++ "\ncalles on " ++ s2
-
--- Helper 
 allEq :: Eq a => [a] -> Bool
 allEq (x:xs) = all (== x) xs
 allEq _   = True
+
+-- Error Handling:
+errorCall :: String -> String -> TypeStateM ()
+errorCall "varUnknown"  x = addError $ "The variable " ++ show x ++ " is not known. Please declare before use!"
+errorCall "funcUnknown" x = addError $ "The function " ++ show x ++ " is not known. Please declare before use!"
+errorCall "funcTyErr"   x = addError $ "The function " ++ show x ++ " returns a different type than declared."
+errorCall "blockTyErr"  x = addError "BlockStatement contains type error"
+errorCall "ifElseTyErr" x = addError "The types of the if and else cases do not match!"
+errorCall error         _ = addError error
 
 addError :: String -> TypeStateM ()
 addError e = do
     es <- gets errors
     modify (\s -> s {errors = ("   - " ++ e) : es})
+
+-- TODO: remove 
+
+-- Debug Helper 
+
+semanticsError :: String -> String -> a
+semanticsError s1 s2 = error $ "error in function " ++ s1 ++ "\ncalles on " ++ s2
+
