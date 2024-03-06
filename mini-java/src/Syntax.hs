@@ -2,7 +2,6 @@ module Syntax where
 
 type Typed = Bool
 
--- Definition des Programmtyps
 data Program = Program Class Typed
              deriving (Show, Eq, Read)
 
@@ -27,7 +26,7 @@ type BlockStmtList = [Stmt]
 data Type = IntT
           | BoolT
           | CharT
-          | StringT -- #TODO: zu Parser hinzufügen
+          | StringT
           | NewTypeT NewType
           | FuncT [Type] Type
           | VoidT
@@ -44,7 +43,6 @@ data Stmt = TypedStmt Stmt Type
           | IfElseStmt Expression Stmt (Maybe Stmt)
           | StmtExprStmt StmtExpr
           | Print String
-          -- Vllt hier Field Ref zum Verändern von fieldVars? 
           deriving (Show, Eq, Read)
 
 data StmtExpr = TypedStmtExpr StmtExpr Type
@@ -56,10 +54,10 @@ data StmtExpr = TypedStmtExpr StmtExpr Type
 data Expression = TypedExpr Expression Type 
                 | ThisExpr
                 | SuperExpr
-                | LocalOrFieldVarExpr String -- noch nicht sicher, ob Field oder Local
+                | LocalOrFieldVarExpr String
                 | FieldVarExpr String
                 | LocalVarExpr String
-                | InstVarExpr Expression String  -- ## FieldRef im CP TODO: Maybe This vllt?
+                | InstVarExpr Expression String
                 | UnaryOpExpr UnaryOperator Expression
                 | BinOpExpr Expression BinaryOperator Expression
                 | IntLitExpr Int
@@ -73,9 +71,8 @@ data Expression = TypedExpr Expression Type
 data NewExpr = NewExpr NewType [Expression]
              deriving (Show, Eq, Read)
 
-data MethodCallExpr = MethodCallExpr Expression String [Expression] -- Todo Wie in den Folien umschreiebn
+data MethodCallExpr = MethodCallExpr Expression String [Expression]
                     deriving (Show, Eq, Read)
-
 
 data BinaryOperator = Plus
                     | Minus
@@ -98,5 +95,3 @@ data UnaryOperator = UnaryMinus
 
 newtype ClassName = ClassName String
                   deriving (Show, Eq, Read)
-
--- TODO: evtl umbenennen? Zb Expression -> Expr?

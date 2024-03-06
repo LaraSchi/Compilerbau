@@ -2,6 +2,7 @@ module PrettyPrint where
 
 import Syntax
 import Data.List
+import Debug.Trace
 
 -- ANSI
 
@@ -93,6 +94,8 @@ prettyPrintStmtExpr c (AssignmentStmt expr1 expr2) =
     prettyPrintExpression c expr1 ++ " = " ++ prettyPrintExpression c expr2
 prettyPrintStmtExpr c (NewExpression newExpr) =
     prettyPrintNewExpr newExpr
+prettyPrintStmtExpr c (MethodCall (MethodCallExpr Null name args)) =
+    name ++ "(" ++ commaSep (map (prettyPrintExpression c) args) ++ ")"
 prettyPrintStmtExpr c (MethodCall (MethodCallExpr expr name args)) =
     prettyPrintExpression c expr ++ "." ++ name ++ "(" ++ commaSep (map (prettyPrintExpression c) args) ++ ")"
 
@@ -105,6 +108,7 @@ prettyPrintExpression c SuperExpr = "super"
 prettyPrintExpression c (LocalOrFieldVarExpr name) = name
 prettyPrintExpression c (FieldVarExpr name) = "this." ++ name
 prettyPrintExpression c (LocalVarExpr name) = name
+prettyPrintExpression c (InstVarExpr Null name) = name
 prettyPrintExpression c (InstVarExpr expr name) =
     prettyPrintExpression c expr ++ "." ++ name
 prettyPrintExpression c (UnaryOpExpr op expr) =
@@ -117,7 +121,7 @@ prettyPrintExpression c (IntLitExpr n) = show n
 prettyPrintExpression c (BoolLitExpr b) = if b then "true" else "false"
 prettyPrintExpression c (CharLitExpr ch) = "'" ++ ch ++ "'"
 prettyPrintExpression c (StringLitExpr s) = "\"" ++ s ++ "\""
-prettyPrintExpression c Null = "null"
+prettyPrintExpression c Null = "this"
 prettyPrintExpression c (StmtExprExpr stmtExpr) =
     prettyPrintStmtExpr c stmtExpr
 
@@ -147,12 +151,12 @@ prettyPrintType VoidT = "void"
 
 -- Pretty Printer für neue Typen
 prettyPrintNewType :: NewType -> String
-prettyPrintNewType (NewType "xIntT")    = redColor ++ "int" ++ resetColor
-prettyPrintNewType (NewType "xBoolT")   = redColor ++ "boolean" ++ resetColor
-prettyPrintNewType (NewType "xCharT")   = redColor ++ "char" ++ resetColor
-prettyPrintNewType (NewType "xVoidT")   = redColor ++ "void" ++ resetColor
-prettyPrintNewType (NewType ('x':name)) = redColor ++ name ++ resetColor
-prettyPrintNewType (NewType name)       = name
+prettyPrintNewType (NewType "xIntT")        = resetColor ++ redColor ++ "int" ++ resetColor
+prettyPrintNewType (NewType "xBoolT")       = resetColor ++ redColor ++ "boolean" ++ resetColor
+prettyPrintNewType (NewType "xCharT")       = resetColor ++ redColor ++ "char" ++ resetColor
+prettyPrintNewType (NewType "xVoidT")       = resetColor ++ redColor ++ "void" ++ resetColor
+prettyPrintNewType all@(NewType ('x':name)) = resetColor ++ redColor ++ name ++ resetColor
+prettyPrintNewType (NewType name)           = name
 
 -- Pretty Printer für binäre Operatoren
 prettyPrintBinaryOperator :: BinaryOperator -> String

@@ -1,0 +1,7 @@
+class Expr {
+    int i;
+    boolean b;
+    public int returnA(int i, boolean b) {
+        return a;
+    }
+}
