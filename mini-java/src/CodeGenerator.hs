@@ -168,7 +168,7 @@ generateCodeForStmt (WhileStmt expr stmt) cp_infos = do
                     [If_Eq ((byteCodeSize `shiftR` 8) .&. 0xFF) (byteCodeSize .&. 0xFF)] ++
                     code_stmt ++
                     [Goto (((byteCodeSize - code_len_with_ifeq_goto) `shiftR` 8) .&. 0xFF) ((byteCodeSize - code_len_with_ifeq_goto) .&. 0xFF)])
-generateCodeForStmt _ cp_infos = return []
+
 
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
