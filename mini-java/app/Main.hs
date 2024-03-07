@@ -20,7 +20,7 @@ import System.Directory
 main :: IO ()
 main = do
     -- CP Examples
-    --fileContent <- readFile "code/ConstPoolExpls/explReferences.minijava"
+    fileContent <- readFile "code/ConstPoolExpls/explReferences.minijava"
     --fileContent <- readFile "code/ConstPoolExpls/constructor.minijava"
     --fileContent <- readFile "code/ConstPoolExpls/globalLocalSameName.minijava"
     --fileContent <- readFile "code/ConstPoolExpls/helloWorldClass.minijava"

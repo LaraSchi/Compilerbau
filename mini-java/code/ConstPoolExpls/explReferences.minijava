@@ -13,10 +13,15 @@ class explReferences {
    public int method() { // Method-Overload
         explReferences ref = new explReferences();
         ref.x = 2;
+        ref.method2();
         return 1;
    }
 
-   public int method2() { // MethodReferences
+   public void method2() { // Method-Overload
+           int z = 1;
+      }
+
+   public int method3() { // MethodReferences
          int x = this.method();
          return method(1);
    }
