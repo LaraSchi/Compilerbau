@@ -3,19 +3,18 @@ class explReferences {
     boolean b;
     char c;
 
-    public int add(int x) {
+    public int method(int x) {
         b = true;           // FieldReferences
         this.c = 'c';
         return n + x;
     }
 
-   public int add() { // Method-Overload
+   public int method() { // Method-Overload
         return 1;
     }
 
-   public int methodReference() { // MethodReference
-         int x = this.add();
-         return add(1);
+   public int method2() { // MethodReference
+         int x = this.method();
+         return method(1);
    }
-
 }
