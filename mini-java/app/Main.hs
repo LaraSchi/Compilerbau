@@ -110,6 +110,6 @@ parseAndCheck folder s = do
 
 checkAllExamples :: IO()
 checkAllExamples = do
-    let folder = "code/sC/"
+    let folder = "code/semantikCheck/"
     files1 <- listDirectory folder
     mapM_ (parseAndCheck folder) files1 -}
