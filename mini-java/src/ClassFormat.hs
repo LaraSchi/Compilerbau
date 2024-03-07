@@ -296,7 +296,7 @@ setColor :: Int -> CP_Info -> String
 setColor index (FieldRef_Info _ _ _ "java/lang/System.out:Ljava/io/PrintStream;") | index > 9 = setSGRCode [SetColor Foreground Vivid Yellow]
 setColor index (MethodRef_Info _ _ _ "java/io/PrintStream.println:(Ljava/lang/String;)V") | index > 9 = setSGRCode [SetColor Foreground Vivid Yellow]
 setColor index (String_Info _ _ "~HelloWorld~") | index > 9 = setSGRCode [SetColor Foreground Vivid Yellow]
-setColor index (FieldRef_Info _ _ _ d) | index > 9 = trace (show d) $ setSGRCode [SetColor Foreground Vivid Blue]
+setColor index (FieldRef_Info _ _ _ d) | index > 9 = setSGRCode [SetColor Foreground Vivid Blue]
 setColor index (MethodRef_Info _ _ _ _) | index > 9 = setSGRCode [SetColor Foreground Vivid Magenta]
 setColor index _ | index <= 9 = setSGRCode [SetColor Foreground Vivid Green]
 setColor _ _ = setSGRCode [Reset]
