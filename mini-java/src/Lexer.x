@@ -11,23 +11,23 @@ $string = [a-zA-Z_0-9]
 tokens :-
   $white+                     ;
   "//".*;
-  class                     { \_ -> ClassT }
-  public                    { \_ -> PublicT }
-  int                       { \_ -> IntTypeT }
-  boolean                   { \_ -> BooleanTypeT }
-  char                      { \_ -> CharTypeT }
-  void                      { \_ -> VoidTypeT }
-  new                       { \_ -> NewT }
-  return                    { \_ -> ReturnT }
-  while                     { \_ -> WhileT }
-  if                        { \_ -> IfT }
-  else                      { \_ -> ElseT }
-  this                      { \_ -> ThisT }
-  super                     { \_ -> SuperT }
-  true                      { \_ -> TrueT }
-  false                     { \_ -> FalseT }
-  null                      { \_ -> NullT }
-  println                   { \_ -> PrintlnT }
+  class                       { \_ -> ClassT }
+  public                      { \_ -> PublicT }
+  int                         { \_ -> IntTypeT }
+  boolean                     { \_ -> BooleanTypeT }
+  char                        { \_ -> CharTypeT }
+  void                        { \_ -> VoidTypeT }
+  new                         { \_ -> NewT }
+  return                      { \_ -> ReturnT }
+  while                       { \_ -> WhileT }
+  if                          { \_ -> IfT }
+  else                        { \_ -> ElseT }
+  this                        { \_ -> ThisT }
+  super                       { \_ -> SuperT }
+  true                        { \_ -> TrueT }
+  false                       { \_ -> FalseT }
+  null                        { \_ -> NullT }
+  println                     { \_ -> PrintlnT }
   "+"                         { \_ -> PlusT }
   "-"                         { \_ -> MinusT }
   "*"                         { \_ -> TimesT }

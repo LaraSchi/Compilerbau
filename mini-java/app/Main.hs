@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wunused-top-binds #-}
-
 module Main (main) where
 
 import Parser (parse)
@@ -14,7 +12,7 @@ import System.Directory
 
 
 -- For colour printing
--- import System.Console.ANSI
+import System.Console.ANSI
 
 
 main :: IO ()
@@ -34,7 +32,7 @@ main = do
 
 
     --fileContent <- readFile "code/examples/explWhile.minijava" -- read file
-    --fileContent <- readFile "code/examples/bct.minijava" -- read file
+    fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
     putStrLn "parsing file content"
@@ -104,12 +102,12 @@ parseAndCheck folder s = do
             (t',[]) -> putStrLn $ prettyPrintProgram t'
             (t',es) -> do
                 putStrLn "\x1b[31m The following semantic error(s) were detected: "
-                mapM_ putStrLn es
+                mapM_ putStrLn $ reverse es
                 putStrLn  "\x1b[0m"
                 putStrLn $ prettyPrintProgram t'
 
 checkAllExamples :: IO()
 checkAllExamples = do
-    let folder = "code/sC/"
+    let folder = "code/semantikCheck/"
     files1 <- listDirectory folder
     mapM_ (parseAndCheck folder) files1 -}

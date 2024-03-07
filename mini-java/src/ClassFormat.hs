@@ -375,7 +375,7 @@ showBytes [] = ""
 showBytes (x:xs) = "\t" ++ show x ++ "\n" ++ showBytes xs
 
 
--- Function to format ListaInt  TODO: better parsing: List only contains bytes -> when opcode with two arguments the next two list elements are the args
+-- Function to format ListaInt  better parsing: List only contains bytes -> when opcode with two arguments the next two list elements are the args
 showCode :: ListaInt -> Int -> String
 showCode [] idx = ""
 showCode (opc:arg1:arg2:arg3:arg4:xs) idx =

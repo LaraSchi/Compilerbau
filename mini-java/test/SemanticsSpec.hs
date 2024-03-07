@@ -6,7 +6,6 @@ import Test.Hspec
 import TestHelper
 import Semantics
 
--- #TODO: nicht nur false oder true zurück, sondern beschreibung was nicht geklappt hat
 -- tests one TestEntry
 testEntry :: TestEntry -> SpecWith ()
 testEntry entry = it ("Test nr. " ++ no entry ++ ": testing " ++ name entry) $ do
