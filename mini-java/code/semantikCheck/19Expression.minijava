@@ -5,7 +5,7 @@ class Expr {
         this.i = i + i;
         this.b = ! b;
     }
-    public Expr(int i, boolean b) {
+    public Exp(int i, boolean b) {
         Expr e = new Expr(i,b);
         if ((e.b && true) || false) {
             e.i = 1;
