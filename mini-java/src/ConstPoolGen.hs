@@ -122,7 +122,6 @@ findReferencesExpr expr fieldOrMethodDecls className = case expr of
   LocalVarExpr name -> (return ())
   InstVarExpr e name -> do
     findReferencesExpr e fieldOrMethodDecls className
-    --checkAndGenRef name fieldOrMethodDecls className
   UnaryOpExpr _ e -> findReferencesExpr e fieldOrMethodDecls className
   BinOpExpr e1 _ e2 -> do
     findReferencesExpr e1 fieldOrMethodDecls className
@@ -170,16 +169,6 @@ unwrapToMethodList decls = [method | ThisMethodDekl method <- decls]
 -- Check if it is a Reference. Is it a method of this class?
 resolveAndGenerateMethodRefs :: String -> [FieldOrMethod] -> NewType -> [Expression] -> ConstantpoolStateM ()
 resolveAndGenerateMethodRefs name decls className exprList = case decls of
-        --(ThisFieldDekl _ : _) -> do
-        --  let fieldRefs = filter (\field ->
-        --                         case field of
-        --                           (FieldDecl _ fieldName maybeExpr) -> name == fieldName
-        --                           _                       -> False
-        --                       ) (unwrapToFieldList decls)
-        --  trace (show fieldRefs) $ (return ())
-
-        --  mapM_ (\(FieldDecl fieldType fieldName maybeExpr) -> generateFieldRefConstantPool fieldName (typeToString fieldType) className) fieldRefs
-
     (ThisMethodDekl _ : _) -> do
       let methodRefs = filter (\(MethodDecl _ _ methodName prameters _) -> name == methodName && (areInputTypesCorrect exprList prameters)) (unwrapToMethodList decls)
       mapM_ (\(MethodDecl _ thisType methodName parameters _) -> do
@@ -196,7 +185,6 @@ areInputTypesCorrect exprs params = length exprs == length params && all fits (z
 ----------------------------------------------------------------------------
 -- Helper functions to create specific constant pool entries
 -- The Entries are added to the state and the Info is returned for index retrieval.
-
 generateFieldDeklCP :: Field -> NewType -> ConstantpoolStateM ()
 generateFieldDeklCP field className = case field of
     (FieldDecl fieldType fieldName Nothing) -> do
