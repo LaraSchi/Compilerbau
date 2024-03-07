@@ -1,9 +1,10 @@
 class ControlClass {
   public int check(int a) {
     if (a > 0) {
-      return 1;
+      int x = 1;
     } else {
-      return 0;
+      int x = 0;
     }
+    return x;
   }
 }
