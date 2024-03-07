@@ -58,7 +58,7 @@ cpIndexFrom :: String -> [CP_Info] -> Int
 cpIndexFrom searchName constPoolList =
     case elemIndex (Utf8_Info TagUtf8 (length searchName) searchName "") constPoolList of
         Just idx -> idx + 1  -- Constant pool begins at 1.
-        Nothing  -> -1 --Todo Warning?
+        Nothing  -> -1
 
 -- Iteration über FieldList aus der AST, um die Liste aus FieldInfos zu bauen. CP wird mit übergeben.
 generateFieldsArray :: [Field] -> [CP_Info] -> Field_Infos
@@ -74,7 +74,7 @@ buildFieldInfo (FieldDecl fieldType fieldName maybeExpr) cpInfosList =
                 , index_name_fi = cpIndexFrom fieldName cpInfosList  -- name_index
                 , index_descr_fi = cpIndexFrom (typeToString fieldType) cpInfosList -- descriptor_index (type)
                 , tam_fi = 0                    -- count_attributte
-                , array_attr_fi = [] -- Todo 'ConstantValue' attributes? (expl. final int i = 10;)
+                , array_attr_fi = []
                 }]
     in newFieldInfos
 
