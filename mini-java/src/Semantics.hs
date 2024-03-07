@@ -266,7 +266,7 @@ checkMethodCall (MethodCallExpr e s es) = do
     let funcType = filter ((==s).fst) field
     if null funcType 
     then errorCall "funcUnknown" s >> return (MethodCallExpr eTyped s esTyped,wrongType "error")
-    else if getParams funcType == map getTypeE esTyped 
+    else if map getTypeE esTyped `elem` getParams funcType
         then do
             let (params, resultType) = getFuncTypes (snd (head funcType))
             return (MethodCallExpr eTyped s esTyped,resultType)
@@ -275,9 +275,10 @@ checkMethodCall (MethodCallExpr e s es) = do
 ------ Helper ------
 
 -- Extracts the parameter types from a function type
-getParams :: [(String, Type)] -> [Type]
-getParams ((_,FuncT ts _):_) = ts
-getParams _                  = error "getParams wurde auf falschem typen aufgerufen"
+getParams :: [(String, Type)] -> [[Type]]
+getParams ((_,FuncT ts _):fs) = ts : getParams fs
+getParams []                  = [] 
+getParams _                   = error "getParams wurde auf falschem typen aufgerufen"
 
 -- Extracts the parameter types and return type from a function type.
 getFuncTypes :: Type -> ([Type],Type)
