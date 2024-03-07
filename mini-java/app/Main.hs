@@ -102,7 +102,7 @@ parseAndCheck folder s = do
             (t',[]) -> putStrLn $ prettyPrintProgram t'
             (t',es) -> do
                 putStrLn "\x1b[31m The following semantic error(s) were detected: "
-                mapM_ putStrLn es
+                mapM_ putStrLn $ reverse es
                 putStrLn  "\x1b[0m"
                 putStrLn $ prettyPrintProgram t'
 
