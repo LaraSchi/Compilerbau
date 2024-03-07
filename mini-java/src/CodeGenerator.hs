@@ -115,6 +115,7 @@ generateCodeForBlockStmt (stmt:stmts) cp_infos = do
     codeForBlock <- generateCodeForBlockStmt stmts cp_infos
     return (codeForStmt ++ codeForBlock)
 
+
 -- Function to generate assembly code for Stmt
 generateCodeForStmt :: Stmt -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForStmt (TypedStmt stmt _) cp_infos =  generateCodeForStmt stmt cp_infos
@@ -167,7 +168,7 @@ generateCodeForStmt (WhileStmt expr stmt) cp_infos = do
                     [If_Eq ((byteCodeSize `shiftR` 8) .&. 0xFF) (byteCodeSize .&. 0xFF)] ++
                     code_stmt ++
                     [Goto (((byteCodeSize - code_len_with_ifeq_goto) `shiftR` 8) .&. 0xFF) ((byteCodeSize - code_len_with_ifeq_goto) .&. 0xFF)])
-
+generateCodeForStmt _ cp_infos = return []
 
 -- LocalVar Decl 
 generateCodeForStmt (LocalVarDeclStmt var_type name maybeExpr) cp_infos = 
@@ -455,6 +456,7 @@ generateCodeForExpression (BinOpExpr expr1 bin_op expr2) cp_infos = do
         _ -> do 
             code <- generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos [] []
             return (code)
+
     
     
 generateCodeForExpression (IntLitExpr intVal) cp_infos = do
@@ -500,7 +502,7 @@ generateCodeForExpression (Null) cp_infos = do
     addToCurrentByteCodeSize 1
     return [(AConst_Null)]
 generateCodeForExpression (StmtExprExpr stmtExpr) cp_infos = generateCodeForStmtExpr stmtExpr cp_infos
-
+generateCodeForExpression _ cp_infos = return []
 
 -- Function to generate assembly code for NewExpr
 generateCodeForNewExpr :: NewExpr -> [CP_Info] -> GlobalVarsMonad [ByteCodeInstrs]
@@ -518,7 +520,7 @@ generateCodeForNewExpr (NewExpr newType args) cp_infos = do
             code ++
             [(InvokeSpecial ((idx_method_ref `shiftR` 8) .&. 0xFF) (idx_method_ref .&. 0xFF)),  -- reference to methodref "classname.<init>:()V"
             (Pop)]) -- needs to be deleted if new expr is part of assignment or local var decl
-
+generateCodeForNewExpr _ cp_infos = return []
 
 -- Function to generate assembly code for NewType
 generateCodeForNewType :: NewType -> GlobalVarsMonad [ByteCodeInstrs]
@@ -531,7 +533,7 @@ generateCodeForExpressions (expr:exprs) cp_infos = do
     codeForExpr <- generateCodeForExpression expr cp_infos
     codeForExprs <- generateCodeForExpressions exprs cp_infos
     return (codeForExpr ++ codeForExprs)
-
+generateCodeForExpressions _ cp_infos = return []
 
 generateCodeForBinOpExpr :: Expression -> [CP_Info] -> [ByteCodeInstrs] -> [ByteCodeInstrs] -> GlobalVarsMonad [ByteCodeInstrs]
 generateCodeForBinOpExpr (BinOpExpr expr1 bin_op expr2) cp_infos c1 c2 = do
