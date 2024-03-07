@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wunused-top-binds #-}
-
 module Main (main) where
 
 import Parser (parse)
