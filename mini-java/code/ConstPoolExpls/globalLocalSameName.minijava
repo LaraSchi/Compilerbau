@@ -8,7 +8,6 @@ public int add(int a, int b) {
     }
 
 public int meth(boolean x) {
-    A a;
     return 1;
  }
 }

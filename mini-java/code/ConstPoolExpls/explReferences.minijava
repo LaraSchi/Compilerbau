@@ -8,8 +8,6 @@ class explReferences {
         b = true;           // FieldReferences
         this.c = 'c';
         return n + x;
-
-
     }
 
    public int method() { // Method-Overload
@@ -19,7 +17,7 @@ class explReferences {
    }
 
    public int method2() { // MethodReferences
-         //int x = this.method();
+         int x = this.method();
          return method(1);
    }
 }

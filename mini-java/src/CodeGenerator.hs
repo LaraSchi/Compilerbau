@@ -701,6 +701,7 @@ getVarIndex var_name (var:vars)
     where indexRest = getVarIndex var_name vars
 
 getTypeFromIndex :: Int -> [Type] -> Type
+getTypeFromIndex index [] = VoidT
 getTypeFromIndex index (t:ts) =
     if (index - 1) == 0
         then t
