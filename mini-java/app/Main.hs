@@ -12,7 +12,7 @@ import System.Directory
 
 
 -- For colour printing
--- import System.Console.ANSI
+import System.Console.ANSI
 
 
 main :: IO ()
