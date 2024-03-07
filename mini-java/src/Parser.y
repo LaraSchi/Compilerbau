@@ -94,12 +94,12 @@ MethodDecl
 
 Field
   : Type identifier ';'                  { [FieldDecl $1 $2 Nothing] }
-  | Type identifier '=' Expression ';'   { [FieldDecl $1 $2 (Just $4)] } -- > TODO: Liste aus FieldRef und FieldDecl
+  | Type identifier '=' Expression ';'   { [FieldDecl $1 $2 (Just $4)] }
 
 
 ParameterList
-  : Parameter                   { [$1] }
-  | Parameter ',' ParameterList { $1 : $3 }
+  : Parameter                       { [$1] }
+  | Parameter ',' ParameterList     { $1 : $3 }
 
 Parameter
   : Type identifier       { Parameter $1 $2 }
@@ -111,12 +111,12 @@ BlockStmtList
   | Stmt BlockStmtList            { $1 : $2 }
 
 Stmt
-  : ReturnStmt ';'           { $1 }
-  | WhileStmt             { $1 }
-  | DeclarationStmt  ';'     { $1 }
-  | IfStmt                { $1 }
-  | println '(' string ')' ';'   { Print $3 }
-  | StmtExpr ';'              { StmtExprStmt $1 }
+  : ReturnStmt ';'              { $1 }
+  | WhileStmt                   { $1 }
+  | DeclarationStmt  ';'        { $1 }
+  | IfStmt                      { $1 }
+  | println '(' string ')' ';'  { Print $3 }
+  | StmtExpr ';'                { StmtExprStmt $1 }
 
 
 StmtExpr
@@ -125,20 +125,20 @@ StmtExpr
   | MethodCall            { MethodCall $1 }
 
 Expression
-  : this                            { ThisExpr }
-  | super                           { SuperExpr }
-  | identifier                      { LocalOrFieldVarExpr $1 }
-  | StmtExpr                        { StmtExprExpr $1 }
-  | this '.' identifier             { FieldVarExpr $3 }
-  | Expression '.' identifier       { InstVarExpr $1 $3 }
-  | UnaryOperator Expression        { UnaryOpExpr $1 $2 }
-  | Expression BinaryOperator Expression { BinOpExpr $1 $2 $3 }
-  | int                             { IntLitExpr $1 }
-  | BooleanLiteral                  { BoolLitExpr $1 }
-  | char                            { CharLitExpr $1 }
-  | string                          { StringLitExpr $1 }
-  | null                            { Null }
-  | '(' Expression ')'              { $2 }
+  : this                                    { ThisExpr }
+  | super                                   { SuperExpr }
+  | identifier                              { LocalOrFieldVarExpr $1 }
+  | StmtExpr                                { StmtExprExpr $1 }
+  | this '.' identifier                     { FieldVarExpr $3 }
+  | Expression '.' identifier               { InstVarExpr $1 $3 }
+  | UnaryOperator Expression                { UnaryOpExpr $1 $2 }
+  | Expression BinaryOperator Expression    { BinOpExpr $1 $2 $3 }
+  | int                                     { IntLitExpr $1 }
+  | BooleanLiteral                          { BoolLitExpr $1 }
+  | char                                    { CharLitExpr $1 }
+  | string                                  { StringLitExpr $1 }
+  | null                                    { Null }
+  | '(' Expression ')'                      { $2 }
 
 
 NewExpression
@@ -161,18 +161,18 @@ ReturnStmt
   : return Expression     { ReturnStmt $2 }
 
 WhileStmt
-  : while '(' Expression ')' '{' BlockStmt '}' { WhileStmt $3 $6 }
+  : while '(' Expression ')' '{' BlockStmt '}'  { WhileStmt $3 $6 }
 
 DeclarationStmt
-  : Type identifier                 { LocalVarDeclStmt $1 $2 Nothing}
-  | Type identifier '=' Expression  { LocalVarDeclStmt $1 $2 (Just $4) }
+  : Type identifier                        { LocalVarDeclStmt $1 $2 Nothing}
+  | Type identifier '=' Expression         { LocalVarDeclStmt $1 $2 (Just $4) }
 
 IfStmt
   : if '(' Expression ')' '{' BlockStmt '}'                             { IfElseStmt $3 $6 Nothing }
   | if '(' Expression ')' '{' BlockStmt '}' else '{' BlockStmt '}'      { IfElseStmt $3 $6 (Just $10) }
 
 AssignmentStmt
-  : Expression '=' Expression                   { AssignmentStmt $1 $3 }
+  : Expression '=' Expression   { AssignmentStmt $1 $3 }
 
 BinaryOperator
   : '+'       { Plus }

@@ -21,8 +21,7 @@ spec = describe "Parser Tests" $ do
     testData <- runIO (readTestData "test/examples/parserTests.json")
     mapM_ testEntry testData
 
--- #TODO: in helper file
-
+-- helper
 replaceAposQuotes :: String -> String
 replaceAposQuotes = map replaceChar
     where

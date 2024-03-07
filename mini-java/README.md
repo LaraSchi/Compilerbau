@@ -27,9 +27,7 @@ Table of Contents
 
 Syntax: The compiler supports a subset of syntactically correct Java classes with specific constraints outlined in the course specification.
 Type Checking: A type-checking phase ensures that the abstract syntax tree is well-typed according to the specified restrictions.
-Usage
 
-- Todo
 
 ## Usage
 
