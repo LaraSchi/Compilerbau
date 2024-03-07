@@ -34,7 +34,7 @@ main = do
 
 
     --fileContent <- readFile "code/examples/explWhile.minijava" -- read file
-    --fileContent <- readFile "code/examples/bct.minijava" -- read file
+    fileContent <- readFile "code/examples/bct.minijava" -- read file
 
     putStrLn ""
     putStrLn "parsing file content"
